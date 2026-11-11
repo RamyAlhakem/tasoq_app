@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "992372087661",
+    "project_id": "tasoq-app",
+    "storage_bucket": "tasoq-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:992372087661:android:3a07935c7449278d911864",
+        "android_client_info": {
+          "package_name": "com.tasoq.tasoq"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "992372087661-0be4urlt37j44g06dpglmofgc8qvulf0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tasoq.tasoq",
+            "certificate_hash": "3f61264ad0989f808ee04970b8d50941bb0ac917"
+          }
+        },
+        {
+          "client_id": "992372087661-8plt76kvbgmp3l0487j5pcs6qkjqib9i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAyUUjSXb5c2sahFP4wnM1Mk90AbgoPOPU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "992372087661-8plt76kvbgmp3l0487j5pcs6qkjqib9i.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
