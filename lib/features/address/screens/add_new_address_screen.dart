@@ -46,6 +46,8 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _zipCodeController = TextEditingController();
   final TextEditingController _countryCodeController = TextEditingController();
+  final ValueNotifier<String?> _selectedCountry = ValueNotifier(null);
+  final ValueNotifier<String?> _selectedZip = ValueNotifier(null);
   final FocusNode _addressNode = FocusNode();
   final FocusNode _nameNode = FocusNode();
   final FocusNode _emailNode = FocusNode();
@@ -60,6 +62,26 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
   late LatLng _defaut;
 
   final GlobalKey<FormState> _addressFormKey = GlobalKey();
+
+  @override
+  void dispose() {
+    _contactPersonNameController.dispose();
+    _contactPersonEmailController.dispose();
+    _contactPersonNumberController.dispose();
+    _cityController.dispose();
+    _zipCodeController.dispose();
+    _countryCodeController.dispose();
+    _selectedCountry.dispose();
+    _selectedZip.dispose();
+    _addressNode.dispose();
+    _nameNode.dispose();
+    _emailNode.dispose();
+    _numberNode.dispose();
+    _cityNode.dispose();
+    _zipNode.dispose();
+    _controller?.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -116,7 +138,7 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
             ' ${Provider.of<ProfileController>(context, listen: false).userInfoModel!.lName ?? ''}';
 
         String countryCode = CountryCodeHelper.getCountryCode(Provider.of<ProfileController>(context, listen: false).userInfoModel!.phone ?? '')!;
-        Provider.of<AuthController>(context, listen: false).setCountryCode(countryCode);
+        Provider.of<AuthController>(context, listen: false).setCountryCode(countryCode, notify: false);
         String phoneNumberOnly = CountryCodeHelper.extractPhoneNumber(countryCode, Provider.of<ProfileController>(context, listen: false).userInfoModel!.phone ?? '');
         _contactPersonNumberController.text = phoneNumberOnly;
       }
@@ -134,8 +156,10 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
         child: Column(children: [
           Consumer<AddressController>(
             builder: (context, addressController, child) {
-              if ( Provider.of<SplashController>(context , listen: false ). configModel !. deliveryCountryRestriction == 1  && addressController.restrictedCountryList.isNotEmpty ) {
-                _countryCodeController . text = addressController. restrictedCountryList [ 0 ];
+              if (Provider.of<SplashController>(context, listen: false).configModel!.deliveryCountryRestriction == 1
+                  && addressController.restrictedCountryList.isNotEmpty
+                  && !addressController.restrictedCountryList.contains(_countryCodeController.text)) {
+                _countryCodeController . text = addressController. restrictedCountryList [0];
               }
               return Consumer<LocationController>(
                   builder: (context, locationController, _) {
@@ -272,27 +296,32 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
                           ),
 
                           SizedBox(height: 50,
-                              child: RepaintBoundary(
-                                child: ListView.builder(
-                                    shrinkWrap: true,
-                                    scrollDirection: Axis.horizontal,
-                                    physics: const BouncingScrollPhysics(),
-                                    itemCount: addressController.addressTypeList.length,
-                                    itemBuilder: (context, index) => InkWell(
-                                        onTap: () => addressController.updateAddressIndex(index, true),
-                                        child: Container(padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault, horizontal: Dimensions.paddingSizeLarge),
-                                            margin: const EdgeInsets.only(right: 17),
-                                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
-                                                border: Border.all(color: addressController.selectAddressIndex == index ?
-                                                Theme.of(context).primaryColor : Theme.of(context).primaryColor.withValues(alpha:.125))),
-                                            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                                              SizedBox(width: 20, child: Image.asset(addressController.addressTypeList[index].icon,
-                                                  color: addressController.selectAddressIndex == index ?
-                                                  Theme.of(context).primaryColor : Theme.of(context).primaryColor.withValues(alpha:.35))),
-                                              const SizedBox(width: Dimensions.paddingSizeSmall,),
-                                              Text(getTranslated(addressController.addressTypeList[index].title, context)!,
-                                                  style: textRegular.copyWith())])))),
-                              )),
+                            child: RepaintBoundary(
+                              child: ListView.builder(
+                                shrinkWrap: true,
+                                scrollDirection: Axis.horizontal,
+                                physics: const BouncingScrollPhysics(),
+                                itemCount: addressController.addressTypeList.length,
+                                itemBuilder: (context, index) => InkWell(
+                                  onTap: () => addressController.updateAddressIndex(index, true),
+                                  child: Container(padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault, horizontal: Dimensions.paddingSizeLarge),
+                                    margin: const EdgeInsets.only(right: 17),
+                                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
+                                      border: Border.all(color: addressController.selectAddressIndex == index ?
+                                      Theme.of(context).primaryColor : Theme.of(context).primaryColor.withValues(alpha:.125))),
+                                    child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                                      SizedBox(width: 20, child: Image.asset(addressController.addressTypeList[index].icon,
+                                        color: addressController.selectAddressIndex == index ?
+                                        Theme.of(context).primaryColor : Theme.of(context).primaryColor.withValues(alpha:.35))),
+                                      const SizedBox(width: Dimensions.paddingSizeSmall,),
+                                      Text(getTranslated(addressController.addressTypeList[index].title, context)!,
+                                        style: textRegular.copyWith())]
+                                    )
+                                  )
+                                )
+                              ),
+                            )
+                          ),
 
 
                           Padding(padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
@@ -374,21 +403,24 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
                                             isExpanded: true,
                                             isDense: true,
                                             decoration: InputDecoration(contentPadding: const EdgeInsets.symmetric(vertical: 0),
-
-                                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(5))),
+                                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(5))),
                                             hint:  Row(children: [
                                               Image.asset(Images.country),
                                               const SizedBox(width: Dimensions.paddingSizeSmall),
                                               Text(_countryCodeController.text, style: textRegular.copyWith(fontSize: 14, color: Theme.of(context).textTheme.bodyLarge!.color)),
-                                            ],
-                                            ),
-                                            items: addressController.restrictedCountryList.map((item) => DropdownMenuItem<String>(
-                                                value: item, child: Text(item, style: textRegular.copyWith(fontSize: 14, color: Theme.of(context).textTheme.bodyLarge?.color)))).toList(),
-                                            onChanged: (value) {
-                                              _countryCodeController.text = value!;
+                                            ]),
 
+                                            items: addressController.restrictedCountryList.map((item) => DropdownItem<String>(
+                                              value: item, child: Text(item, style: textRegular.copyWith(fontSize: 14, color: Theme.of(context).textTheme.bodyLarge?.color)))
+                                            ).toList(),
+
+                                            valueListenable: _selectedCountry,
+                                            onChanged: (value) {
+                                              _selectedCountry.value = value;
+                                              _countryCodeController.text = value!;
                                             },
-                                            buttonStyleData: const ButtonStyleData(padding: EdgeInsets.only(right: 8),),
+
+                                            buttonStyleData: const FormFieldButtonStyleData(padding: EdgeInsets.only(right: 8),),
                                             iconStyleData: IconStyleData(
                                                 icon: Icon(Icons.arrow_drop_down, color: Theme.of(context).hintColor), iconSize: 24),
                                             dropdownStyleData: DropdownStyleData(
@@ -479,16 +511,17 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
                                 hint:  Row(children: [
                                   Image.asset(Images.city),
                                   const SizedBox(width: Dimensions.paddingSizeSmall,),
-                                  Text(getTranslated('zip', context)!, style: textRegular.copyWith(fontSize: 14, color: Theme.of(context).textTheme.bodyLarge!.color)),
+                                  Text(_zipCodeController.text.isNotEmpty ? _zipCodeController.text : getTranslated('zip', context)!, style: textRegular.copyWith(fontSize: 14, color: Theme.of(context).textTheme.bodyLarge!.color)),
                                 ],
                                 ),
-                                items: addressController.restrictedZipList.map((item) => DropdownMenuItem<String>(
+                                items: addressController.restrictedZipList.map((item) => DropdownItem<String>(
                                     value: item.zipcode, child: Text(item.zipcode!, style: textRegular.copyWith(fontSize: 14)))).toList(),
+                                valueListenable: _selectedZip,
                                 onChanged: (value) {
+                                  _selectedZip.value = value;
                                   _zipCodeController.text = value!;
-
                                 },
-                                buttonStyleData: const ButtonStyleData(padding: EdgeInsets.only(right: 8),),
+                                buttonStyleData: const FormFieldButtonStyleData(padding: EdgeInsets.only(right: 8),),
                                 iconStyleData: IconStyleData(
                                     icon: Icon(Icons.arrow_drop_down, color: Theme.of(context).hintColor), iconSize: 24),
                                 dropdownStyleData: DropdownStyleData(
@@ -531,7 +564,7 @@ class _AddNewAddressScreenState extends State<AddNewAddressScreen> {
                                     showCustomSnackBarWidget(getTranslated('country_is_required', context), Get.context!, snackBarType: SnackBarType.warning);
                                   } else {
                                     addressController.addAddress(addressModel).then((value) {
-                                      if (value.response?.statusCode == 200 ) {
+                                      if (value.response?.statusCode == 200 || value.response?.statusCode == 201) {
                                         if(context.mounted) {
                                           Navigator.pop(context);
                                         }

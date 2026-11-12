@@ -12,20 +12,14 @@ class SwiperControl extends SwiperPlugin {
     this.padding = const EdgeInsets.all(5.0),
   });
 
-  ///IconData for previous
   final IconData iconPrevious;
 
-  ///iconData for next
   final IconData iconNext;
 
-  ///icon size
   final double size;
 
-  ///Icon normal color, The theme's [ThemeData.primaryColor] by default.
   final Color? color;
 
-  ///if set loop=false on Swiper, this color will be used when swiper goto the last slide.
-  ///The theme's [ThemeData.disabledColor] by default.
   final Color? disableColor;
 
   final EdgeInsetsGeometry padding;

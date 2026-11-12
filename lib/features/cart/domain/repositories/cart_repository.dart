@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+import 'package:flutter_sixvalley_ecommerce/helper/feature_disabled_handler.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/dio/dio_client.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/exception/api_error_handler.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
@@ -39,10 +41,11 @@ class CartRepository extends DataSyncService implements CartRepositoryInterface 
     for(int index=0; index<choiceOptions.length; index++){
       choice.addAll({choiceOptions[index].name: choiceOptions[index].options![variationIndexes![index]]});
     }
+    // v6 derives `variant` server-side from `color` + `choice_*` and resolves
+    // digital price from `variant_key`, so neither is sent from the app anymore.
     Map<String?, dynamic> data = {
       'id': cart.productId,
       'guest_id' : Provider.of<AuthController>(Get.context!, listen: false).getGuestToken(),
-      'variant': cart.variation?.type,
       'quantity': cart.quantity,
       'buy_now': buyNow,
       'shipping_method_exist': shippingMethodExist,
@@ -53,17 +56,14 @@ class CartRepository extends DataSyncService implements CartRepositoryInterface 
       data.addAll({'color': cart.color});
     }
     if(cart.variantKey != null){
-      data.addAll({
-        'variant_key': cart.variantKey,
-        'digital_variation_price': cart.digitalVariantPrice
-      });
+      data.addAll({'variant_key': cart.variantKey});
     }
 
     try {
       final response = await dioClient.post(AppConstants.addToCartUri, data: data);
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
@@ -100,7 +100,7 @@ class CartRepository extends DataSyncService implements CartRepositoryInterface 
       final response = await dioClient.post(AppConstants.productRestockRequest, data: data);
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
@@ -110,12 +110,13 @@ class CartRepository extends DataSyncService implements CartRepositoryInterface 
   @override
   Future<ApiResponseModel> updateQuantity(int? key,int quantity) async {
     try {
-      final response = await dioClient.post(AppConstants.updateCartQuantityUri,
-        data: {'_method': 'put',
-          'key': key,
+      final response = await dioClient.put(
+        '${AppConstants.updateCartQuantityUri}/$key',
+        data: {
           'quantity': quantity,
           'guest_id' : Provider.of<AuthController>(Get.context!, listen: false).getGuestToken(),
-        });
+        },
+      );
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -125,10 +126,10 @@ class CartRepository extends DataSyncService implements CartRepositoryInterface 
   @override
   Future<ApiResponseModel> delete(int? key) async {
     try {
-      final response = await dioClient.post(AppConstants.removeFromCartUri,
-          data: {'_method': 'delete',
-            'guest_id' : Provider.of<AuthController>(Get.context!, listen: false).getGuestToken(),
-            'key': key});
+      final response = await dioClient.delete(
+        '${AppConstants.removeFromCartUri}/$key',
+        queryParameters: {'guest_id': Provider.of<AuthController>(Get.context!, listen: false).getGuestToken()},
+      );
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -151,9 +152,32 @@ class CartRepository extends DataSyncService implements CartRepositoryInterface 
 
 
   @override
+  Future<ApiResponseModel> mergeWholesaleGuestCart() async {
+    try {
+      final response = await dioClient.post(AppConstants.wholesaleMergeGuestCart,
+        data: {
+          'cart_guest_id' : Provider.of<AuthController>(Get.context!, listen: false).getGuestCartId(),
+        }
+      );
+      return ApiResponseModel.withSuccess(response);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403 && FeatureDisabledHandler.isFeatureDisabled(e.response?.data)) {
+        return ApiResponseModel.withSuccess(e.response!);
+      }
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+    } catch (e) {
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+
+  @override
   Future<ApiResponseModel> addRemoveCartSelectedItem(Map<String,dynamic> data) async {
     try {
-      final response = await dioClient.post(AppConstants.selectCartItemsUri, data: data);
+      final response = await dioClient.put(AppConstants.selectCartItemsUri, data: {
+        ...data,
+        'guest_id': Provider.of<AuthController>(Get.context!, listen: false).getGuestToken(),
+      });
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));

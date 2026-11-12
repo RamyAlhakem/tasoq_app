@@ -30,6 +30,12 @@ class _AllTopSellerScreenState extends State<AllTopSellerScreen> {
   }
 
   @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Selector<ShopController, String?>(
       selector: (ctx, shopController) => shopController.sellerTypeTitle,

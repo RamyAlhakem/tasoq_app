@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/domain/models/address_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_checkout/domain/services/auction_checkout_service_interface.dart';
@@ -43,6 +44,19 @@ class AuctionCheckoutController with ChangeNotifier {
   List <String?> keyList = [];
   int offlineMethodSelectedId = 0;
   String offlineMethodSelectedName = '';
+
+  void _disposeInputFieldControllers() {
+    for (final controller in inputFieldControllerList) {
+      controller.dispose();
+    }
+  }
+
+  @override
+  void dispose() {
+    orderNoteController.dispose();
+    _disposeInputFieldControllers();
+    super.dispose();
+  }
 
   void setAddressIndex(int i) {
     _addressIndex = i;
@@ -132,6 +146,7 @@ class AuctionCheckoutController with ChangeNotifier {
     _isAcceptTerms = false;
     _selectedDigitalPaymentMethodName = '';
     orderNoteController.clear();
+    _disposeInputFieldControllers();
     inputFieldControllerList.clear();
     keyList.clear();
   }
@@ -213,25 +228,20 @@ class AuctionCheckoutController with ChangeNotifier {
 
     ApiResponseModel response = await auctionCheckoutServiceInterface.claimAuction(data);
 
-    if (response.response != null && response.response!.statusCode == 200) {
-      String message = 'auction_claimed_successfully';
-      String? redirectLink;
-      if (response.response!.data is Map) {
-        if (response.response!.data['message'] != null) {
-          message = response.response!.data['message'];
-        }
-        if (response.response!.data['redirect_link'] != null) {
-          redirectLink = response.response!.data['redirect_link'];
-        }
-      }
+    final int? statusCode = response.response?.statusCode;
+    final dynamic responseData = response.response?.data;
+
+    if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
+      final String message = ApiEnvelope.message(responseData) ?? 'auction_claimed_successfully';
+
+      final dynamic rawRedirect = ApiEnvelope.content(responseData)['redirect_link'];
+      final String? redirectLink =
+          rawRedirect is String && rawRedirect.isNotEmpty ? rawRedirect : null;
+
       callback(true, message, redirectLink);
     } else {
-      String? errorMessage;
-      if (response.error is String) {
-        errorMessage = response.error.toString();
-      } else {
-        errorMessage = response.response?.data['message']?.toString();
-      }
+      final String? errorMessage =
+          response.error is String ? response.error.toString() : ApiEnvelope.errorMessage(responseData);
       callback(false, errorMessage ?? 'Failed to claim auction', null);
     }
 
@@ -256,6 +266,7 @@ class AuctionCheckoutController with ChangeNotifier {
 
   void setOfflinePaymentMethodSelectedIndex(int index, {bool notify = true}) {
     keyList = [];
+    _disposeInputFieldControllers();
     inputFieldControllerList = [];
     _offlineMethodSelectedIndex = index;
     if (offlinePaymentModel != null &&

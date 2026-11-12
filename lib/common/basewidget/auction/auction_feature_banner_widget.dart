@@ -24,15 +24,21 @@ class AuctionFeatureBannerWidget extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildHeader(context),
-          _buildBody(context),
+          AuctionFeatureBannerHeader(onClose: onClose),
+          AuctionFeatureBannerBody(onGetItNow: onGetItNow),
         ],
       ),
     );
   }
+}
 
+class AuctionFeatureBannerHeader extends StatelessWidget {
+  final VoidCallback? onClose;
 
-  Widget _buildHeader(BuildContext context) {
+  const AuctionFeatureBannerHeader({super.key, this.onClose});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -106,27 +112,109 @@ class AuctionFeatureBannerWidget extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildBody(BuildContext context) {
+class AuctionFeatureBannerBody extends StatelessWidget {
+  final VoidCallback? onGetItNow;
+
+  const AuctionFeatureBannerBody({super.key, this.onGetItNow});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       color: Theme.of(context).cardColor,
       padding: const EdgeInsets.all(12),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildFeatureGrid(context),
+          const AuctionFeatureGrid(),
           const SizedBox(height: 10),
-          _buildRatingRow(context),
+          const AuctionRatingRow(),
           const SizedBox(height: 12),
-          _buildGetItNowButton(context),
+          AuctionGetItNowButton(onGetItNow: onGetItNow),
           const SizedBox(height: 12),
-          _buildWarningText(context),
+          const AuctionWarningText(),
         ],
       ),
     );
   }
+}
 
-  Widget _buildFeatureGrid(BuildContext context) {
+class AuctionGetItNowButton extends StatelessWidget {
+  final VoidCallback? onGetItNow;
+
+  const AuctionGetItNowButton({super.key, this.onGetItNow});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 40,
+      child: ElevatedButton(
+        onPressed: onGetItNow,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).cardColor,
+          disabledBackgroundColor: Theme.of(context).colorScheme.primary,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              getTranslated('get_it_now', context) ?? '',
+              style: textBold.copyWith(color: Colors.white, fontSize: 14),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.arrow_forward_rounded, size: 18, color: Colors.white),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class AuctionWarningText extends StatelessWidget {
+  const AuctionWarningText({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final fullText = getTranslated('auction_addon_warning', context) ?? '';
+    const boldWord = 'Add-on';
+    final splitIndex = fullText.indexOf(boldWord);
+    final errorColor = Theme.of(context).colorScheme.error;
+    final baseStyle = titilliumRegular.copyWith(color: errorColor, fontSize: 10, height: 1.3);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.warning, color: errorColor, size: 12),
+        const SizedBox(width: 2),
+        Expanded(
+          child: splitIndex == -1
+            ? Text(fullText, style: baseStyle)
+            : Text.rich(
+              TextSpan(
+                style: baseStyle,
+                children: [
+                  TextSpan(text: fullText.substring(0, splitIndex)),
+                  TextSpan(text: boldWord, style: baseStyle.copyWith(fontWeight: FontWeight.bold)),
+                  TextSpan(text: fullText.substring(splitIndex + boldWord.length)),
+                ],
+              ),
+            ),
+        ),
+      ],
+    );
+  }
+}
+
+class AuctionFeatureGrid extends StatelessWidget {
+  const AuctionFeatureGrid({super.key});
+
+  @override
+  Widget build(BuildContext context) {
     final features = [
       _FeatureItem(icon: Images.liveBiddingIcon, title: getTranslated('live_bidding', context) ?? '', subtitle: getTranslated('live_bidding_subtitle', context) ?? ''),
       _FeatureItem(icon: Images.extraRevenueIcon, title: getTranslated('extra_revenue', context) ?? '', subtitle: getTranslated('extra_revenue_subtitle', context) ?? ''),
@@ -140,9 +228,9 @@ class AuctionFeatureBannerWidget extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(child: _buildFeatureCard(context, features[0])),
+              Expanded(child: AuctionFeatureCard(feature: features[0])),
               const SizedBox(width: 8),
-              Expanded(child: _buildFeatureCard(context, features[1])),
+              Expanded(child: AuctionFeatureCard(feature: features[1])),
             ],
           ),
         ),
@@ -151,17 +239,24 @@ class AuctionFeatureBannerWidget extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(child: _buildFeatureCard(context, features[2])),
+              Expanded(child: AuctionFeatureCard(feature: features[2])),
               const SizedBox(width: 8),
-              Expanded(child: _buildFeatureCard(context, features[3])),
+              Expanded(child: AuctionFeatureCard(feature: features[3])),
             ],
           ),
         ),
       ],
     );
   }
+}
 
-  Widget _buildFeatureCard(BuildContext context, _FeatureItem feature) {
+class AuctionFeatureCard extends StatelessWidget {
+  final _FeatureItem feature;
+
+  const AuctionFeatureCard({super.key, required this.feature});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
@@ -209,8 +304,13 @@ class AuctionFeatureBannerWidget extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildRatingRow(BuildContext context) {
+class AuctionRatingRow extends StatelessWidget {
+  const AuctionRatingRow({super.key});
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -222,64 +322,6 @@ class AuctionFeatureBannerWidget extends StatelessWidget {
             color: Theme.of(context).textTheme.titleMedium?.color,
             fontSize: 10,
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGetItNowButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 40,
-      child: ElevatedButton(
-        onPressed: onGetItNow,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          foregroundColor: Theme.of(context).cardColor,
-          disabledBackgroundColor: Theme.of(context).colorScheme.primary,
-          elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              getTranslated('get_it_now', context) ?? '',
-              style: textBold.copyWith(color: Colors.white, fontSize: 14),
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.arrow_forward_rounded, size: 18, color: Colors.white),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWarningText(BuildContext context) {
-    final fullText = getTranslated('auction_addon_warning', context) ?? '';
-    const boldWord = 'Add-on';
-    final splitIndex = fullText.indexOf(boldWord);
-    final errorColor = Theme.of(context).colorScheme.error;
-    final baseStyle = titilliumRegular.copyWith(color: errorColor, fontSize: 10, height: 1.3);
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(Icons.warning, color: errorColor, size: 12),
-        const SizedBox(width: 2),
-        Expanded(
-          child: splitIndex == -1
-            ? Text(fullText, style: baseStyle)
-            : Text.rich(
-              TextSpan(
-                style: baseStyle,
-                children: [
-                  TextSpan(text: fullText.substring(0, splitIndex)),
-                  TextSpan(text: boldWord, style: baseStyle.copyWith(fontWeight: FontWeight.bold)),
-                  TextSpan(text: fullText.substring(splitIndex + boldWord.length)),
-                ],
-              ),
-            ),
         ),
       ],
     );

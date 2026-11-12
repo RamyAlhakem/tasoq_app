@@ -25,6 +25,12 @@ class _LoyaltyPointConverterDialogueWidgetState extends State<LoyaltyPointConver
   final TextEditingController _convertPointAmountController = TextEditingController();
 
   @override
+  void dispose() {
+    _convertPointAmountController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     double? exchangeRate = Provider.of<SplashController>(context,listen: false).configModel!.loyaltyPointExchangeRate;
     int? min = Provider.of<SplashController>(context,listen: false).configModel!.loyaltyPointMinimumPoint;

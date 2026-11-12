@@ -56,16 +56,18 @@ class _ViewAllAuctionProductScreenState extends State<ViewAllAuctionProductScree
   @override
   void initState() {
     super.initState();
-    if (widget.isFromRecentlyViewedSection) {
-      Provider.of<AuctionHomeController>(context, listen: false)
-          .getRecentlyViewedAuctionList(isLoggedIn: true);
-    }
-    Provider.of<AuctionHomeController>(context, listen: false)
-        .getAuctionHomeSection(
-      widget.auctionEnum,
-      categoryId: widget.categoryId,
-      ownerId: widget.ownerId,
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final AuctionHomeController auctionHomeController = Provider.of<AuctionHomeController>(context, listen: false);
+      if (widget.isFromRecentlyViewedSection) {
+        auctionHomeController.getRecentlyViewedAuctionList(isLoggedIn: true);
+      }
+      auctionHomeController.getAuctionHomeSection(
+        widget.auctionEnum,
+        categoryId: widget.categoryId,
+        ownerId: widget.ownerId,
+      );
+    });
   }
 
   @override

@@ -18,7 +18,7 @@ class OrderAmountCalculation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool isPaid = orderProvider.orderDetails?[0].latestEditHistory?.orderDuePaymentStatus == 'paid';
+    bool isPaid = orderProvider.orders?.latestEditHistory?.orderDuePaymentStatus == 'paid';
     return  Container(
       decoration: BoxDecoration(
         boxShadow: [BoxShadow(color: Theme.of(context).hintColor.withValues(alpha:0.2), spreadRadius:1.5, blurRadius: 3)],
@@ -47,7 +47,7 @@ class OrderAmountCalculation extends StatelessWidget {
             color: Theme.of(context).cardColor,
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-              if(orderProvider.orderDetails![0].order?.editedStatus == 1)
+              if(orderProvider.orders?.editedStatus == 1)
               Container(
                 padding: EdgeInsets.all(Dimensions.paddingSizeSmall),
                 decoration: BoxDecoration(
@@ -104,11 +104,11 @@ class OrderAmountCalculation extends StatelessWidget {
               ),
 
 
-              if((orderProvider.orderDetails?[0].latestEditHistory?.orderDueAmount ?? 0)  > 0)...[
+              if((orderProvider.orders?.latestEditHistory?.orderDueAmount ?? 0)  > 0)...[
                 AmountWidget(isTitleBlack: true,  title: '${getTranslated('paid_amount', context)}',
                   titleStyle: textRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color),
                   amountStyle: textRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color),
-                  amount: PriceConverter.convertPrice(context, (itemTotalAmount + shippingCost - referAndEarnDiscount - eeDiscount! - orderProvider.orders!.discountAmount! - discount  + tax) - (orderProvider.orderDetails?[0].latestEditHistory?.orderDueAmount ?? 0))
+                  amount: PriceConverter.convertPrice(context, (itemTotalAmount + shippingCost - referAndEarnDiscount - eeDiscount! - orderProvider.orders!.discountAmount! - discount  + tax) - (orderProvider.orders?.latestEditHistory?.orderDueAmount ?? 0))
                 ),
 
 
@@ -118,24 +118,24 @@ class OrderAmountCalculation extends StatelessWidget {
                     color: isPaid ? Theme.of(context).textTheme.bodyLarge?.color : Theme.of(context).colorScheme.error),
                   amountStyle: textBold.copyWith(fontSize: Dimensions.fontSizeDefault,
                     color: isPaid ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.error),
-                  amount: PriceConverter.convertPrice(context, (orderProvider.orderDetails?[0].latestEditHistory?.orderDueAmount ?? 0))
+                  amount: PriceConverter.convertPrice(context, (orderProvider.orders?.latestEditHistory?.orderDueAmount ?? 0))
                 ),
               ],
 
 
-              if((orderProvider.orderDetails?[0].latestEditHistory?.orderReturnAmount ?? 0)  > 0)...[
+              if((orderProvider.orders?.latestEditHistory?.orderReturnAmount ?? 0)  > 0)...[
                 AmountWidget(isTitleBlack: true,  title: '${getTranslated('paid_amount', context)}',
                   titleStyle: textRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color),
                   amountStyle: textRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color),
-                    amount: PriceConverter.convertPrice(context, (itemTotalAmount + shippingCost - referAndEarnDiscount - eeDiscount! - orderProvider.orders!.discountAmount! - discount  + tax) - (orderProvider.orderDetails?[0].latestEditHistory?.orderDueAmount ?? 0) +  (orderProvider.orderDetails?[0].latestEditHistory?.orderReturnAmount ?? 0))
+                    amount: PriceConverter.convertPrice(context, (itemTotalAmount + shippingCost - referAndEarnDiscount - eeDiscount! - orderProvider.orders!.discountAmount! - discount  + tax) - (orderProvider.orders?.latestEditHistory?.orderDueAmount ?? 0) +  (orderProvider.orders?.latestEditHistory?.orderReturnAmount ?? 0))
                 ),
 
 
                 AmountWidget(isTitleBlack: true,  title: '${getTranslated('amount_to_return', context)}',
-                  isReturned: orderProvider.orderDetails?[0].latestEditHistory?.orderReturnPaymentStatus == 'returned',
+                  isReturned: orderProvider.orders?.latestEditHistory?.orderReturnPaymentStatus == 'returned',
                   titleStyle: textBold.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color),
                   amountStyle: textBold.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).colorScheme.primary),
-                  amount: PriceConverter.convertPrice(context, (orderProvider.orderDetails?[0].latestEditHistory?.orderReturnAmount ?? 0))
+                  amount: PriceConverter.convertPrice(context, (orderProvider.orders?.latestEditHistory?.orderReturnAmount ?? 0))
                 ),
               ],
 

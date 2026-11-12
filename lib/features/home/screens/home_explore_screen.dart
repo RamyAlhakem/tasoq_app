@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/app_mode_selector_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_asset_image_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_image_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/buttons_tab_bar.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/category_content_screen_shimmer.dart';
@@ -11,9 +13,12 @@ import 'package:flutter_sixvalley_ecommerce/features/auction_home/controllers/au
 import 'package:flutter_sixvalley_ecommerce/features/auction_home/domain/auction_enum.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/banner/controllers/banner_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/brand/controllers/brand_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/brand/widgets/brand_list_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/category/controllers/category_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/clearance_sale/widgets/clearance_sale_list_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/deal/controllers/flash_deal_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/home/widgets/ai_fab_visibility_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/redesign/home_category_content.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/redesign/auction_product_section_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/redesign/banner_slider_widget.dart';
@@ -69,10 +74,7 @@ class _HomeExploreScreenState extends State<HomeExploreScreen> with TickerProvid
 
   late final AnimationController _tabBarRevealAnim;
 
-  late final AnimationController _fabAnimController;
-  late final Animation<Offset> _fabSlideAnim;
-  late final Animation<double> _fabFadeAnim;
-  double _lastScrollOffset = 0;
+  late final AiFabVisibilityController _aiFab;
 
   final List<ProductType> _productTypes = const [
     ProductType.newArrival,
@@ -85,7 +87,7 @@ class _HomeExploreScreenState extends State<HomeExploreScreen> with TickerProvid
   void initState() {
     super.initState();
     final splash = Provider.of<SplashController>(Get.context!, listen: false);
-    _isAuctionEnabled = splash.configModel?.isAuctionFeatureEnabled ?? false;
+    _isAuctionEnabled = splash.isAuctionEnabled;
     _singleVendor = splash.configModel?.businessMode == 'single';
     _tabBarRevealAnim = AnimationController(
       vsync: this,
@@ -93,31 +95,21 @@ class _HomeExploreScreenState extends State<HomeExploreScreen> with TickerProvid
       value: 1.0,
     )..addListener(() => setState(() {}));
 
-    _fabAnimController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-      value: 0.0, // 0 = visible, 1 = hidden
-    );
-    _fabSlideAnim = Tween<Offset>(
-      begin: Offset.zero,
-      end: const Offset(0, 2.5),
-    ).animate(CurvedAnimation(
-      parent: _fabAnimController,
-      curve: const Interval(0.3, 1.0, curve: Curves.easeIn),
-      reverseCurve: const Interval(0.0, 0.7, curve: Curves.easeOut),
-    ));
-    _fabFadeAnim = Tween<double>(
-      begin: 1.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _fabAnimController,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeIn),
-      reverseCurve: const Interval(0.4, 1.0, curve: Curves.easeOut),
-    ));
+    _aiFab = AiFabVisibilityController(vsync: this, scrollController: _scrollController, nested: true);
 
     _initTabs();
     _scrollController.addListener(_onScroll);
     widget.resetToExploreListenable?.addListener(_resetToExplore);
+
+    // The default theme's dashboard no longer runs HomePage.loadData, so the
+    // brand row would otherwise stay on its shimmer until pull-to-refresh.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final BrandController brandController = Provider.of<BrandController>(context, listen: false);
+      if (brandController.brandModel == null) {
+        brandController.getBrandList(offset: 1, isUpdate: false);
+      }
+    });
   }
 
   void _resetToExplore() {
@@ -153,29 +145,6 @@ class _HomeExploreScreenState extends State<HomeExploreScreen> with TickerProvid
         _tabBarRevealAnim.animateTo(1.0, curve: Curves.easeIn);
       }
     }
-
-    // AI FAB: hide when scrolling down (top→bottom), show when scrolling up (bottom→top)
-    final double current = _scrollController.offset;
-    final double delta = current - _lastScrollOffset;
-    if (delta.abs() > 8) {
-      final bool shouldShow = delta < 0 || current < 10;
-      if (shouldShow && _fabAnimController.value != 0.0) {
-        _fabAnimController.reverse();
-      } else if (!shouldShow && _fabAnimController.value != 1.0) {
-        _fabAnimController.forward();
-      }
-      _lastScrollOffset = current;
-    }
-  }
-
-  Widget _searchBar(BuildContext context) {
-    return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: InkWell(
-        onTap: () => RouterHelper.getSearchRoute(action: RouteAction.push),
-        child: SearchHomePageWidget(isCompact: true),
-      ),
-    );
   }
 
   int _scrollKeyForTab(int tabIndex) {
@@ -192,6 +161,7 @@ class _HomeExploreScreenState extends State<HomeExploreScreen> with TickerProvid
     final flashDealController = Provider.of<FlashDealController>(context, listen: false);
     final bannerController    = Provider.of<BannerController>(context, listen: false);
     final shopController      = Provider.of<ShopController>(context, listen: false);
+    final brandController      = Provider.of<BrandController>(context, listen: false);
     final auctionController   = _isAuctionEnabled ? Provider.of<AuctionHomeController>(context, listen: false) : null;
     final isLoggedIn = authController.isLoggedIn();
 
@@ -208,6 +178,7 @@ class _HomeExploreScreenState extends State<HomeExploreScreen> with TickerProvid
     await productController.getJustForYouProduct(1);
     await productController.getClearanceAllProductList(1);
     await shopController.getTopSellerList(offset: 1);
+    await  brandController.getBrandList(offset: 1, isUpdate: true);
     if (auctionController != null) {
       await auctionController.getAuctionHomeSection(AuctionEnum.all);
     }
@@ -229,8 +200,6 @@ class _HomeExploreScreenState extends State<HomeExploreScreen> with TickerProvid
           final incomingKey = _scrollKeyForTab(_tabController!.index);
 
           _tabScrollOffsets[previousKey] = _scrollController.offset;
-          // Reset so the category TabBar shows its real 48px bottom before the
-          // incoming category tab's overlap injector reads the absorber.
           _buttonsTabPinned = false;
           _tabBarRevealAnim.value = 1.0;
           _scrollController.jumpTo(_tabScrollOffsets[incomingKey] ?? 0.0);
@@ -257,7 +226,7 @@ class _HomeExploreScreenState extends State<HomeExploreScreen> with TickerProvid
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _tabBarRevealAnim.dispose();
-    _fabAnimController.dispose();
+    _aiFab.dispose();
     _tabController?.dispose();
     _productTabController?.dispose();
     super.dispose();
@@ -284,8 +253,12 @@ class _HomeExploreScreenState extends State<HomeExploreScreen> with TickerProvid
 
           final bool onExploreTab = _tabController == null || _tabController!.index == 0;
           final double revealT = onExploreTab ? _tabBarRevealAnim.value : 1.0;
+          final SplashController splashController = Provider.of<SplashController>(context);
+          final bool showModeSelector = splashController.isWholesaleEnabled || splashController.isAuctionEnabled;
 
-          return Container(
+          return NotificationListener<ScrollNotification>(
+            onNotification: _aiFab.onScrollNotification,
+            child: Container(
             color: Color.lerp(Theme.of(context).cardColor, Theme.of(context).primaryColor, revealT),
             child: SafeArea(
               bottom: false,
@@ -294,9 +267,9 @@ class _HomeExploreScreenState extends State<HomeExploreScreen> with TickerProvid
                   ? Padding(
                       padding: const EdgeInsets.only(bottom: 68),
                       child: SlideTransition(
-                        position: _fabSlideAnim,
+                        position: _aiFab.slide,
                         child: FadeTransition(
-                          opacity: _fabFadeAnim,
+                          opacity: _aiFab.fade,
                           child: FloatingActionButton(
                             onPressed: () {
                               RouterHelper.getAiShoppingRoute(action: RouteAction.push);
@@ -310,15 +283,15 @@ class _HomeExploreScreenState extends State<HomeExploreScreen> with TickerProvid
                       ),
                     )
                   : null,
+
                 body: RefreshIndicator(
                   edgeOffset: _refreshEdgeOffset,
                   triggerMode: RefreshIndicatorTriggerMode.onEdge,
                   notificationPredicate: (notification) => notification is OverscrollNotification || notification.depth != 2,
                   onRefresh: () async => _refreshData(),
-                  child: (_tabController == null ||
-                      _productTabController == null)
-                      ? const Center(child: CircularProgressIndicator())
-                      : NestedScrollView(
+                  child: (_tabController == null || _productTabController == null)
+                    ? const Center(child: CircularProgressIndicator())
+                    : NestedScrollView(
                     key: _nestedKey,
                     controller: _scrollController,
                     headerSliverBuilder: (context, innerBoxIsScrolled) {
@@ -329,7 +302,8 @@ class _HomeExploreScreenState extends State<HomeExploreScreen> with TickerProvid
                           centerTitle: false,
                           automaticallyImplyLeading: false,
                           backgroundColor: Theme.of(context).primaryColor,
-                          expandedHeight: 65,
+                          toolbarHeight: 0,
+                          expandedHeight: 44,
                           flexibleSpace: _CustomizableSpaceBarWidget(
                             builder: (ctx, scrollingRate, child) => Opacity(
                               opacity: (1 - scrollingRate).clamp(0.0, 1.0),
@@ -337,46 +311,94 @@ class _HomeExploreScreenState extends State<HomeExploreScreen> with TickerProvid
                             ),
                             child: SafeArea(
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: Dimensions.homePagePadding, vertical: Dimensions.paddingSizeSmall),
+                                padding: const EdgeInsets.fromLTRB(
+                                  Dimensions.homePagePadding,
+                                  Dimensions.paddingSizeSmall,
+                                  Dimensions.homePagePadding, 0
+                                ),
                                 child: Consumer<ProfileController>(
                                   builder: (context, profileController, _) {
                                     final bool isLoggedIn = Provider.of<AuthController>(context, listen: false).isLoggedIn();
                                     final String firstLine = isLoggedIn
-                                        ? getTranslated('hello_welcome', context)!
-                                        : getTranslated('hello', context)!;
+                                      ? getTranslated('hello_welcome', context)!
+                                      : getTranslated('hello', context)!;
                                     final String secondLine = isLoggedIn
-                                        ? (profileController.userInfoModel?.fName ?? '')
-                                        : getTranslated('welcome', context)!;
-                                    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      ? ((profileController.userInfoModel?.fName ?? '') + (' '+ (profileController.userInfoModel?.lName ?? '')))
+                                      : getTranslated('welcome', context)!;
+                                    if (showModeSelector) {
+                                      return Row(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        children: [
+                                          const Expanded(child: AppModeSelectorWidget()),
+                                          const SizedBox(width: Dimensions.paddingSizeSmall),
+
+                                          GestureDetector(
+                                            onTap: () => RouterHelper.getMoreScreenRoute(action: RouteAction.push),
+                                            child: ClipOval(
+                                              child: CustomImageWidget(
+                                                image: profileController.userInfoModel?.imageFullUrl?.path ?? '',
+                                                width: 32, height: 32, placeholder: Images.guestProfile),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    }
+
+                                    final double greetingFontSize = isLoggedIn ? 12 : 18;
+                                    return Row(
+                                      crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
                                         Expanded(
-                                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min,
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Text(
-                                                firstLine,
-                                                style: titilliumRegular.copyWith(
-                                                  color: Colors.white,
-                                                  fontSize: Dimensions.fontSizeDefault,
-                                                ),
+                                              Row(
+                                                children: [
+                                                  Flexible(
+                                                    child: Text(
+                                                      getTranslated('hello_welcome', context)!,
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                      style: (isLoggedIn ? titilliumRegular : titilliumBold).copyWith(
+                                                        color: Colors.white,
+                                                        fontSize: greetingFontSize,
+                                                        height: 1.0,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+                                                  CustomAssetImageWidget(
+                                                    Images.welcomeIcon,
+                                                    height: greetingFontSize, width: greetingFontSize,
+                                                  ),
+                                                ],
                                               ),
-                                              const SizedBox(height: Dimensions.paddingSizeExtraExtraSmall),
-                                              Text(secondLine,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: titilliumBold.copyWith(
-                                                  color: Colors.white,
-                                                  fontSize: Dimensions.fontSizeLarge,
+
+                                              if (isLoggedIn) ...[
+                                                const SizedBox(height: Dimensions.paddingSizeExtraExtraSmall),
+                                                Text(
+                                                  '${profileController.userInfoModel?.fName ?? ''} ${profileController.userInfoModel?.lName ?? ''}',
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: titilliumBold.copyWith(
+                                                    color: Colors.white,
+                                                    fontSize: 18,
+                                                    height: 1.0,
+                                                  ),
                                                 ),
-                                              ),
+                                              ],
                                             ],
                                           ),
                                         ),
+                                        const SizedBox(width: Dimensions.paddingSizeSmall),
+
                                         GestureDetector(
                                           onTap: () => RouterHelper.getMoreScreenRoute(action: RouteAction.push),
                                           child: ClipOval(
                                             child: CustomImageWidget(
-                                                image: profileController.userInfoModel?.imageFullUrl?.path ?? '',
-                                                width: 40, height: 40, placeholder: Images.guestProfile),
+                                              image: profileController.userInfoModel?.imageFullUrl?.path ?? '',
+                                              width: 32, height: 32, placeholder: Images.guestProfile),
                                           ),
                                         ),
                                       ],
@@ -397,6 +419,7 @@ class _HomeExploreScreenState extends State<HomeExploreScreen> with TickerProvid
                             pinned: true,
                             floating: true,
                             expandedHeight: 0,
+                            toolbarHeight: 0,
                             surfaceTintColor: Theme.of(context).primaryColor,
                             foregroundColor: Theme.of(context).primaryColor,
                             forceElevated: innerBoxIsScrolled,
@@ -408,20 +431,19 @@ class _HomeExploreScreenState extends State<HomeExploreScreen> with TickerProvid
                                   heightFactor: revealT,
                                   child: Opacity(
                                     opacity: revealT,
-                                    child: (_tabController != null && _tabController!.length == expectedLength)
-                                        ? TabBar(
+                                    child: (_tabController != null && _tabController!.length == expectedLength) ? TabBar(
                                       controller: _tabController,
                                       isScrollable: true,
                                       tabAlignment: TabAlignment.start,
                                       dividerColor: Colors.transparent,
                                       indicatorColor: Theme.of(context).colorScheme.secondary,
                                       labelStyle: titilliumSemiBold.copyWith(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: Dimensions.fontSizeSmall),
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: Dimensions.fontSizeDefault),
                                       unselectedLabelStyle: titilliumRegular.copyWith(
-                                          color: Colors.white,
-                                          fontSize: Dimensions.fontSizeSmall),
+                                        color: Colors.white,
+                                        fontSize: Dimensions.fontSizeDefault),
                                       tabs: [
                                         Tab(text: getTranslated('explore', context)!),
                                         ...categories.map((c) => Tab(text: getTranslated(c.name, context) ?? c.name ?? ''),
@@ -435,11 +457,12 @@ class _HomeExploreScreenState extends State<HomeExploreScreen> with TickerProvid
                           ),
                         ),
 
+
                         SliverPersistentHeader(
                           pinned: true,
                           delegate: _SliverSearchBarDelegate(
                             visible: onExploreTab,
-                            child: _searchBar(context),
+                            child: const _ExploreSearchBar(),
                           ),
                         ),
 
@@ -460,6 +483,9 @@ class _HomeExploreScreenState extends State<HomeExploreScreen> with TickerProvid
                                   const NewUserExclusiveSection(),
                                   if (!_singleVendor) const TopStoresWidget(),
                                   const BannersSliderWidget(useFooterBanners: true),
+
+                                  BrandListWidget(isHomePage: true),
+
                                 ],
                               ),
                             ),
@@ -485,7 +511,7 @@ class _HomeExploreScreenState extends State<HomeExploreScreen> with TickerProvid
 
                     body: onExploreTab ? TabBarView(
                       controller: _productTabController,
-                      children: _productTypes.map((type) => _ListItemWidget(productType: type)).toList(),
+                      children: _productTypes.map((type) => _ListItemWidget(productType: type, tabIndex: _productTypes.indexOf(type), tabController: _productTabController!)).toList(),
                     ) : _switchingToCategory ? const CategoryContentScreenShimmer() : TabBarView(
                       controller: _tabController,
                       children: [
@@ -500,8 +526,24 @@ class _HomeExploreScreenState extends State<HomeExploreScreen> with TickerProvid
                 ),
               ),
             ),
+            ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _ExploreSearchBar extends StatelessWidget {
+  const _ExploreSearchBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: InkWell(
+        onTap: () => RouterHelper.getSearchRoute(action: RouteAction.push),
+        child: const SearchHomePageWidget(isCompact: true),
       ),
     );
   }
@@ -586,14 +628,19 @@ class _CustomizableSpaceBarWidget extends StatelessWidget {
 
 class _ListItemWidget extends StatefulWidget {
   final ProductType productType;
+  final int tabIndex;
+  final TabController tabController;
 
-  const _ListItemWidget({required this.productType});
+  const _ListItemWidget({required this.productType, required this.tabIndex, required this.tabController});
 
   @override
   State<_ListItemWidget> createState() => _ListItemWidgetState();
 }
 
 class _ListItemWidgetState extends State<_ListItemWidget> {
+  static const double _paginationThreshold = 300;
+  bool _isLoadingMore = false;
+
   @override
   void initState() {
     super.initState();
@@ -602,11 +649,31 @@ class _ListItemWidgetState extends State<_ListItemWidget> {
     });
   }
 
+  bool _hasMore(ProductModel model) {
+    final int totalPages = ((model.totalSize ?? 0) / (model.limit ?? 10)).ceil();
+    return (model.offset ?? 1) < totalPages;
+  }
+
+  Future<void> _loadMore(ProductModel model) async {
+    // NestedScrollView forwards scroll notifications to every built tab (e.g. the
+    // neighbour during a swipe), so only the visible tab may paginate.
+    if (widget.tabController.index != widget.tabIndex || widget.tabController.indexIsChanging) return;
+    if (_isLoadingMore || !_hasMore(model)) return;
+    setState(() => _isLoadingMore = true);
+    await Provider.of<ProductController>(context, listen: false)
+        .getProductsForType(widget.productType, (model.offset ?? 1) + 1);
+    if (mounted) setState(() => _isLoadingMore = false);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Selector<ProductController, ProductModel?>(
-      selector: (_, controller) => controller.productModelForType(widget.productType),
-      builder: (context, selectedProductModel, _) {
+    return Selector<ProductController, (ProductModel?, int?)>(
+      selector: (_, controller) {
+        final model = controller.productModelForType(widget.productType);
+        return (model, model?.products?.length);
+      },
+      builder: (context, data, _) {
+        final selectedProductModel = data.$1;
         final products = selectedProductModel?.products;
 
         if (products == null) {
@@ -617,21 +684,40 @@ class _ListItemWidgetState extends State<_ListItemWidget> {
           return NoInternetOrDataScreenWidget(isNoInternet: false, message: getTranslated('no_product_found', context) ?? '');
         }
 
-        return Padding(
-          padding: const EdgeInsets.all(11),
-          child: MasonryGridView.count(
-            cacheExtent: 600,
-            key: PageStorageKey(widget.productType),
-            crossAxisCount: ResponsiveHelper.isTab(context) ? 3 : 2,
-            itemCount: products.length,
-            itemBuilder: (context, index) => RepaintBoundary(
-              child: Container(
-                margin: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
-                child: ProductCardWidget(key: ValueKey(products[index].id), product: products[index]),
+        return Column(children: [
+          Expanded(
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                if (notification.depth == 0 &&
+                    notification.metrics.axis == Axis.vertical &&
+                    notification.metrics.extentAfter < _paginationThreshold) {
+                  _loadMore(selectedProductModel!);
+                }
+                return false;
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(11),
+                child: MasonryGridView.count(
+                  cacheExtent: 600,
+                  key: PageStorageKey(widget.productType),
+                  crossAxisCount: ResponsiveHelper.isTab(context) ? 3 : 2,
+                  itemCount: products.length,
+                  itemBuilder: (context, index) => RepaintBoundary(
+                    child: Container(
+                      margin: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
+                      child: ProductCardWidget(key: ValueKey(products[index].id), product: products[index]),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
-        );
+          if (_isLoadingMore)
+            const Padding(
+              padding: EdgeInsets.all(Dimensions.paddingSizeSmall),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+        ]);
       },
     );
   }

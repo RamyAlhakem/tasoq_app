@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/date_converter.dart';
 
 class LoyaltyPointModel {
@@ -13,26 +15,39 @@ class LoyaltyPointModel {
 
 
   LoyaltyPointModel.fromJson(Map<String, dynamic> json) {
-    limit = int.tryParse('${json['limit']}');
-    offset = int.tryParse('${json['offset']}');
-    totalSize = int.tryParse('${json['total_size']}');
-    filterBy = json['filter_by'];
-    startDate = DateConverter.convertDurationDateTimeFromString(json['start_date']);
-    endDate = DateConverter.convertDurationDateTimeFromString(json['end_date']);
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json, legacyKeys: ['loyalty_point_list']);
+    final Map params = envelope.content['params'] is Map ? envelope.content['params'] : const {};
+    final Map summary = envelope.content['summary'] is Map ? envelope.content['summary'] : const {};
 
-    if (json['transaction_types'] != null) {
-      transactionTypes = List<String>.from(json['transaction_types'].map((id) => id.toString()));
-    }
+    limit = envelope.limit;
+    offset = envelope.offset;
+    totalSize = envelope.totalSize;
+    filterBy = params['entry_type'] ?? params['filter_by'] ?? json['filter_by'];
+    startDate = DateConverter.convertDurationDateTimeFromString(params['start_date'] ?? json['start_date']);
+    endDate = DateConverter.convertDurationDateTimeFromString(params['end_date'] ?? json['end_date']);
+    transactionTypes = _readTransactionTypes(params['transaction_types'] ?? json['transaction_types']);
 
-    if(json['total_loyalty_point'] != null) {
-      totalLoyaltyPoint = json['total_loyalty_point'].toInt();
-    }
-    if (json['loyalty_point_list'] != null) {
+    totalLoyaltyPoint = int.tryParse('${summary['total_loyalty_point'] ?? envelope.read('total_loyalty_point')}');
+
+    if (envelope.data != null) {
       loyaltyPointList = <LoyaltyPointList>[];
-      json['loyalty_point_list'].forEach((v) {
-        loyaltyPointList!.add(LoyaltyPointList.fromJson(v));
-      });
+      for (final dynamic v in envelope.data!) {
+        if (v is Map) loyaltyPointList!.add(LoyaltyPointList.fromJson(Map<String, dynamic>.from(v)));
+      }
     }
+  }
+
+  static List<String>? _readTransactionTypes(dynamic value) {
+    if (value is List) return value.map((type) => type.toString()).toList();
+    if (value is String && value.isNotEmpty) {
+      try {
+        final dynamic decoded = jsonDecode(value);
+        if (decoded is List) return decoded.map((type) => type.toString()).toList();
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
   }
 
   Map<String, dynamic> toJson() {
@@ -41,8 +56,7 @@ class LoyaltyPointModel {
     data['offset'] = offset;
     data['total_loyalty_point'] = totalLoyaltyPoint;
     if (loyaltyPointList != null) {
-      data['loyalty_point_list'] =
-          loyaltyPointList!.map((v) => v.toJson()).toList();
+      data['loyalty_point_list'] = loyaltyPointList!.map((v) => v.toJson()).toList();
     }
     return data;
   }
@@ -59,6 +73,7 @@ class LoyaltyPointList {
   String? _transactionType;
   String? _createdAt;
   String? _updatedAt;
+  bool? _isWholesaleOrder;
 
   LoyaltyPointList(
       {int? id,
@@ -70,7 +85,8 @@ class LoyaltyPointList {
         String? reference,
         String? transactionType,
         String? createdAt,
-        String? updatedAt}) {
+        String? updatedAt,
+        bool? isWholesaleOrder}) {
     if (id != null) {
       _id = id;
     }
@@ -101,6 +117,9 @@ class LoyaltyPointList {
     if (updatedAt != null) {
       _updatedAt = updatedAt;
     }
+    if (isWholesaleOrder != null) {
+      _isWholesaleOrder = isWholesaleOrder;
+    }
   }
 
   int? get id => _id;
@@ -113,6 +132,7 @@ class LoyaltyPointList {
   String? get transactionType => _transactionType;
   String? get createdAt => _createdAt;
   String? get updatedAt => _updatedAt;
+  bool? get isWholesaleOrder => _isWholesaleOrder;
 
 
   LoyaltyPointList.fromJson(Map<String, dynamic> json) {
@@ -121,11 +141,12 @@ class LoyaltyPointList {
     _transactionId = json['transaction_id'];
     _credit =  double.tryParse(json['credit'].toString());
     _debit = double.tryParse(json['debit'].toString());
-    _balance = json['balance'].toDouble();
+    _balance = double.tryParse('${json['balance']}');
     _reference = json['reference'];
     _transactionType = json['transaction_type'];
     _createdAt = json['created_at'];
     _updatedAt = json['updated_at'];
+    _isWholesaleOrder = json['is_wholesale_order'] == true;
   }
 
   Map<String, dynamic> toJson() {
@@ -140,6 +161,7 @@ class LoyaltyPointList {
     data['transaction_type'] = _transactionType;
     data['created_at'] = _createdAt;
     data['updated_at'] = _updatedAt;
+    data['is_wholesale_order'] = _isWholesaleOrder;
     return data;
   }
 }

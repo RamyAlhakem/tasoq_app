@@ -27,7 +27,7 @@ class AuctionAiRepository implements AuctionAiRepositoryInterface {
       );
       return ApiResponseModel.withSuccess(response!);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
@@ -46,7 +46,7 @@ class AuctionAiRepository implements AuctionAiRepositoryInterface {
       );
       return ApiResponseModel.withSuccess(response!);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
@@ -67,7 +67,7 @@ class AuctionAiRepository implements AuctionAiRepositoryInterface {
       );
       return ApiResponseModel.withSuccess(response!);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
@@ -88,7 +88,7 @@ class AuctionAiRepository implements AuctionAiRepositoryInterface {
       );
       return ApiResponseModel.withSuccess(response!);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
@@ -107,7 +107,7 @@ class AuctionAiRepository implements AuctionAiRepositoryInterface {
       );
       return ApiResponseModel.withSuccess(response!);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
@@ -128,7 +128,7 @@ class AuctionAiRepository implements AuctionAiRepositoryInterface {
       );
       return ApiResponseModel.withSuccess(response!);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
@@ -138,7 +138,7 @@ class AuctionAiRepository implements AuctionAiRepositoryInterface {
       final response = await dioClient?.get(AppConstants.auctionGenerateLimitCheck);
       return ApiResponseModel.withSuccess(response!);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
@@ -156,7 +156,7 @@ class AuctionAiRepository implements AuctionAiRepositoryInterface {
       );
       return ApiResponseModel.withSuccess(response!);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
@@ -172,7 +172,7 @@ class AuctionAiRepository implements AuctionAiRepositoryInterface {
       );
       return ApiResponseModel.withSuccess(response!);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
@@ -187,7 +187,7 @@ class AuctionAiRepository implements AuctionAiRepositoryInterface {
       );
       return ApiResponseModel.withSuccess(response!);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 

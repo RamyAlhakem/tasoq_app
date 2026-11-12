@@ -29,15 +29,13 @@ class _ShopOverviewScreenState extends State<ShopOverviewScreen> {
   Widget build(BuildContext context) {
     final Size size = MediaQuery.sizeOf(context);
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-
-        Consumer<CouponController>(
+    return Consumer<CouponController>(
           builder: (context, couponController, _) {
-            return  Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+            return  SliverMainAxisGroup(
+              slivers: [
+                SliverToBoxAdapter(child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
                 const SizedBox(height: Dimensions.paddingSizeSmall),
 
                 couponController.couponItemModel != null ? (couponController.couponItemModel!.coupons != null && couponController.couponItemModel!.coupons!.isNotEmpty) ? Stack(children: [
@@ -51,6 +49,12 @@ class _ShopOverviewScreenState extends State<ShopOverviewScreen> {
                           disableCenter: true,
                           onPageChanged: (index, reason) {
                             couponController.setCurrentIndex(index);
+                            final int loaded = couponController.couponItemModel?.coupons?.length ?? 0;
+                            final int total = couponController.couponItemModel?.totalSize ?? loaded;
+                            if(index == loaded - 1 && loaded < total && !couponController.isLoading) {
+                              couponController.getSellerWiseCouponList(
+                                widget.slug, (couponController.couponItemModel?.offset ?? 1) + 1);
+                            }
                           }
                       ),
                       itemCount: couponController.couponItemModel!.coupons!.length,
@@ -84,7 +88,7 @@ class _ShopOverviewScreenState extends State<ShopOverviewScreen> {
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
                           Text('${couponController.couponCurrentIndex+1}',
                             style: textMedium.copyWith(color: Theme.of(context).primaryColor, fontSize: Dimensions.fontSizeExtraSmall),),
-                          Text('/${couponController.couponItemModel!.coupons!.length}',
+                          Text('/${couponController.couponItemModel!.totalSize ?? couponController.couponItemModel!.coupons!.length}',
                             style: textRegular.copyWith(color: Theme.of(context).hintColor, fontSize: Dimensions.fontSizeExtraSmall),),
                         ]),
                       ),
@@ -111,13 +115,14 @@ class _ShopOverviewScreenState extends State<ShopOverviewScreen> {
                     getTranslated('featured_products', context) : getTranslated('recommanded_products', context) : '');
                   }
                 ),
-
+              ],
+              )),
 
                 Consumer<SellerProductController>(
                   builder: (context, productController, _) {
-                    return Padding(padding: const EdgeInsets.fromLTRB(Dimensions.paddingSizeSmall,
+                    return SliverPadding(padding: const EdgeInsets.fromLTRB(Dimensions.paddingSizeSmall,
                       Dimensions.paddingSizeDefault, Dimensions.paddingSizeSmall, 0),
-                      child: ShopFeaturedProductViewList(scrollController: widget.scrollController, slug: widget.slug, sellerNavigationModel: widget.sellerNavigationModel));
+                      sliver: ShopFeaturedProductViewList(scrollController: widget.scrollController, slug: widget.slug, sellerNavigationModel: widget.sellerNavigationModel));
                   }
                 ),
 
@@ -127,19 +132,15 @@ class _ShopOverviewScreenState extends State<ShopOverviewScreen> {
                     return (productController.sellerWiseFeaturedProduct != null &&
                       productController.sellerWiseFeaturedProduct!.products != null &&
                       productController.sellerWiseFeaturedProduct!.products!.isEmpty)?
-                    Padding(padding: const EdgeInsets.fromLTRB(Dimensions.paddingSizeSmall,
+                    SliverPadding(padding: const EdgeInsets.fromLTRB(Dimensions.paddingSizeSmall,
                       Dimensions.paddingSizeDefault, Dimensions.paddingSizeSmall, 0),
-                      child: ShopRecommandedProductViewList(scrollController: widget.scrollController,
+                      sliver: ShopRecommandedProductViewList(scrollController: widget.scrollController,
                       sellerNavigationModel: widget.sellerNavigationModel,
-                      slug : widget.slug),): const SizedBox();
-                  })]
+                      slug : widget.slug),): const SliverToBoxAdapter(child: SizedBox());
+                  }),
+              ],
             );
           }
-        ),
-
-
-
-      ],
-    );
+        );
   }
 }

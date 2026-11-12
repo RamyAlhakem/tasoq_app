@@ -1,5 +1,6 @@
 
 import 'package:flutter_sixvalley_ecommerce/data/model/image_full_url.dart';
+import 'package:flutter_sixvalley_ecommerce/features/order/domain/models/order_model.dart' show ShippingAddressData;
 import 'package:flutter_sixvalley_ecommerce/features/product/domain/models/product_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/domain/models/product_details_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shop/domain/models/seller_model.dart';
@@ -280,8 +281,9 @@ class Order {
   double? referAndEarnDiscount;
   int? editedStatus;
   OfflinePayments? offlinePayments;
+  ShippingAddressData? shippingAddressData;
 
-  Order({this.isShippingFree, this.sellerIs, this.status, this.deliveryManReview, this.referAndEarnDiscount, this.editedStatus});
+  Order({this.isShippingFree, this.sellerIs, this.status, this.deliveryManReview, this.referAndEarnDiscount, this.editedStatus, this.shippingAddressData});
 
   Order.fromJson(Map<String, dynamic> json) {
     try{
@@ -298,6 +300,10 @@ class Order {
 
     offlinePayments = json['offline_payments'] != null
       ? OfflinePayments.fromJson(json['offline_payments']) : null;
+    // used for the phone-tracked guest fallback (POST /orders/track authorizes by phone,
+    // unlike the order/order-items endpoints which need a token or guest_id).
+    shippingAddressData = json['shipping_address_data'] != null
+      ? ShippingAddressData.fromJson(json['shipping_address_data']) : null;
 
   }
 

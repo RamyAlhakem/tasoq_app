@@ -1,7 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/dio/dio_client.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/exception/api_error_handler.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/domain/repositories/order_details_repository_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
@@ -17,7 +20,8 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
   @override
   Future<ApiResponseModel> get(String orderID) async {
     try {
-      final response = await dioClient!.get(AppConstants.orderDetailsUri+orderID);
+      // v6 exposes line items as their own sub-resource of the order.
+      final response = await dioClient!.get('${AppConstants.orderDetailsUri}$orderID/items');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -27,7 +31,8 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
   @override
   Future<ApiResponseModel> getOrderFromOrderId(String orderID) async {
     try {
-      final response = await dioClient!.get('${AppConstants.getOrderFromOrderId}$orderID&guest_id=${Provider.of<AuthController>(Get.context!, listen: false).getGuestToken()}');
+      // v6 takes the order id as a path segment, not an `order_id` query param.
+      final response = await dioClient!.get('${AppConstants.getOrderFromOrderId}$orderID?guest_id=${Provider.of<AuthController>(Get.context!, listen: false).getGuestToken()}');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -38,7 +43,13 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
   @override
   Future<ApiResponseModel> downloadDigitalProduct(int orderDetailsId) async {
     try {
-      final response = await dioClient!.get('${AppConstants.downloadDigitalProduct}$orderDetailsId?guest_id=${Provider.of<AuthController>(Get.context!, listen: false).getGuestToken()}');
+      // v6 takes the order-item id as a path segment; guest_id resolves ownership when logged out.
+      final response = await dioClient!.get(
+        '${AppConstants.downloadDigitalProduct}$orderDetailsId/download',
+        queryParameters: {
+          'guest_id': Provider.of<AuthController>(Get.context!, listen: false).getGuestToken(),
+        },
+      );
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -48,8 +59,12 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
   @override
   Future<ApiResponseModel> resendOtpForDigitalProduct(int orderId) async {
     try {
-      final response = await dioClient!.post(AppConstants.otpVResendForDigitalProduct,
-      data: {'order_details_id' : orderId});
+      final response = await dioClient!.post(
+        '${AppConstants.otpVResendForDigitalProduct}$orderId/download/otp',
+        data: {
+          'guest_id': Provider.of<AuthController>(Get.context!, listen: false).getGuestToken(),
+        },
+      );
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -59,8 +74,28 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
   @override
   Future<ApiResponseModel> otpVerificationForDigitalProduct(int orderId, String otp) async {
     try {
-      final response = await dioClient!.get('${AppConstants.otpVerificationForDigitalProduct}?order_details_id=$orderId&otp=$otp&guest_id=1',);
+      // v6 verify is a POST that streams the file back as raw bytes on success
+      // (not JSON), so the request must ask for bytes explicitly.
+      final response = await dioClient!.post(
+        '${AppConstants.otpVerificationForDigitalProduct}$orderId/download/verify',
+        data: {
+          'guest_id': Provider.of<AuthController>(Get.context!, listen: false).getGuestToken(),
+          'otp': otp,
+          'action': 'download',
+        },
+        options: Options(responseType: ResponseType.bytes),
+      );
       return ApiResponseModel.withSuccess(response);
+    } on DioException catch (e) {
+      // Error bodies come back as bytes too (same forced responseType) — decode
+      // them back to JSON so the shared error-message helpers still work.
+      dynamic data = e.response?.data;
+      if (data is List<int>) {
+        try {
+          data = jsonDecode(utf8.decode(data));
+        } catch (_) {}
+      }
+      return ApiResponseModel.withError(ApiEnvelope.errorMessage(data) ?? ApiErrorHandler.getMessage(e));
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
     }
@@ -84,9 +119,7 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
 
   Future<ApiResponseModel> reorder(String orderId) async {
     try {
-      final response = await dioClient!.post(AppConstants.reorder,
-          data: {'order_id': orderId,
-          });
+      final response = await dioClient!.post('${AppConstants.reorder}$orderId/reorder');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -94,9 +127,15 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
   }
 
   @override
-  Future<ApiResponseModel> getTrackOrderDetailsId(String orderID) async {
+  Future<ApiResponseModel> getTrackOrderDetailsId(String orderID, String? phoneNumber) async {
     try {
-      final response = await dioClient!.get('${AppConstants.orderDetailsTrack}$orderID');
+      final response = await dioClient!.get(
+        '${AppConstants.orderDetailsTrack}$orderID/status-history',
+        queryParameters: {
+          'guest_id': Provider.of<AuthController>(Get.context!, listen: false).getGuestToken(),
+          if (phoneNumber != null) 'phone_number': phoneNumber,
+        },
+      );
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -131,7 +170,13 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
   @override
   Future getOrderInvoice(String orderID) async{
     try {
-      final response = await dioClient!.get('${AppConstants.generateInvoice}$orderID');
+      // v6 takes the order id as a path segment; guest_id resolves ownership when logged out.
+      final response = await dioClient!.get(
+        '${AppConstants.generateInvoice}$orderID/invoice',
+        queryParameters: {
+          'guest_id': Provider.of<AuthController>(Get.context!, listen: false).getGuestToken(),
+        },
+      );
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -152,13 +197,13 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
   }
 
   @override
-  Future<ApiResponseModel> duePaymentByCod(int orderId, String paymentMethod, String? bringChangeAmount) async {
+  Future<ApiResponseModel> duePaymentByCod(int orderId, String? bringChangeAmount, String? currencyCode) async {
     try {
-      final response = await dioClient!.post(AppConstants.duePaymentByCodUri,
+      final response = await dioClient!.post('${AppConstants.duePaymentByCodUri}$orderId/due-payments/cash-on-delivery',
           data: {
-            'order_id': orderId,
-            'payment_method': paymentMethod,
-            'bring_change_amount': bringChangeAmount
+            'guest_id': Provider.of<AuthController>(Get.context!, listen: false).getGuestToken(),
+            'bring_change_amount': bringChangeAmount,
+            'current_currency_code': currencyCode,
           });
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
@@ -167,17 +212,16 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
   }
 
   @override
-  Future<ApiResponseModel> duePaymentByDigitalPayment(int orderId, String paymentMethod, String? guestId, String? orderDuePaymentNote, String? currencyCode) async {
+  Future<ApiResponseModel> duePaymentByDigitalPayment(int orderId, String paymentMethod, String? orderDuePaymentNote, String? currencyCode) async {
     try {
-      final response = await dioClient!.post(AppConstants.duePaymentByDigitalPayment,
+      final response = await dioClient!.post('${AppConstants.duePaymentByDigitalPayment}$orderId/due-payments/digital-payment',
           data: {
-            'order_id': orderId,
+            'guest_id': Provider.of<AuthController>(Get.context!, listen: false).getGuestToken(),
             'payment_method': paymentMethod,
-            'guest_id': guestId,
             'payment_platform': 'app',
-            'order_due_payment_note': orderDuePaymentNote,
             'payment_request_from': 'app',
-            'current_currency_code' : currencyCode,
+            'current_currency_code': currencyCode,
+            'order_due_payment_note': orderDuePaymentNote,
           });
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
@@ -187,14 +231,18 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
 
 
   @override
-  Future<ApiResponseModel> duePaymentByOfflinePayment(int orderId, String paymentMethod, String? orderDueNote, String? methodId) async {
+  Future<ApiResponseModel> duePaymentByOfflinePayment(int orderId, int? methodId, List<String?> typeKey, List<String> typeValue, String? orderDueNote) async {
     try {
-      final response = await dioClient!.post(AppConstants.duePaymentByOfflinePayment,
+      final Map<String?, String> info = {};
+      for (var i = 0; i < typeKey.length; i++) {
+        info.addAll(<String?, String>{typeKey[i]: typeValue[i]});
+      }
+      final response = await dioClient!.post('${AppConstants.duePaymentByOfflinePayment}$orderId/due-payments/offline-payment',
           data: {
-            'order_id': orderId,
-            'payment_method': paymentMethod,
-            'order_due_payment_note': orderDueNote,
+            'guest_id': Provider.of<AuthController>(Get.context!, listen: false).getGuestToken(),
             'method_id': methodId,
+            'method_informations': base64.encode(utf8.encode(jsonEncode(info))),
+            'order_due_payment_note': orderDueNote,
           });
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
@@ -206,12 +254,11 @@ class OrderDetailsRepository implements OrderDetailsRepositoryInterface{
 
 
   @override
-  Future<ApiResponseModel> duePaymentByWallet(int orderId, String paymentMethod) async {
+  Future<ApiResponseModel> duePaymentByWallet(int orderId) async {
     try {
-      final response = await dioClient!.post(AppConstants.duePaymentByWallet,
+      final response = await dioClient!.post('${AppConstants.duePaymentByWallet}$orderId/due-payments/wallet',
         data: {
-          'order_id': orderId,
-          'payment_method': paymentMethod
+          'guest_id': Provider.of<AuthController>(Get.context!, listen: false).getGuestToken(),
         });
       return ApiResponseModel.withSuccess(response);
     } catch (e) {

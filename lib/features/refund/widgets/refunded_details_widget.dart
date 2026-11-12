@@ -10,7 +10,6 @@ import 'package:flutter_sixvalley_ecommerce/helper/date_converter.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/price_converter.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/app_localization.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
-import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
@@ -55,15 +54,19 @@ class RefundDetailsWidgetState extends State<RefundDetailsWidget> {
             ) : const SizedBox();
           }
         )),
-      body: SingleChildScrollView(
-        child: Consumer<OrderDetailsController>(
+      body: Consumer<OrderDetailsController>(
           builder: (context, orderDetailsController,_) {
             return Consumer<RefundController>(builder: (context,refundReq,_) {
               return Padding(padding: MediaQuery.of(context).viewInsets,
                 child: Consumer<RefundController>(builder: (context, refund, _) {
                 return refund.refundResultModel!=null && refund.refundResultModel!.refundRequest != null ?
-                Padding(padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                CustomScrollView(
+                  slivers: [
+                    SliverPadding(
+                      padding: EdgeInsets.only(left: Dimensions.paddingSizeSmall, right: Dimensions.paddingSizeSmall, top: Dimensions.paddingSizeSmall,
+                        bottom: refundReq.refundResultModel!.refundRequest![0].refundStatus!.isNotEmpty ? 0 : Dimensions.paddingSizeSmall),
+                      sliver: SliverToBoxAdapter(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Card(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
@@ -188,28 +191,32 @@ class RefundDetailsWidgetState extends State<RefundDetailsWidget> {
                             Padding(
                               padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeDefault),
                               child: SizedBox(height: 90,
-                                child: RepaintBoundary(
-                                  child: ListView.builder(
-                                    scrollDirection: Axis.horizontal,
-                                    shrinkWrap: true,
-                                    itemCount:  refund.refundResultModel!.refundRequest![0].images!.length,
-                                    itemBuilder: (BuildContext context, index){
-                                      return  refund.refundResultModel!.refundRequest![0].images!.isNotEmpty?
-                                      Padding(padding: const EdgeInsets.only(left: Dimensions.paddingSizeDefault,),
-                                        child: Stack(children: [
-                                          InkWell(onTap: () => showDialog(context: context, builder: (ctx) =>
-                                              ImageDialog(imageUrl:'${AppConstants.baseUrl}/storage/app/public/refund/'
-                                                  '${refund.refundResultModel!.refundRequest![0].images![index]}'), ),
-                                            child: Container(width: 85, height: 85,
-                                              decoration: const BoxDecoration(
-                                                  color: Colors.white, borderRadius: BorderRadius.all(Radius.circular(20))),
-                                              child: ClipRRect(borderRadius: const BorderRadius.all(Radius.circular(Dimensions.paddingSizeExtraSmall)),
-                                                child: CustomImageWidget(placeholder: Images.placeholder, image: '${refund.refundResultModel!.refundRequest![0].imagesFullUrl![index].path}',
-                                                    width: 85, height: 85, fit: BoxFit.cover),) ,
-                                            ),
-                                          ),
-                                        ],),):const SizedBox();
-                                    },),
+                                child: CustomScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  shrinkWrap: true,
+                                  slivers: [
+                                    SliverList(
+                                      delegate: SliverChildBuilderDelegate(
+                                        (BuildContext context, index){
+                                          return  refund.refundResultModel!.refundRequest![0].images!.isNotEmpty?
+                                          Padding(padding: const EdgeInsets.only(left: Dimensions.paddingSizeDefault,),
+                                            child: Stack(children: [
+                                              InkWell(onTap: () => showDialog(context: context, builder: (ctx) =>
+                                                  ImageDialog(imageUrl: '${refund.refundResultModel!.refundRequest![0].imagesFullUrl![index].path}'), ),
+                                                child: Container(width: 85, height: 85,
+                                                  decoration: const BoxDecoration(
+                                                      color: Colors.white, borderRadius: BorderRadius.all(Radius.circular(20))),
+                                                  child: ClipRRect(borderRadius: const BorderRadius.all(Radius.circular(Dimensions.paddingSizeExtraSmall)),
+                                                    child: CustomImageWidget(placeholder: Images.placeholder, image: '${refund.refundResultModel!.refundRequest![0].imagesFullUrl![index].path}',
+                                                        width: 85, height: 85, fit: BoxFit.cover),) ,
+                                                ),
+                                              ),
+                                            ],),):const SizedBox();
+                                        },
+                                        childCount: refund.refundResultModel!.refundRequest![0].images!.length,
+                                      ),
+                                    ),
+                                  ],
                                 ),),
                             ):const SizedBox(),
 
@@ -217,20 +224,24 @@ class RefundDetailsWidgetState extends State<RefundDetailsWidget> {
 
                         ],),
                       ),
+                      ),
+                        ]),
+                      ),
                     ),
 
-                    if(refundReq.refundResultModel!.refundRequest![0].refundStatus!.isNotEmpty)...[
-                      const ChangeLogWidget(),
-                    ]
-
-                  ])) : const RefundDetailsShimmerWidget();
+                    if(refundReq.refundResultModel!.refundRequest![0].refundStatus!.isNotEmpty)
+                      SliverPadding(
+                        padding: const EdgeInsets.only(left: Dimensions.paddingSizeSmall, right: Dimensions.paddingSizeSmall, bottom: Dimensions.paddingSizeSmall),
+                        sliver: const ChangeLogWidget(),
+                      ),
+                  ],
+                ) : const SingleChildScrollView(child: RefundDetailsShimmerWidget());
               }),
               );
             });
           }
         ),
-      ),
-    );
+      );
   }
 }
 

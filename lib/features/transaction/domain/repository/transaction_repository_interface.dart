@@ -7,10 +7,19 @@ abstract class TransactionRepositoryInterface implements RepositoryInterface {
 
   Future<ApiResponseModel> payCommission({required CommissionPayRequestModel commissionPayRequest});
 
-  Future<ApiResponseModel> storeOrUpdateWithdraw({
+  Future<ApiResponseModel> createWithdraw({
     required int auctionProductId,
     required int withdrawMethodId,
-    int? existingWithdrawId,
+    double? amount,
+    Map<String, dynamic>? methodInfo,
+    String? transactionNote,
+    String? currentCurrencyCode,
+  });
+
+  Future<ApiResponseModel> updateWithdraw({
+    required int withdrawId,
+    required int auctionProductId,
+    required int withdrawMethodId,
     double? amount,
     Map<String, dynamic>? methodInfo,
     String? transactionNote,

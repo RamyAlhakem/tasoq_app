@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/dio/dio_client.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/exception/api_error_handler.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
@@ -22,7 +21,7 @@ class AuctionParticipationRepository implements AuctionParticipationRepositoryIn
       final response = await dioClient!.post(AppConstants.auctionEntryFeeUri, data: entryFeeRequest.toJson());
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
@@ -34,10 +33,7 @@ class AuctionParticipationRepository implements AuctionParticipationRepositoryIn
       final response = await dioClient!.post(AppConstants.auctionPlaceBidUri, data: bidRequest.toJson());
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
-      if (e is DioException && e.response?.statusCode == 403) {
-        return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: e.response);
-      }
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
@@ -46,13 +42,13 @@ class AuctionParticipationRepository implements AuctionParticipationRepositoryIn
     required int auctionProductId,
   }) async {
     try {
-      final response = await dioClient!.post(
+      final response = await dioClient!.put(
         AppConstants.auctionWithdrawBidUri,
         data: {'auction_product_id': auctionProductId},
       );
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
@@ -63,13 +59,13 @@ class AuctionParticipationRepository implements AuctionParticipationRepositoryIn
     required String currencyCode,
   }) async {
     try {
-      final response = await dioClient!.post(
+      final response = await dioClient!.put(
         AppConstants.auctionRollbackBidUri,
         data: {'auction_product_id': auctionProductId, 'bid_amount': bidAmount, 'currency_code': currencyCode},
       );
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
@@ -79,7 +75,7 @@ class AuctionParticipationRepository implements AuctionParticipationRepositoryIn
   }) async {
     try {
       final response = await dioClient!.post(
-        '${AppConstants.baseUrl}${AppConstants.auctionSaveUri}',
+        AppConstants.auctionSaveUri,
         data: saveProductRequest.toJson(),
       );
       return ApiResponseModel.withSuccess(response);
@@ -91,20 +87,20 @@ class AuctionParticipationRepository implements AuctionParticipationRepositoryIn
   @override
   Future<ApiResponseModel> getAuctionSocialShareLink({required int productId}) async {
     try{
-      final response = await dioClient!.get('${AppConstants.baseUrl}${AppConstants.auctionSocialShareUri}$productId');
+      final response = await dioClient!.get('${AppConstants.auctionSocialShareUri}$productId/social-share-link');
       return ApiResponseModel.withSuccess(response);
     }catch (e){
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
   @override
   Future<ApiResponseModel> getAuctionInvoice(int auctionId) async {
     try {
-      final response = await dioClient!.get('${AppConstants.auctionGenerateInvoice}$auctionId');
+      final response = await dioClient!.get('${AppConstants.auctionGenerateInvoice}$auctionId/invoice');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 

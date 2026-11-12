@@ -16,16 +16,16 @@ abstract class OrderDetailsServiceInterface {
 
   Future<dynamic> trackOrder(String orderId, String phoneNumber);
 
-  Future<dynamic> getTrackOrderDetailsId(String orderId);
+  Future<dynamic> getTrackOrderDetailsId(String orderId, String? phoneNumber);
 
   Future<HttpClientResponse> productDownload(String url);
 
-  Future<dynamic> duePaymentByCod(int orderId, String paymentMethod, String? bringChangeAmount);
+  Future<dynamic> duePaymentByCod(int orderId, String? bringChangeAmount, String? currencyCode);
 
-  Future<dynamic> duePaymentByDigitalPayment(int orderId, String paymentMethod, String? guestId, String? orderDuePaymentNote, String? currencyCode);
+  Future<dynamic> duePaymentByDigitalPayment(int orderId, String paymentMethod, String? orderDuePaymentNote, String? currencyCode);
 
-  Future<dynamic> duePaymentByWallet(int orderId, String paymentMethod);
+  Future<dynamic> duePaymentByWallet(int orderId);
 
-  Future<dynamic> duePaymentByOfflinePayment(int orderId, String paymentMethod, String? orderDueNote, String? methodId);
+  Future<dynamic> duePaymentByOfflinePayment(int orderId, int? methodId, List<String?> typeKey, List<String> typeValue, String? orderDueNote);
 
 }

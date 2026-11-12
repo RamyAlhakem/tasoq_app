@@ -23,19 +23,10 @@ class OrderRepository implements OrderRepositoryInterface{
 
 
   @override
-  Future<ApiResponseModel> getTrackingInfo(String orderID) async {
-    try {
-      final response = await dioClient!.get(AppConstants.trackingUri+orderID);
-      return ApiResponseModel.withSuccess(response);
-    } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
-    }
-  }
-
-  @override
   Future<ApiResponseModel> cancelOrder(int? orderId) async {
     try {
-      final response = await dioClient!.get('${AppConstants.cancelOrderUri}?order_id=$orderId');
+      // v6 takes the order id as a path segment and is a PUT, not a GET.
+      final response = await dioClient!.put('${AppConstants.cancelOrderUri}$orderId/cancel');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));

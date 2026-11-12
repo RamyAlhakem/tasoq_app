@@ -77,6 +77,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailPhoneController!.dispose();
     _passwordController!.dispose();
+    _emailNumberFocus.dispose();
+    _passwordFocus.dispose();
     super.dispose();
   }
 

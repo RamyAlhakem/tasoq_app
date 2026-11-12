@@ -19,6 +19,13 @@ class ChatSearchWidget extends StatefulWidget {
 
 class _ChatSearchWidgetState extends State<ChatSearchWidget> {
   final TextEditingController _textEditingController = TextEditingController();
+
+  @override
+  void dispose() {
+    _textEditingController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<ChatController>(

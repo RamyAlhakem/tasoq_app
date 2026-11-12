@@ -1,3 +1,4 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/image_full_url.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shop/domain/enums/vacation_duration_type.dart';
 
@@ -39,22 +40,45 @@ class SellerInfoModel {
 
 
   SellerInfoModel.fromJson(Map<String, dynamic> json) {
-    _seller =
-    json['seller'] != null ? Seller.fromJson(json['seller']) : null;
-    _avgRating = json['avg_rating'].toString();
-    _totalReview = json['total_review'];
-    _totalOrder = json['total_order'];
-    _totalProduct = json['total_product'];
-    if(json['minimum_order_amount'] != null){
+    final Map<String, dynamic> payload = _payload(json);
+
+    _seller = _readSeller(payload);
+    _avgRating = payload['avg_rating'].toString();
+    _totalReview = payload['total_review'];
+    _totalOrder = payload['total_order'];
+    _totalProduct = payload['total_product'];
+    if(payload['minimum_order_amount'] != null){
       try{
-        minimumOrderAmount = json['minimum_order_amount'].toDouble();
+        minimumOrderAmount = payload['minimum_order_amount'].toDouble();
       }catch(e){
-        minimumOrderAmount = double.parse(json['minimum_order_amount'].toString());
+        minimumOrderAmount = double.parse(payload['minimum_order_amount'].toString());
       }
     }else{
       minimumOrderAmount = 0;
     }
 
+  }
+
+  static Map<String, dynamic> _payload(Map<String, dynamic> json) {
+    final Map content = ApiEnvelope.content(json);
+    final dynamic data = content['data'];
+    return Map<String, dynamic>.from(data is Map ? data : content);
+  }
+
+  static Seller? _readSeller(Map<String, dynamic> payload) {
+    final Map<String, dynamic>? seller = payload['seller'] is Map ? Map<String, dynamic>.from(payload['seller']) : null;
+
+    if (seller?['shop'] != null) return Seller.fromJson(seller!);
+
+    if (payload['slug'] == null) {
+      return seller != null ? Seller.fromJson(seller) : null;
+    }
+
+    return Seller.fromJson(<String, dynamic>{
+      ...?seller,
+      'total_review': payload['total_review'],
+      'shop': payload,
+    });
   }
 
   Map<String, dynamic> toJson() {
@@ -246,7 +270,7 @@ class Shop {
   Shop.fromJson(Map<String, dynamic> json) {
     _slug = json['slug'];
     _id = json['id'];
-    _sellerId = int.parse(json['seller_id'].toString());
+    _sellerId = int.tryParse(json['seller_id'].toString());
     _name = json['name'];
     _address = json['address'];
     _contact = json['contact'];

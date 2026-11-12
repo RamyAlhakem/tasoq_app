@@ -1,3 +1,4 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/image_full_url.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shop/domain/enums/vacation_duration_type.dart';
 
@@ -10,14 +11,15 @@ class ChatModel {
   ChatModel({this.totalSize, this.limit, this.offset, this.chat});
 
   ChatModel.fromJson(Map<String, dynamic> json) {
-    totalSize = json['total_size'];
-    limit = json['limit'];
-    offset = json['offset'];
-    if (json['chat'] != null) {
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json, legacyKeys: ['chat']);
+    totalSize = envelope.totalSize;
+    limit = envelope.limit?.toString();
+    offset = envelope.offset?.toString();
+    if (envelope.data != null) {
       chat = <Chat>[];
-      json['chat'].forEach((v) {
-        chat!.add(Chat.fromJson(v));
-      });
+      for (final dynamic v in envelope.data!) {
+        if (v is Map) chat!.add(Chat.fromJson(Map<String, dynamic>.from(v)));
+      }
     }
   }
 }
@@ -60,15 +62,20 @@ class Chat {
       });
 
   Chat.fromJson(Map<String, dynamic> json) {
+    final Map<String, dynamic>? counterparty = json['counterparty'] is Map ? Map<String, dynamic>.from(json['counterparty']) : null;
+    final String? counterpartyType = counterparty?['type']?.toString();
+    final dynamic counterpartyId = counterparty == null ? null : counterparty['id'];
+
     id = json['id'];
     userId = json['user_id'];
-    sellerId = json['seller_id'];
-    adminId = json['admin_id'];
-    if(json['delivery_man_id'] != null){
-      deliveryManId = int.parse(json['delivery_man_id'].toString());
+    sellerId = json['seller_id'] ?? (counterpartyType == 'seller' ? counterpartyId : null);
+    adminId = json['admin_id'] ?? (counterpartyType == 'admin' ? counterpartyId : null);
+    final dynamic rawDeliveryManId = json['delivery_man_id'] ?? (counterpartyType == 'delivery-man' ? counterpartyId : null);
+    if(rawDeliveryManId != null){
+      deliveryManId = int.tryParse(rawDeliveryManId.toString());
     }
 
-    message = json['message'];
+    message = json['message'] ?? json['last_message'];
     sentByCustomer = json['sent_by_customer'];
     sentBySeller = json['sent_by_seller'];
     sentByAdmin = json['sent_by_admin'];
@@ -76,8 +83,10 @@ class Chat {
     seenByCustomer = json['seen_by_customer'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
-    sellerInfo = json['seller_info'] != null ? SellerInfo.fromJson(json['seller_info']) : null;
-    deliveryMan = json['delivery_man'] != null ? DeliveryMan.fromJson(json['delivery_man']) : null;
+    sellerInfo = json['seller_info'] != null ? SellerInfo.fromJson(json['seller_info'])
+        : (counterpartyType == 'seller' || counterpartyType == 'admin' ? SellerInfo.fromCounterparty(counterparty!) : null);
+    deliveryMan = json['delivery_man'] != null ? DeliveryMan.fromJson(json['delivery_man'])
+        : (counterpartyType == 'delivery-man' ? DeliveryMan.fromCounterparty(counterparty!) : null);
     unseenMessageCount = json['unseen_message_count'];
 
   }
@@ -99,6 +108,8 @@ class SellerInfo {
       });
     }
   }
+
+  SellerInfo.fromCounterparty(Map<String, dynamic> counterparty) : shops = <Shops>[Shops.fromJson(counterparty)];
 
 }
 
@@ -145,7 +156,7 @@ class Shops {
 
   Shops.fromJson(Map<String, dynamic> json) {
     id = json['id'];
-    sellerId = int.parse(json['seller_id'].toString());
+    sellerId = int.tryParse(json['seller_id'].toString());
     name = json['name'];
     address = json['address'];
     contact = json['contact'];
@@ -206,9 +217,17 @@ class DeliveryMan {
     image = json['image'];
     phone = json['phone'];
     code = json['country_code'];
-    imageFullUrl = json['image_full_url'] != null
-      ? ImageFullUrl.fromJson(json['image_full_url'])
-      : null;
+    imageFullUrl = json['image_full_url'] != null ? ImageFullUrl.fromJson(json['image_full_url']) : null;
 
+  }
+
+  DeliveryMan.fromCounterparty(Map<String, dynamic> counterparty) {
+    id = counterparty['id'];
+    fName = counterparty['name'];
+    lName = '';
+    image = counterparty['image'];
+    phone = counterparty['phone'];
+    code = counterparty['country_code'];
+    imageFullUrl = counterparty['image_full_url'] != null ? ImageFullUrl.fromJson(counterparty['image_full_url']) : null;
   }
 }

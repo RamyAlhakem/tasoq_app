@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_sliver_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/product_card_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/product_shimmer_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/controllers/seller_product_controller.dart';
@@ -26,29 +26,25 @@ class _ShopFeaturedProductViewListState extends State<ShopFeaturedProductViewLis
       builder: (context, productController, _) {
         return productController.sellerWiseFeaturedProduct != null?
         (productController.sellerWiseFeaturedProduct!.products != null && productController.sellerWiseFeaturedProduct!.products!.isNotEmpty)?
-        Padding(
+        SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeEight),
-          child: PaginatedListView(scrollController: widget.scrollController,
+          sliver: PaginatedSliverListView(scrollController: widget.scrollController,
             onPaginate: (offset) async => await productController.getSellerProductList(widget.slug.toString(), offset!, ""),
             totalSize: productController.sellerWiseFeaturedProduct?.totalSize,
             offset: productController.sellerWiseFeaturedProduct?.offset,
-            itemView: RepaintBoundary(
-              child: MasonryGridView.count(
-                itemCount: productController.sellerWiseFeaturedProduct?.products?.length,
-                crossAxisCount: ResponsiveHelper.isTab(context)? 3: 2,
-                padding: const EdgeInsets.all(0),
-                physics: const NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                itemBuilder: (BuildContext context, int index) => Padding(
-                  padding: EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
-                  child: ProductCardWidget(
-                    product: productController.sellerWiseFeaturedProduct!.products![index],
-                    sellerNavigationModel: widget.sellerNavigationModel,
-                  ),
+            itemView: SliverMasonryGrid.count(
+              crossAxisCount: ResponsiveHelper.isTab(context)? 3: 2,
+              itemBuilder: (BuildContext context, int index) => Padding(
+                padding: EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
+                child: ProductCardWidget(
+                  product: productController.sellerWiseFeaturedProduct!.products![index],
+                  sellerNavigationModel: widget.sellerNavigationModel,
                 ),
               ),
-            )),
-        ): const SizedBox() : ProductShimmer(isEnabled: productController.sellerWiseFeaturedProduct == null, isHomePage: false);
+              childCount: productController.sellerWiseFeaturedProduct?.products?.length,
+            ),
+          ),
+        ): const SliverToBoxAdapter(child: SizedBox()) : SliverToBoxAdapter(child: ProductShimmer(isEnabled: productController.sellerWiseFeaturedProduct == null, isHomePage: false));
       }
     );
   }

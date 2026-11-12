@@ -377,26 +377,25 @@ class _AuctionListItemWidgetState extends State<AuctionListItemWidget> {
             ),
           ),
 
-          PositionedDirectional(
-            top: 0,
-            start: 0,
-            child: (isLive || widget.auctionStatus?.isUpcoming == true)
-                ? StatusBadgeWidget(
-              text: isLive
-                  ? ((widget.isOutbid ?? false)
-                      ? getTranslated('outbid', context) ?? ""
-                      : getTranslated('leading_bid', context) ?? "")
-                  : getTranslated('upcoming', context) ?? "",
-              color: isLive
-                  ? ((widget.isOutbid ?? false)
-                      ? Theme.of(context).colorScheme.error
-                      : Theme.of(context).colorScheme.onTertiaryContainer)
-                  : Theme.of(context).colorScheme.onTertiaryContainer,
-            ) : const SizedBox.shrink(),
-          ),
+          PositionedDirectional(top: 0, start: 0, child: _buildStatusBadge(context, isLive)),
         ],
       ),
     );
+  }
+
+  Widget _buildStatusBadge(BuildContext context, bool isLive) {
+    final bool isOutbid = widget.isOutbid ?? false;
+
+    if (isLive && isOutbid) {
+      return StatusBadgeWidget(text: getTranslated('outbid', context) ?? '', color: Theme.of(context).colorScheme.error);
+    }
+    if (isLive && !isOutbid) {
+      return StatusBadgeWidget(text: getTranslated('leading_bid', context) ?? '', color: Theme.of(context).colorScheme.onTertiaryContainer);
+    }
+    if (widget.auctionStatus?.isUpcoming == true) {
+      return StatusBadgeWidget(text: getTranslated('upcoming', context) ?? '', color: Theme.of(context).colorScheme.onTertiaryContainer);
+    }
+    return const SizedBox.shrink();
   }
 }
 

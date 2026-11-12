@@ -13,11 +13,17 @@ import 'package:provider/provider.dart';
 class ExistingAccountBottomSheet extends StatefulWidget {
   final ProfileModel profileModel;
   final String socialLoginMedium;
+
+  final String? socialToken;
+  final String? socialUniqueId;
+
   final BuildContext con;
   const ExistingAccountBottomSheet({
     super.key,
     required this.profileModel,
     required this.socialLoginMedium,
+    this.socialToken,
+    this.socialUniqueId,
     required this.con
   });
 
@@ -124,9 +130,10 @@ class _ExistingAccountBottomSheetState extends State<ExistingAccountBottomSheet>
                       authProvider.existingAccountCheck(
                           email: widget.profileModel.email!,
                           userResponse: 0,
-                          medium: widget.socialLoginMedium
+                          medium: widget.socialLoginMedium,
+                          token: widget.socialToken ?? '',
+                          uniqueId: widget.socialUniqueId ?? ''
                       ).then((value){
-
                         final (responseModel, tempToken) = value;
                         if(responseModel != null && responseModel.isSuccess && responseModel.message == 'token') {
 
@@ -171,7 +178,9 @@ class _ExistingAccountBottomSheetState extends State<ExistingAccountBottomSheet>
                       authProvider.existingAccountCheck(
                           email: widget.profileModel.email!,
                           userResponse: 1,
-                          medium: widget.socialLoginMedium
+                          medium: widget.socialLoginMedium,
+                          token: widget.socialToken ?? '',
+                          uniqueId: widget.socialUniqueId ?? ''
                       ).then((value){
 
                         final (responseModel, tempToken) = value;

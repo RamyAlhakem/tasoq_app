@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_transaction/controller/auction_transaction_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/helper/date_converter.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
@@ -30,12 +30,12 @@ class _SalesTrendWidgetState extends State<SalesTrendWidget> {
   DateTime? _endDate;
 
   static const _options = [
-    (type: AuctionReportDateType.allTime, label: 'All Time'),
-    (type: AuctionReportDateType.year,    label: 'This Year'),
-    (type: AuctionReportDateType.month,   label: 'This Month'),
-    (type: AuctionReportDateType.week,    label: 'This Week'),
-    (type: AuctionReportDateType.today,   label: 'Today'),
-    (type: AuctionReportDateType.custom,  label: 'Custom Date'),
+    (type: AuctionReportDateType.allTime, labelKey: 'all_time'),
+    (type: AuctionReportDateType.year,    labelKey: 'this_year'),
+    (type: AuctionReportDateType.month,   labelKey: 'this_month'),
+    (type: AuctionReportDateType.week,    labelKey: 'this_week'),
+    (type: AuctionReportDateType.today,   labelKey: 'today'),
+    (type: AuctionReportDateType.custom,  labelKey: 'custom_date'),
   ];
 
   static String _fmt(String raw) {
@@ -50,8 +50,8 @@ class _SalesTrendWidgetState extends State<SalesTrendWidget> {
     return raw;
   }
 
-  String get _startLabel => _startDate != null ? DateFormat('MM/dd/yyyy').format(_startDate!) : 'mm/dd/yyyy';
-  String get _endLabel   => _endDate   != null ? DateFormat('MM/dd/yyyy').format(_endDate!)   : 'mm/dd/yyyy';
+  String get _startLabel => _startDate != null ? DateConverter.monthDayYear(_startDate!) : 'mm/dd/yyyy';
+  String get _endLabel   => _endDate   != null ? DateConverter.monthDayYear(_endDate!)   : 'mm/dd/yyyy';
 
   Future<void> _pickStart() async {
     final picked = await showDatePicker(
@@ -78,8 +78,8 @@ class _SalesTrendWidgetState extends State<SalesTrendWidget> {
     String? endStr;
     if (_selectedType == AuctionReportDateType.custom) {
       if (_startDate == null || _endDate == null) return;
-      startStr = DateFormat('yyyy-MM-dd').format(_startDate!);
-      endStr   = DateFormat('yyyy-MM-dd').format(_endDate!);
+      startStr = DateConverter.yearMonthDay(_startDate!);
+      endStr   = DateConverter.yearMonthDay(_endDate!);
     }
     setState(() => _appliedType = _selectedType);
     context.read<AuctionTransactionController>().getSalesReport(
@@ -142,7 +142,7 @@ class _SalesTrendWidgetState extends State<SalesTrendWidget> {
                         },
                         items: _options.map((o) => DropdownMenuItem(
                           value: o.type,
-                          child: Text(o.label, overflow: TextOverflow.ellipsis),
+                          child: Text(getTranslated(o.labelKey, context) ?? o.labelKey, overflow: TextOverflow.ellipsis),
                         )).toList(),
                       ),
                     ),
@@ -193,7 +193,7 @@ class _SalesTrendWidgetState extends State<SalesTrendWidget> {
                 );
               }
 
-              final trend = controller.salesReport?.salesTrend;
+              final trend = controller.salesReport?.summary?.salesTrend;
               if (trend == null || trend.labels.isEmpty) {
                 return SizedBox(
                   height: 300,

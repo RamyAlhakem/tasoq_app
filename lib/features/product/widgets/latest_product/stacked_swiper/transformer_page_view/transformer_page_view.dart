@@ -1,4 +1,3 @@
-/// transformer page view library
 library;
 
 import 'dart:async';
@@ -7,19 +6,10 @@ import 'package:flutter/material.dart';
 
 import 'index_controller.dart';
 
-///
-/// NOTICE::
-///
-/// In order to make package smaller,currently we're not supporting any build-in page transformers
-/// You can find build in transforms here:
-///
-///
-///
 
 const int kMaxValue = 2000000000;
 const int kMiddleValue = 1000000000;
 
-///  Default auto play transition duration (in millisecond)
 const int kDefaultTransactionDuration = 300;
 
 class TransformInfo {
@@ -36,51 +26,32 @@ class TransformInfo {
     this.scrollDirection,
   });
 
-  /// The `width` of the `TransformerPageView`
   final double? width;
 
-  /// The `height` of the `TransformerPageView`
   final double? height;
 
-  /// The `position` of the widget pass to [PageTransformer.transform]
-  ///  A `position` describes how visible the widget is.
-  ///  The widget in the center of the screen' which is  full visible, position is 0.0.
-  ///  The widget in the left ,may be hidden, of the screen's position is less than 0.0, -1.0 when out of the screen.
-  ///  The widget in the right ,may be hidden, of the screen's position is greater than 0.0,  1.0 when out of the screen
-  ///
-  ///
   final double? position;
 
-  /// The `index` of the widget pass to [PageTransformer.transform]
   final int? index;
 
-  /// The `activeIndex` of the PageView
   final int? activeIndex;
 
-  /// The `activeIndex` of the PageView, from user start to swipe
-  /// It will change when user end drag
   final int fromIndex;
 
-  /// Next `index` is greater than this `index`
   final bool? forward;
 
-  /// User drag is done.
   final bool? done;
 
-  /// Same as [TransformerPageView.viewportFraction]
   final double? viewportFraction;
 
-  /// Copy from [TransformerPageView.scrollDirection]
   final Axis? scrollDirection;
 }
 
 abstract class PageTransformer {
   PageTransformer({this.reverse = false});
 
-  ///
   final bool reverse;
 
-  /// Return a transformed widget, based on child and TransformInfo
   Widget transform(Widget child, TransformInfo info);
 }
 
@@ -196,18 +167,6 @@ class TransformerPageController extends PageController {
 }
 
 class TransformerPageView extends StatefulWidget {
-  /// Creates a scrollable list that works page by page using widgets that are
-  /// created on demand.
-  ///
-  /// This constructor is appropriate for page views with a large (or infinite)
-  /// number of children because the builder is called only for those children
-  /// that are actually visible.
-  ///
-  /// Providing a non-null [itemCount] lets the [PageView] compute the maximum
-  /// scroll extent.
-  ///
-  /// [itemBuilder] will be called only with indices greater than or equal to
-  /// zero and less than [itemCount].
   const TransformerPageView({
     super.key,
     this.index,
@@ -268,25 +227,14 @@ class TransformerPageView extends StatefulWidget {
     );
   }
 
-  /// Create a `transformed` widget base on the widget that has been passed to  the [PageTransformer.transform].
-  /// See [TransformInfo]
-  ///
   final PageTransformer? transformer;
 
-  /// Same as [PageView.scrollDirection]
-  ///
-  /// Defaults to [Axis.horizontal].
   final Axis scrollDirection;
 
-  /// Same as [PageView.physics]
   final ScrollPhysics? physics;
 
-  /// Set to false to disable page snapping, useful for custom scroll behavior.
-  /// Same as [PageView.pageSnapping]
   final bool pageSnapping;
 
-  /// Called whenever the page in the center of the viewport changes.
-  /// Same as [PageView.onPageChanged]
   final ValueChanged<int>? onPageChanged;
 
   final IndexedWidgetBuilder? itemBuilder;
@@ -294,24 +242,18 @@ class TransformerPageView extends StatefulWidget {
   // See [IndexController.mode],[IndexController.next],[IndexController.previous]
   final IndexController? controller;
 
-  /// Animation duration
   final Duration duration;
 
-  /// Animation curve
   final Curve curve;
 
   final TransformerPageController? pageController;
 
-  /// Set true to open infinity loop mode.
   final bool loop;
 
-  /// This value is only valid when `pageController` is not set,
   final int itemCount;
 
-  /// This value is only valid when `pageController` is not set,
   final double viewportFraction;
 
-  /// If not set, it is controlled by this widget.
   final int? index;
 
   final bool allowImplicitScrolling;
@@ -357,7 +299,6 @@ class _TransformerPageViewState extends State<TransformerPageView> {
   late double _currentPixels;
   bool _done = false;
 
-  ///This value will not change until user end drag.
   late int _fromIndex;
 
   PageTransformer? _transformer;
@@ -601,11 +542,4 @@ class _TransformerPageViewState extends State<TransformerPageView> {
   }
 }
 
-/// Ref: https://docs.flutter.dev/development/tools/sdk/release-notes/release-notes-3.0.0#your-code
-/// This allows a value of type T or T?
-/// to be treated as a value of type T?.
-///
-/// We use this so that APIs that have become
-/// non-nullable can still be used with `!` and `?`
-/// to support older versions of the API as well.
 T? _ambiguate<T>(T? value) => value;

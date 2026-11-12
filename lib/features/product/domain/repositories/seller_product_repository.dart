@@ -22,7 +22,7 @@ class SellerProductRepository extends DataSyncService implements SellerProductRe
       }) async {
     try {
       final response = await dioClient.get(
-          '${AppConstants.sellerProductUri}$slug/products?guest_id=1&limit=10&offset=$offset&search=$search&category=$categoryIds&brand_ids=$brandIds&product_id=$productId&product_authors=$authorIds&publishing_houses=$publishingIds&product_type=$productType');
+          '${AppConstants.sellerProductUri}$slug/products?limit=10&offset=$offset&search=$search&category=$categoryIds&brand_ids=$brandIds&product_id=$productId&product_authors=$authorIds&publishing_houses=$publishingIds&product_type=${productType ?? 'all'}');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -33,7 +33,7 @@ class SellerProductRepository extends DataSyncService implements SellerProductRe
   Future<ApiResponseModel> getSellerWiseBestSellingProductList(String slug, String offset) async {
     try {
       final response = await dioClient.get(
-          '${AppConstants.sellerWiseBestSellingProduct}$slug/seller-best-selling-products?guest_id=1&limit=10&offset=$offset');
+          '${AppConstants.sellerWiseBestSellingProduct}$slug/products/best-selling?limit=10&offset=$offset');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -43,7 +43,7 @@ class SellerProductRepository extends DataSyncService implements SellerProductRe
   @override
   Future<ApiResponseModel> getSellerWiseFeaturedProductList(String slug, String offset) async {
     try {
-      final response = await dioClient.get('${AppConstants.sellerWiseBestSellingProduct}$slug/seller-featured-product?guest_id=1&limit=10&offset=$offset');
+      final response = await dioClient.get('${AppConstants.sellerWiseBestSellingProduct}$slug/products/featured?limit=10&offset=$offset');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -55,7 +55,7 @@ class SellerProductRepository extends DataSyncService implements SellerProductRe
   Future<ApiResponseModel> getSellerWiseRecommendedProductList(String slug, String offset) async {
     try {
       final response = await dioClient.get(
-          '${AppConstants.sellerWiseBestSellingProduct}$slug/seller-recommended-products?guest_id=1&limit=10&offset=$offset');
+          '${AppConstants.sellerWiseBestSellingProduct}$slug/products/recommended?limit=10&offset=$offset');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));

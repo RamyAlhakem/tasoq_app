@@ -13,6 +13,7 @@ import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_app_bar_wid
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_button_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/no_internet_screen_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/not_loggedin_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
 import 'package:provider/provider.dart';
 
 
@@ -23,6 +24,8 @@ class SupportTicketScreen extends StatefulWidget {
 }
 
 class _SupportTicketScreenState extends State<SupportTicketScreen> {
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     if (Provider.of<AuthController>(context, listen: false).isLoggedIn()) {
@@ -32,6 +35,12 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
       }
     }
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -61,10 +70,20 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
           support.supportTicketList!.isNotEmpty?
           RefreshIndicator(
             onRefresh: () async => await support.getSupportTicketList(),
-            child: ListView.separated(
-              itemCount: support.supportTicketList!.length,
-              itemBuilder: (context, index) => SupportTicketWidget(supportTicketModel: support.supportTicketList![index], index: index),
-              separatorBuilder: (BuildContext context, int index) => const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+            child: PaginatedListView(
+              scrollController: _scrollController,
+              onPaginate: (int? offset) => support.getSupportTicketList(offset: offset ?? 1),
+              totalSize: support.ticketTotalSize,
+              offset: support.ticketOffset,
+              limit: support.ticketLimit ?? 25,
+              itemView: Flexible(
+                child: ListView.separated(
+                  controller: _scrollController,
+                  itemCount: support.supportTicketList!.length,
+                  itemBuilder: (context, index) => SupportTicketWidget(supportTicketModel: support.supportTicketList![index], index: index),
+                  separatorBuilder: (BuildContext context, int index) => const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+                ),
+              ),
             ),
           ) : const NoInternetOrDataScreenWidget(isNoInternet: false, icon: Images.noTicket,
             message: 'no_ticket_created') : const SupportTicketShimmer() : NotLoggedInWidget(fromPage: RouterHelper.supportTicketScreen,

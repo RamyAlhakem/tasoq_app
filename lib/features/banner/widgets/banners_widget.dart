@@ -7,8 +7,6 @@ import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_image_widget.dart';
 import 'package:provider/provider.dart';
 
-
-
 class BannersWidget extends StatelessWidget {
   const BannersWidget({super.key});
 
@@ -42,12 +40,7 @@ class BannersWidget extends StatelessWidget {
                       return InkWell(
                         onTap: () {
                           if(bannerProvider.mainBannerList![index].resourceId != null || bannerProvider.mainBannerList![index].url != null) {
-                            bannerProvider.clickBannerRedirect(context,
-                                bannerProvider.mainBannerList![index].resourceId,
-                                bannerProvider.mainBannerList![index].resourceType == 'product' ?
-                                bannerProvider.mainBannerList![index].product : null,
-                                bannerProvider.mainBannerList![index].resourceType,
-                                url: bannerProvider.mainBannerList![index].url);
+                            bannerProvider.clickBannerRedirect(context, bannerProvider.mainBannerList![index]);
                           }
                         },
                         child: ClipRRect(

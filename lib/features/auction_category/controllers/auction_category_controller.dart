@@ -45,7 +45,7 @@ class AuctionCategoryController extends ChangeNotifier {
         onResponse: (data, source) {
           if (data != null) {
             _categoryList.clear();
-            data.forEach((category) => _categoryList.add(AuctionCategoryModel.fromJson(category)));
+            _categoryList.addAll(AuctionCategoryList.fromJson(data).categories);
             _categorySelectedIndex = 0;
             notifyListeners();
           }

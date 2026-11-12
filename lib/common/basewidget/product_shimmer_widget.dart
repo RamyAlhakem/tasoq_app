@@ -12,7 +12,6 @@ class ProductShimmer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraSmall),
       child: GridView.builder(
-
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: ResponsiveHelper.isTab(context)? 3: 2,
         crossAxisSpacing: 10,mainAxisSpacing: 10,

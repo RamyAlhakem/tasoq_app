@@ -17,10 +17,5 @@ class OrderService implements OrderServiceInterface{
     return await orderRepositoryInterface.getOrderList(offset, status);
   }
 
-  @override
-  Future getTrackingInfo(String orderID)  async{
-    return await orderRepositoryInterface.getTrackingInfo(orderID);
-  }
-
 
 }

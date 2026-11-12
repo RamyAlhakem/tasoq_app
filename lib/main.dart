@@ -10,6 +10,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_sixvalley_ecommerce/data/local/cache_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/ai_shopping/controllers/ai_shopping_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_ai_shopping/controllers/wholesale_ai_shopping_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_ai/controllers/auction_ai_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction/controllers/customer_auction_list_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_category/controllers/auction_category_controller.dart';
@@ -72,6 +73,27 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'di_container.dart' as di;
 import 'features/auction_dashboard_summary/controllers/auction_dashboard_summary_controller.dart';
+import 'features/wholesale/wholesale_category/controllers/wholesale_category_controller.dart';
+import 'features/wholesale/wholesale_product/controllers/wholesale_product_controller.dart';
+import 'features/wholesale/wholesale_product_details/controllers/wholesale_product_details_controller.dart';
+import 'features/wholesale/wholesale_wishlist/controllers/wholesale_wishlist_controller.dart';
+import 'features/wholesale/wholesale_cart/controllers/wholesale_cart_controller.dart';
+import 'features/wholesale/wholesale_restock/controllers/wholesale_restock_controller.dart';
+import 'features/wholesale/wholesale_home/controllers/wholesale_home_controller.dart';
+import 'features/wholesale/wholesale_search/controllers/wholesale_search_controller.dart';
+import 'features/wholesale/wholesale_order/controllers/wholesale_order_controller.dart';
+import 'features/wholesale/wholesale_order/controllers/wholesale_refund_controller.dart';
+import 'features/wholesale/wholesale_order/controllers/wholesale_review_controller.dart';
+import 'features/wholesale/wholesale_offer_products/controllers/wholesale_offer_products_controller.dart';
+import 'features/wholesale/wholesale_offers/controllers/wholesale_offers_controller.dart';
+import 'features/wholesale/wholesale_attribute/controllers/wholesale_attribute_controller.dart';
+import 'features/wholesale/wholesale_banner/controllers/wholesale_banner_controller.dart';
+import 'features/wholesale/wholesale_brand/controllers/wholesale_brand_controller.dart';
+import 'features/wholesale/wholesale_brand/controllers/wholesale_brand_list_controller.dart';
+import 'features/wholesale/wholesale_brand/controllers/wholesale_brand_products_controller.dart';
+import 'features/wholesale/wholesale_campaign/controllers/wholesale_campaign_controller.dart';
+import 'features/wholesale/wholesale_coupon/controllers/wholesale_coupon_controller.dart';
+import 'features/wholesale/wholesale_checkout/controllers/wholesale_checkout_controller.dart';
 import 'features/create_auction/controllers/add_auction_product_contoller.dart';
 import 'features/create_auction/controllers/add_auction_product_media_controller.dart';
 import 'features/splash/domain/models/config_model.dart';
@@ -79,26 +101,29 @@ import 'features/transaction/controllers/transaction_controller.dart';
 import 'helper/custom_delegate.dart';
 import 'localization/app_localization.dart';
 
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-    FlutterLocalNotificationsPlugin();
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+
 final database = AppDatabase();
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (Firebase.apps.isEmpty) {
-    if (Platform.isAndroid) {
-      try {
-        /// todo you need to configure that firebase Option with your own firebase to run your app
+  if(Firebase.apps.isEmpty) {
+    if(Platform.isAndroid) {
+      try{
         await Firebase.initializeApp(
-            name: 'project',
-            options: const FirebaseOptions(
-                apiKey: "AIzaSyCFGqSEiWMItei_AFIUgdM53PWrvyGmjFY",
-                projectId: "drivevalley-fdb7f",
-                messagingSenderId: "76471554747",
-                appId: "1:76471554747:android:3aa5d58a094e2a036d0f9e"));
+          name: 'your_project_name',
+          options: const FirebaseOptions(
+            apiKey: "current_key here",
+            projectId: "project_id here",
+            messagingSenderId: "project_number here",
+            appId: "mobilesdk_app_id here"
+          )
+        );
       } finally {
         await Firebase.initializeApp();
       }
@@ -107,121 +132,115 @@ Future<void> main() async {
     }
   }
 
+
+
   await FlutterDownloader.initialize(debug: true, ignoreSsl: true);
   await di.init();
 
-  flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>()
-      ?.requestNotificationsPermission();
+  flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission();
   String? path;
   NotificationBody? body;
 
+
   try {
-    final RemoteMessage? remoteMessage =
-        await FirebaseMessaging.instance.getInitialMessage();
+    final RemoteMessage? remoteMessage = await FirebaseMessaging.instance.getInitialMessage();
     if (remoteMessage != null) {
       body = NotificationHelper.convertNotification(remoteMessage.data);
     }
     await NotificationHelper.initialize(flutterLocalNotificationsPlugin);
     FirebaseMessaging.onBackgroundMessage(myBackgroundMessageHandler);
-    path = await initDynamicLinks();
-  } catch (_) {}
+    path =  await initDynamicLinks();
+  } catch(_) {}
 
   GoRouter.optionURLReflectsImperativeAPIs = true;
 
-  runApp(MultiProvider(
-    providers: [
+  runApp(MultiProvider(providers: [
       ChangeNotifierProvider(create: (context) => di.sl<CategoryController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ShopController>()),
       ChangeNotifierProvider(create: (context) => di.sl<FlashDealController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<FeaturedDealController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<FeaturedDealController>()),
       ChangeNotifierProvider(create: (context) => di.sl<BrandController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ProductController>()),
       ChangeNotifierProvider(create: (context) => di.sl<BannerController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<ProductDetailsController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<OnBoardingController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<ProductDetailsController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<OnBoardingController>()),
       ChangeNotifierProvider(create: (context) => di.sl<AuthController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<SearchProductController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<SearchProductController>()),
       ChangeNotifierProvider(create: (context) => di.sl<CouponController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ChatController>()),
       ChangeNotifierProvider(create: (context) => di.sl<OrderController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<NotificationController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<NotificationController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ProfileController>()),
       ChangeNotifierProvider(create: (context) => di.sl<WishListController>()),
       ChangeNotifierProvider(create: (context) => di.sl<SplashController>()),
       ChangeNotifierProvider(create: (context) => di.sl<CartController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<SupportTicketController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<LocalizationController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<SupportTicketController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<LocalizationController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ThemeController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<GoogleSignInController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<FacebookLoginController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<GoogleSignInController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<FacebookLoginController>()),
       ChangeNotifierProvider(create: (context) => di.sl<AddressController>()),
       ChangeNotifierProvider(create: (context) => di.sl<WalletController>()),
       ChangeNotifierProvider(create: (context) => di.sl<CompareController>()),
       ChangeNotifierProvider(create: (context) => di.sl<CheckoutController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<LoyaltyPointController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<LoyaltyPointController>()),
       ChangeNotifierProvider(create: (context) => di.sl<LocationController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ContactUsController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ShippingController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<OrderDetailsController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<OrderDetailsController>()),
       ChangeNotifierProvider(create: (context) => di.sl<RefundController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ReOrderController>()),
       ChangeNotifierProvider(create: (context) => di.sl<ReviewController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<SellerProductController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<SellerProductController>()),
       ChangeNotifierProvider(create: (context) => di.sl<RestockController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<AddAuctionProductMediaController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<AddAuctionProductController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<AuctionCategoryController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<AuctionHomeController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<AuctionSearchController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<AuctionProductQueueController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<CreatorAuctionDetailsController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<ParticipationAuctionDetailsController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<CustomerAuctionListController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<AddAuctionProductMediaController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<AddAuctionProductController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<AuctionCategoryController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<AuctionHomeController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<AuctionSearchController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<AuctionProductQueueController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<CreatorAuctionDetailsController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<ParticipationAuctionDetailsController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<CustomerAuctionListController>()),
       ChangeNotifierProvider(create: (context) => di.sl<VatTaxController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<AiShoppingController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<AiShoppingController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleAiShoppingController>()),
       ChangeNotifierProvider(create: (context) => di.sl<AuctionAiController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<AuctionParticipationController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<AuctionCheckoutController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<UserCreatedAuctionListController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<AuctionDashboardSummaryController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<TransactionController>()),
-      ChangeNotifierProvider(
-          create: (context) => di.sl<AuctionTransactionController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<AuctionParticipationController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<AuctionCheckoutController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<UserCreatedAuctionListController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<AuctionDashboardSummaryController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<TransactionController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<AuctionTransactionController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleHomeController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleOrderController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleRefundController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleReviewController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleCategoryController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleProductController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleProductDetailsController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleWishlistController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleCartController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleRestockController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleOfferProductsController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleOffersController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleCampaignController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleBannerController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleBrandController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleBrandListController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleBrandProductsController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleAttributeController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleCouponController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleCheckoutController>()),
+      ChangeNotifierProvider(create: (context) => di.sl<WholesaleSearchController>()),
     ],
     child: MyApp(body: body, route: path),
   ));
 }
 
 StreamSubscription<Uri?>? _sub;
+
+
 
 Future<String?> initDynamicLinks() async {
   final appLinks = AppLinks();
@@ -244,27 +263,30 @@ Future<String?> initDynamicLinks() async {
   return null;
 }
 
+
 class MyApp extends StatefulWidget {
   final NotificationBody? body;
   final String? route;
-  const MyApp({super.key, required this.body, this.route});
+  const MyApp({
+    super.key,
+    required this.body,
+    this.route
+  });
 
   @override
   State<MyApp> createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
+
   @override
   void initState() {
     SchedulerBinding.instance.addPostFrameCallback((_) {
-      FirebaseMessaging.instance.getToken().then((String? token) {
-        assert(token != null);
-        print("===== FCM TOKEN: $token =====");
-      });
       _loadData();
     });
     super.initState();
   }
+
 
   @override
   void dispose() {
@@ -272,20 +294,19 @@ class _MyAppState extends State<MyApp> {
     super.dispose();
   }
 
-  void _loadData() async {
-    if (widget.route != null) {
-      final AuthController authProvider =
-          Provider.of<AuthController>(context, listen: false);
 
-      if (Provider.of<AuthController>(context, listen: false).isLoggedIn()) {
-        await Provider.of<ProfileController>(context, listen: false)
-            .getUserInfo(context);
+  void _loadData() async {
+    if(widget.route != null) {
+      final AuthController authProvider = Provider.of<AuthController>(context, listen: false);
+
+      if(Provider.of<AuthController>(context, listen: false).isLoggedIn()) {
+        await Provider.of<ProfileController>(context, listen: false).getUserInfo(context);
       }
 
-      if (mounted) {
-        Provider.of<SplashController>(context, listen: false)
-            .initConfig(context, (_) {}, (ConfigModel? configModel) async {
-          if (configModel != null) {
+      if(mounted) {
+        Provider.of<SplashController>(context, listen: false).initConfig(context, (_) {},
+            (ConfigModel? configModel) async {
+          if(configModel != null) {
             if (authProvider.isLoggedIn()) {
               await authProvider.updateToken(context);
             }
@@ -298,57 +319,58 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
+
     List<Locale> locals = [];
     for (var language in AppConstants.languages) {
       locals.add(Locale(language.languageCode!, language.countryCode));
     }
-    return Consumer<SplashController>(builder: (context, splashController, _) {
-      return Consumer<ThemeController>(builder: (context, themeController, _) {
-        if ((widget.route != null && splashController.configModel == null)) {
-          return Theme(
-              data: themeController.darkTheme
-                  ? dark
-                  : light(
-                      primaryColor: Theme.of(context).primaryColor,
-                      secondaryColor: Theme.of(context).colorScheme.secondary,
-                    ),
-              child: Directionality(
-                  textDirection: TextDirection.ltr,
-                  child: MediaQuery(
-                      data: MediaQueryData.fromView(View.of(context)),
-                      child: SplashWidget())));
-        } else {
-          return MaterialApp.router(
-            routerConfig: RouterHelper.goRoutes,
-            title: AppConstants.appName,
-            debugShowCheckedModeBanner: false,
-            theme: themeController.darkTheme
-                ? dark
-                : light(
-                    primaryColor: Theme.of(context).primaryColor,
-                    secondaryColor: Theme.of(context).colorScheme.secondary,
-                  ),
-            locale: Provider.of<LocalizationController>(context).locale,
-            localizationsDelegates: [
-              AppLocalization.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-              FallbackLocalizationDelegate()
-            ],
-            builder: (context, child) {
-              return MediaQuery(
-                  data: MediaQuery.of(context)
-                      .copyWith(textScaler: TextScaler.noScaling),
-                  child: SafeArea(top: false, child: child!));
-            },
-            supportedLocales: locals,
-          );
-        }
-      });
-    });
+    return Consumer<SplashController>(
+      builder: (context, splashController, _) {
+        return Consumer<ThemeController>(
+          builder: (context, themeController, _) {
+            if ((widget.route != null && splashController.configModel == null)) {
+              return Theme(
+                data : themeController.darkTheme ? dark : light(
+                  primaryColor: Theme.of(context).primaryColor,
+                  secondaryColor: Theme.of(context).colorScheme.secondary,
+                ),
+                child: Directionality(
+                textDirection: TextDirection.ltr,
+                child: MediaQuery(
+                  data: MediaQueryData.fromView(View.of(context)),
+                  child: SplashWidget()
+                )
+              ));
+            } else {
+              return MaterialApp.router(
+              routerConfig: RouterHelper.goRoutes,
+              title: AppConstants.appName,
+              debugShowCheckedModeBanner: false,
+              theme: themeController.darkTheme ? dark : light(
+                primaryColor: Theme.of(context).primaryColor,
+                secondaryColor: Theme.of(context).colorScheme.secondary,
+              ),
+              locale: Provider.of<LocalizationController>(context).locale,
+              localizationsDelegates: [
+                AppLocalization.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+                FallbackLocalizationDelegate()
+              ],
+              builder:(context,child) {
+                return MediaQuery(data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling), child: SafeArea(top: false, child: child!));
+              },
+              supportedLocales: locals,
+            );
+            }
+          }
+        );
+      }
+    );
   }
 }
 

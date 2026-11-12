@@ -53,6 +53,17 @@ class BasicSetupWidget extends StatefulWidget {
 }
 
 class _BasicSetupWidgetState extends State<BasicSetupWidget> with TickerProviderStateMixin {
+  TabController? _fallbackTabController;
+
+  TabController _resolveTabController() {
+    return widget.tabController ?? (_fallbackTabController ??= TabController(length: 1, vsync: this));
+  }
+
+  @override
+  void dispose() {
+    _fallbackTabController?.dispose();
+    super.dispose();
+  }
 
   void _onTitleAiTap(AuctionAiController aiController) {
     if (widget.nameController.text.trim().isEmpty) {
@@ -213,7 +224,7 @@ class _BasicSetupWidgetState extends State<BasicSetupWidget> with TickerProvider
                               SizedBox(
                                 height: 245,
                                 child: AnimatedBuilder(
-                                  animation: widget.tabController ?? TabController(length: 1, vsync: this),
+                                  animation: _resolveTabController(),
                                   builder: (BuildContext context, Widget? child) {
                                     return TabBarView(
                                       controller: widget.tabController,

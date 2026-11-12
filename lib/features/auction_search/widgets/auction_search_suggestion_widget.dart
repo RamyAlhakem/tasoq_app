@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_search/controllers/auction_search_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/search_product/domain/models/suggestion_product_model.dart';
+import 'package:flutter_sixvalley_ecommerce/helper/debounce_helper.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
@@ -10,8 +13,32 @@ import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
 import 'package:provider/provider.dart';
 import 'package:substring_highlight/substring_highlight.dart';
 
-class AuctionSearchSuggestionWidget extends StatelessWidget {
+class AuctionSearchSuggestionWidget extends StatefulWidget {
   const AuctionSearchSuggestionWidget({super.key});
+
+  @override
+  State<AuctionSearchSuggestionWidget> createState() => _AuctionSearchSuggestionWidgetState();
+}
+
+class _AuctionSearchSuggestionWidgetState extends State<AuctionSearchSuggestionWidget> {
+  final DebounceHelper _debounceHelper = DebounceHelper(milliseconds: 500);
+
+  @override
+  void dispose() {
+    _debounceHelper.dispose();
+    super.dispose();
+  }
+
+  Future<Iterable<String>> _getSuggestions(String query, AuctionSearchController controller) {
+    final Completer<Iterable<String>> completer = Completer<Iterable<String>>();
+    _debounceHelper.run(() async {
+      final List<String> names = await controller.getSuggestionAuctionProductName(query);
+      if (!completer.isCompleted) {
+        completer.complete(names.where((word) => word.toLowerCase().contains(query.toLowerCase())));
+      }
+    });
+    return completer.future;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,13 +49,12 @@ class AuctionSearchSuggestionWidget extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Autocomplete<String>(
-                optionsBuilder: (TextEditingValue textEditingValue) async {
+                optionsBuilder: (TextEditingValue textEditingValue) {
                   final String query = textEditingValue.text.trim();
                   if (query.isEmpty) {
                     return const Iterable<String>.empty();
                   }
-                  final List<String> names = await controller.getSuggestionAuctionProductName(query);
-                  return names.where((word) => word.toLowerCase().contains(query.toLowerCase()));
+                  return _getSuggestions(query, controller);
                 },
                 optionsViewOpenDirection: OptionsViewOpenDirection.down,
                 optionsViewBuilder: (context, onSelected, options) {

@@ -1,5 +1,30 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/image_full_url.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/domain/models/product_model.dart';
+
+class WishlistPageModel {
+  List<WishlistModel> wishList = [];
+  int? totalSize;
+  int? offset;
+
+  WishlistPageModel.fromJson(dynamic body) {
+    List? rows;
+    if (body is List) {
+      rows = body;
+    } else if (body is Map) {
+      final ApiListEnvelope envelope = ApiListEnvelope.fromJson(Map<String, dynamic>.from(body));
+      rows = envelope.data;
+      totalSize = envelope.totalSize;
+      offset = envelope.offset;
+    }
+    wishList = [
+      for (final Map row in (rows ?? const []).whereType<Map>())
+        WishlistModel.fromJson(Map<String, dynamic>.from(row)),
+    ];
+    totalSize ??= wishList.length;
+    offset ??= 1;
+  }
+}
 
 class WishlistModel {
   int? id;
@@ -9,13 +34,7 @@ class WishlistModel {
   String? updatedAt;
   Product? productFullInfo;
 
-  WishlistModel(
-      {this.id,
-        this.customerId,
-        this.productId,
-        this.createdAt,
-        this.updatedAt,
-        this.productFullInfo});
+  WishlistModel({this.id, this.customerId, this.productId, this.createdAt, this.updatedAt, this.productFullInfo});
 
   WishlistModel.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -23,7 +42,7 @@ class WishlistModel {
     productId = json['product_id'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
-    productFullInfo = json['product_full_info'] != null ? Product.fromJson(json['product_full_info']) : null;
+    productFullInfo = json['product_full_info'] is Map ? Product.fromJson(Map<String, dynamic>.from(json['product_full_info'])) : null;
   }
 }
 

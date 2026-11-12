@@ -14,6 +14,14 @@ class ImageFullUrl {
     }
   }
 
+  static ImageFullUrl? parse(dynamic value) {
+    if (value is Map) {
+      return ImageFullUrl.fromJson(Map<String, dynamic>.from(value));
+    }
+    final String url = value?.toString() ?? '';
+    return url.isEmpty ? null : ImageFullUrl(path: url, status: 200);
+  }
+
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['key'] = key;

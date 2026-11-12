@@ -36,7 +36,7 @@ class LocationRepository implements LocationRepositoryInterface{
   @override
   Future<ApiResponseModel> getPlaceDetails(String? placeID) async {
     try {
-      Response response = await dioClient!.get('${AppConstants.placeDetailsUri}?placeid=$placeID');
+      Response response = await dioClient!.get('${AppConstants.placeDetailsUri}$placeID');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));

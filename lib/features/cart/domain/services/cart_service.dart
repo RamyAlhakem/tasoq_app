@@ -139,4 +139,9 @@ class CartService implements CartServiceInterface{
     return await cartRepositoryInterface.mergeGuestCart();
   }
 
+  @override
+  Future mergeWholesaleGuestCart() async {
+    return await cartRepositoryInterface.mergeWholesaleGuestCart();
+  }
+
 }

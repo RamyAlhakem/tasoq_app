@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_category/controllers/auction_category_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_search/domain/models/auction_filter_param_model.dart';
@@ -57,9 +58,7 @@ class _AuctionFilterBottomSheetState extends State<AuctionFilterBottomSheet> {
   late Set<int> _selectedBrandIds;
 
   bool _showAllCategories = false;
-  bool _showAllBrands = false;
   static const int _initialCategoryCount = 5;
-  static const int _initialBrandCount = 5;
   static double get _entryFeeMax => AuctionFilterParamModel.kEntryFeeMax;
   static double get _priceMax => AuctionFilterParamModel.kPriceMax;
 
@@ -130,7 +129,7 @@ class _AuctionFilterBottomSheetState extends State<AuctionFilterBottomSheet> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<AuctionCategoryController>(context, listen: false).getCategoryList(false);
-      Provider.of<BrandController>(context, listen: false).getBrandList(offset: 1);
+      Provider.of<BrandController>(context, listen: false).getAuctionBrandList(offset: 1);
     });
   }
 
@@ -147,7 +146,6 @@ class _AuctionFilterBottomSheetState extends State<AuctionFilterBottomSheet> {
       }
       _selectedBrandIds.clear();
       _showAllCategories  = false;
-      _showAllBrands   = false;
     });
     final clearedCategoryIds = (widget.isCategoryPage && widget.categoryId != null) ? {widget.categoryId!} : const <int>{};
     Navigator.of(context).pop(AuctionFilterParamModel(categoryIds: clearedCategoryIds));
@@ -269,9 +267,8 @@ class _AuctionFilterBottomSheetState extends State<AuctionFilterBottomSheet> {
                     ],
 
                     _BrandSection(
+                      scrollController: scrollController,
                       selectedBrandIds: _selectedBrandIds,
-                      showAll: _showAllBrands,
-                      initialCount: _initialBrandCount,
                       onToggle: (id) {
                         setState(() {
                           if (_selectedBrandIds.contains(id)) {
@@ -281,7 +278,6 @@ class _AuctionFilterBottomSheetState extends State<AuctionFilterBottomSheet> {
                           }
                         });
                       },
-                      onSeeMoreTap: () => setState(() => _showAllBrands = !_showAllBrands),
                     ),
                     const SizedBox(height: Dimensions.paddingSizeLarge),
                   ],
@@ -624,18 +620,14 @@ class _CategorySection extends StatelessWidget {
 }
 
 class _BrandSection extends StatelessWidget {
+  final ScrollController scrollController;
   final Set<int> selectedBrandIds;
-  final bool showAll;
-  final int initialCount;
   final ValueChanged<int> onToggle;
-  final VoidCallback onSeeMoreTap;
 
   const _BrandSection({
+    required this.scrollController,
     required this.selectedBrandIds,
-    required this.showAll,
-    required this.initialCount,
     required this.onToggle,
-    required this.onSeeMoreTap,
   });
 
   @override
@@ -644,44 +636,35 @@ class _BrandSection extends StatelessWidget {
       title: getTranslated('brand', context)!,
       child: Consumer<BrandController>(
         builder: (context, brandController, _) {
-          final brands = brandController.brandList;
+          final brands = brandController.auctionBrandList;
+          final model = brandController.auctionBrandModel;
+
           if (brands.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final visibleBrands = showAll ? brands : brands.take(initialCount).toList();
-          final remaining = brands.length - initialCount;
-          final hasMore = brands.length > initialCount;
-
-          return Column(
-            children: [
-              _CheckboxRow(
-                label: getTranslated('all', context)!,
-                isSelected: selectedBrandIds.isEmpty,
-                onToggle: () {
-                  if (selectedBrandIds.isNotEmpty) selectedBrandIds.clear();
-                },
-              ),
-              ...visibleBrands.map((brand) => _CheckboxRow(
-                label: brand.name ?? '',
-                isSelected: selectedBrandIds.contains(brand.id),
-                onToggle: () => onToggle(brand.id ?? 0),
-              )),
-              if (hasMore) ...[
-                Divider(height: 1, color: Theme.of(context).hintColor.withValues(alpha: .15)),
-                const SizedBox(height: Dimensions.paddingSizeSmall),
-                GestureDetector(
-                  onTap: onSeeMoreTap,
-                  child: Text(
-                    showAll ? getTranslated('see_less', context)! : '${getTranslated('see_more', context)!} ($remaining)',
-                    style: titilliumSemiBold.copyWith(
-                      fontSize: Dimensions.fontSizeDefault,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
+          return PaginatedListView(
+            scrollController: scrollController,
+            totalSize: model?.totalSize,
+            offset: model?.offset,
+            limit: model?.limit ?? 24,
+            onPaginate: (offset) => brandController.getAuctionBrandList(offset: offset ?? 1),
+            itemView: Column(
+              children: [
+                _CheckboxRow(
+                  label: getTranslated('all', context)!,
+                  isSelected: selectedBrandIds.isEmpty,
+                  onToggle: () {
+                    if (selectedBrandIds.isNotEmpty) selectedBrandIds.clear();
+                  },
                 ),
+                ...brands.map((brand) => _CheckboxRow(
+                  label: brand.name ?? '',
+                  isSelected: selectedBrandIds.contains(brand.id),
+                  onToggle: () => onToggle(brand.id ?? 0),
+                )),
               ],
-            ],
+            ),
           );
         },
       ),

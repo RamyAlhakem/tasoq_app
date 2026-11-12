@@ -21,9 +21,14 @@ class OtpRegistrationScreen extends StatefulWidget {
   final String tempToken;
   final String userInput;
   final String? userName;
+
+  final String? socialToken;
+  final String? socialUniqueId;
+  final String? socialMedium;
+
   final String? toNavigateScreen;
   final VoidCallback? onLoginSuccess;
-  const OtpRegistrationScreen({super.key, required this.tempToken, required this.userInput, this.userName, this.toNavigateScreen, this.onLoginSuccess});
+  const OtpRegistrationScreen({super.key, required this.tempToken, required this.userInput, this.userName, this.socialToken, this.socialUniqueId, this.socialMedium, this.toNavigateScreen, this.onLoginSuccess});
 
   @override
   State<OtpRegistrationScreen> createState() => _OtpRegistrationScreenState();
@@ -34,6 +39,11 @@ class _OtpRegistrationScreenState extends State<OtpRegistrationScreen> {
   TextEditingController? _emailController;
   TextEditingController? _nameController;
   TextEditingController? _phoneNumberController;
+
+  TextEditingController? _firstNameController;
+  TextEditingController? _lastNameController;
+  TextEditingController? _referralCodeController;
+
   String? countryCode;
 
 
@@ -43,6 +53,9 @@ class _OtpRegistrationScreenState extends State<OtpRegistrationScreen> {
     _emailController = TextEditingController();
     _nameController = TextEditingController();
     _phoneNumberController = TextEditingController();
+    _firstNameController = TextEditingController();
+    _lastNameController = TextEditingController();
+    _referralCodeController = TextEditingController();
 
     final configModel = Provider.of<SplashController>(context, listen: false).configModel!;
     countryCode ??= CountryCode.fromCountryCode(configModel.countryCode!).dialCode;
@@ -119,44 +132,96 @@ class _OtpRegistrationScreenState extends State<OtpRegistrationScreen> {
                               ),
                               const SizedBox(height: 30),
 
-                              CustomTextFieldWidget(
-                                isShowBorder: true,
-                                controller: _nameController,
-                                inputType: TextInputType.emailAddress,
-                                showLabelText: true,
-                                labelText: getTranslated('name', context)!,
-                                required: true,
-                                prefixIcon: Images.userSvg,
-                                prefixColor : Theme.of(context).primaryColor,
-                              ),
-                              const SizedBox(height: Dimensions.paddingSizeLarge),
+                              if(isNumber) ...[
+                                CustomTextFieldWidget(
+                                  isShowBorder: true,
+                                  controller: _firstNameController,
+                                  inputType: TextInputType.name,
+                                  capitalization: TextCapitalization.words,
+                                  showLabelText: true,
+                                  labelText: getTranslated('first_name', context)!,
+                                  required: true,
+                                  prefixIcon: Images.userSvg,
+                                  prefixColor : Theme.of(context).primaryColor,
+                                ),
+                                const SizedBox(height: Dimensions.paddingSizeLarge),
 
+                                CustomTextFieldWidget(
+                                  isShowBorder: true,
+                                  controller: _lastNameController,
+                                  inputType: TextInputType.name,
+                                  capitalization: TextCapitalization.words,
+                                  showLabelText: true,
+                                  labelText: getTranslated('last_name', context)!,
+                                  prefixIcon: Images.userSvg,
+                                  prefixColor : Theme.of(context).primaryColor,
+                                ),
+                                const SizedBox(height: Dimensions.paddingSizeLarge),
 
-                              isNumber ? CustomTextFieldWidget(
-                                //hintText: getTranslated('demo_gmail', context),
-                                isShowBorder: true,
-                                hintText: '',
-                                controller: _emailController,
-                                inputType: TextInputType.emailAddress,
-                                labelText: getTranslated('email', context)!,
-                                prefixIcon: Images.mailIconSvg,
-                                prefixColor: Theme.of(context).primaryColor,
-                              ) :
-                              CustomTextFieldWidget(
-                                showCodePicker: true,
-                                countryDialCode: countryCode,
-                                onCountryChanged: (CountryCode value) {
-                                  countryCode = value.dialCode;
-                                },
-                                //hintText: getTranslated('demo_gmail', context),
-                                isShowBorder: true,
-                                hintText: '',
-                                controller: _phoneNumberController,
-                                inputType: TextInputType.phone,
-                                labelText: getTranslated('mobile_number', context)!,
-                                prefixColor: Theme.of(context).primaryColor,
-                              ),
-                              const SizedBox(height: Dimensions.paddingSizeLarge),
+                                CustomTextFieldWidget(
+                                  isShowBorder: true,
+                                  controller: TextEditingController(text: widget.userInput),
+                                  inputType: TextInputType.phone,
+                                  showLabelText: true,
+                                  labelText: getTranslated('mobile_number', context)!,
+                                  readOnly: true,
+                                  isEnabled: false,
+                                  prefixColor: Theme.of(context).primaryColor,
+                                ),
+                                const SizedBox(height: Dimensions.paddingSizeLarge),
+
+                                CustomTextFieldWidget(
+                                  isShowBorder: true,
+                                  hintText: '',
+                                  controller: _emailController,
+                                  inputType: TextInputType.emailAddress,
+                                  showLabelText: true,
+                                  labelText: getTranslated('email', context)!,
+                                  prefixIcon: Images.mailIconSvg,
+                                  prefixColor: Theme.of(context).primaryColor,
+                                ),
+                                const SizedBox(height: Dimensions.paddingSizeLarge),
+
+                                CustomTextFieldWidget(
+                                  isShowBorder: true,
+                                  hintText: '',
+                                  controller: _referralCodeController,
+                                  inputType: TextInputType.text,
+                                  showLabelText: true,
+                                  labelText: getTranslated('referral_code', context)!,
+                                  capitalization: TextCapitalization.characters,
+                                  prefixColor: Theme.of(context).primaryColor,
+                                ),
+                                const SizedBox(height: Dimensions.paddingSizeLarge),
+
+                              ] else ...[
+                                CustomTextFieldWidget(
+                                  isShowBorder: true,
+                                  controller: _nameController,
+                                  inputType: TextInputType.name,
+                                  showLabelText: true,
+                                  labelText: getTranslated('name', context)!,
+                                  required: true,
+                                  prefixIcon: Images.userSvg,
+                                  prefixColor : Theme.of(context).primaryColor,
+                                ),
+                                const SizedBox(height: Dimensions.paddingSizeLarge),
+
+                                CustomTextFieldWidget(
+                                  showCodePicker: true,
+                                  countryDialCode: countryCode,
+                                  onCountryChanged: (CountryCode value) {
+                                    countryCode = value.dialCode;
+                                  },
+                                  isShowBorder: true,
+                                  hintText: '',
+                                  controller: _phoneNumberController,
+                                  inputType: TextInputType.phone,
+                                  labelText: getTranslated('mobile_number', context)!,
+                                  prefixColor: Theme.of(context).primaryColor,
+                                ),
+                                const SizedBox(height: Dimensions.paddingSizeLarge),
+                              ],
 
                               //const SizedBox(height: 30),
 
@@ -173,15 +238,25 @@ class _OtpRegistrationScreenState extends State<OtpRegistrationScreen> {
                                       String name = _nameController!.text.trim();
                                       String email = _emailController!.text.trim();
                                       String phone = _phoneNumberController!.text.trim();
+                                      String firstName = _firstNameController!.text.trim();
+                                      String lastName = _lastNameController!.text.trim();
+                                      String referralCode = _referralCodeController!.text.trim();
 
-                                      if (_nameController!.text.isEmpty) {
-                                        showCustomSnackBarWidget(getTranslated('please_enter_your_name', context), context, snackBarType: SnackBarType.warning);
+                                      if (isNumber ? firstName.isEmpty : name.isEmpty) {
+                                        showCustomSnackBarWidget(getTranslated(isNumber ? 'enter_first_name' : 'please_enter_your_name', context), context, snackBarType: SnackBarType.warning);
                                       } else if(!isNumber && phone.isEmpty){
                                         showCustomSnackBarWidget(getTranslated('enter_phone_number', context), context, snackBarType: SnackBarType.warning);
                                       }
                                       else{
                                         if(isNumber){
-                                          authProvider.registerWithOtp(name, email: email, phone: widget.userInput).then((value){
+                                          authProvider.registerWithOtp(
+                                            fName: firstName,
+                                            lName: lastName,
+                                            email: email,
+                                            phone: widget.userInput,
+                                            temporaryToken: widget.tempToken,
+                                            referralCode: referralCode,
+                                          ).then((value){
                                             if(value.isSuccess) {
                                               if (authProvider.isActiveRememberMe) {
                                                 String userCountryCode = NumberCheckerHelper.getCountryCode(widget.userInput)!;
@@ -202,7 +277,12 @@ class _OtpRegistrationScreenState extends State<OtpRegistrationScreen> {
                                         }else {
                                           phone = countryCode! + phone;
 
-                                          authProvider.registerWithSocialMedia(name, email: widget.userInput, phone: phone).then((value) {
+                                          authProvider.registerWithSocialMedia(
+                                            token: widget.socialToken ?? '',
+                                            uniqueId: widget.socialUniqueId ?? '',
+                                            medium: widget.socialMedium ?? '',
+                                            phone: phone,
+                                          ).then((value) {
                                             final (responseModel, tempToken) = value;
                                             if(responseModel.isSuccess && tempToken == null) {
                                               authProvider.saveUserEmailAndPassword(UserLogData(

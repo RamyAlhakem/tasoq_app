@@ -41,7 +41,7 @@ class PlaceDetailsModel {
   PlaceDetailsModel.fromJson(Map<String, dynamic> json) {
     name = json['name'];
     id = json['id'];
-    types = json['types'].cast<String>();
+    types = json['types'] is List ? List<String>.from(json['types']) : null;
     formattedAddress = json['formattedAddress'];
     if (json['addressComponents'] != null) {
       addressComponents = <AddressComponents>[];
@@ -50,19 +50,14 @@ class PlaceDetailsModel {
       });
     }
     location = json['location'] != null
-        ? Location.fromJson(json['location'])
-        : null;
-    viewport = json['viewport'] != null
-        ? Viewport.fromJson(json['viewport'])
-        : null;
+       ? Location.fromJson(json['location']) : null;
+    viewport = json['viewport'] != null ? Viewport.fromJson(json['viewport']) : null;
     googleMapsUri = json['googleMapsUri'];
     utcOffsetMinutes = json['utcOffsetMinutes'];
     adrFormatAddress = json['adrFormatAddress'];
     iconMaskBaseUri = json['iconMaskBaseUri'];
     iconBackgroundColor = json['iconBackgroundColor'];
-    displayName = json['displayName'] != null
-        ? DisplayName.fromJson(json['displayName'])
-        : null;
+    displayName = json['displayName'] != null ? DisplayName.fromJson(json['displayName']) : null;
     shortFormattedAddress = json['shortFormattedAddress'];
     if (json['photos'] != null) {
       photos = <Photos>[];
@@ -71,12 +66,8 @@ class PlaceDetailsModel {
       });
     }
     pureServiceAreaBusiness = json['pureServiceAreaBusiness'];
-    googleMapsLinks = json['googleMapsLinks'] != null
-        ? GoogleMapsLinks.fromJson(json['googleMapsLinks'])
-        : null;
-    timeZone = json['timeZone'] != null
-        ? TimeZone.fromJson(json['timeZone'])
-        : null;
+    googleMapsLinks = json['googleMapsLinks'] != null ? GoogleMapsLinks.fromJson(json['googleMapsLinks']) : null;
+    timeZone = json['timeZone'] != null ? TimeZone.fromJson(json['timeZone']) : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -130,7 +121,7 @@ class AddressComponents {
   AddressComponents.fromJson(Map<String, dynamic> json) {
     longText = json['longText'];
     shortText = json['shortText'];
-    types = json['types'].cast<String>();
+    types = json['types'] is List ? List<String>.from(json['types']) : null;
     languageCode = json['languageCode'];
   }
 

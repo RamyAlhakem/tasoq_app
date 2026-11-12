@@ -13,13 +13,13 @@ class ContactUsRepository implements ContactUsRepositoryInterface{
   Future<ApiResponseModel> add(ContactUsBody contactUsBody) async {
     try {
       final response = await dioClient!.post(AppConstants.contactUsUri,
-          data: {
-            "name" :contactUsBody.name,
-            "email" : contactUsBody.email,
-            "mobile_number" : contactUsBody.phone,
-            "subject" : contactUsBody.subject,
-            "message" : contactUsBody.message
-          });
+        data: {
+          "name" :contactUsBody.name,
+          "email" : contactUsBody.email,
+          "mobile_number" : contactUsBody.phone,
+          "subject" : contactUsBody.subject,
+          "message" : contactUsBody.message
+        });
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));

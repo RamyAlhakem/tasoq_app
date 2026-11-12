@@ -27,7 +27,7 @@ class UserCreatedAuctionListRepository implements UserCreatedAuctionListReposito
     try {
       _setRequestHeaders();
       final StringBuffer url = StringBuffer(
-        '${AppConstants.userCreatedAuctionList}?limit=$limit&offset=$offset&auction_status=$auctionStatus&approval_status=approved',
+        '${AppConstants.userCreatedAuctionList}?limit=$limit&offset=$offset&status=$auctionStatus&approval_status=approved',
       );
       if (includeCounts) url.write('&include_counts=1');
       final response = await dioClient!.get(url.toString());

@@ -21,6 +21,12 @@ class _SearchWidgetState extends State<SearchWidget> {
   final TextEditingController searchController = TextEditingController();
 
   @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final SellerProductController sellerProductController = Provider.of<SellerProductController>(context, listen: false);
 

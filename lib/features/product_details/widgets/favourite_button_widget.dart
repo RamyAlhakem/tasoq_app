@@ -134,10 +134,9 @@ class _FavouriteButtonWidgetState extends State<FavouriteButtonWidget>
                 height: (widget.fromProductDetails ?? false) ? 40 : null,
                 width: (widget.fromProductDetails ?? false) ? 40 : null,
                 decoration: BoxDecoration(
-                  color: isDarkMode ? Colors.transparent : Theme.of(context).cardColor,
-                  border: Border.all(color: isDarkMode ? Theme.of(context).primaryColor : Colors.transparent, width: 1),
+                  color: Theme.of(context).cardColor,
                   shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(
+                  boxShadow: (isDarkMode && !(widget.fromProductDetails ?? false)) ? null : [BoxShadow(
                     color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: 0.10),
                     spreadRadius: 0,
                     blurRadius: 15,
@@ -155,7 +154,9 @@ class _FavouriteButtonWidgetState extends State<FavouriteButtonWidget>
                       children: [
                         Icon(
                           CupertinoIcons.heart,
-                          color: isDarkMode ? Theme.of(context).primaryColor : Theme.of(context).textTheme.bodyLarge?.color,
+                          color: isDarkMode
+                              ? ((widget.fromProductDetails ?? false) ? Theme.of(context).primaryColor : Colors.white)
+                              : Theme.of(context).textTheme.bodyLarge?.color,
                           size: Dimensions.paddingSizeDefaultAddress,
                         ),
                         AnimatedBuilder(

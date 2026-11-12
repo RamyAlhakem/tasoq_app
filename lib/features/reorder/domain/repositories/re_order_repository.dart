@@ -13,7 +13,7 @@ class ReOrderRepository implements ReOrderRepositoryInterface{
   @override
   Future<ApiResponseModel> reorder(String orderId) async {
     try {
-      final response = await dioClient!.post(AppConstants.reorder, data: {'order_id': orderId});
+      final response = await dioClient!.post('${AppConstants.reorder}$orderId/reorder');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));

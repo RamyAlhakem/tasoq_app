@@ -20,7 +20,7 @@ class MostDemandedProductView extends StatelessWidget {
                 decoration: BoxDecoration(
                  color: Theme.of(context).primaryColor.withValues(alpha:0.125),
                   borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall)),
-                child: CustomImageWidget(image: '${mostDemandedProduct.mostDemandedProductModel?.bannerFullUrl?.path}'
+                child: CustomImageWidget(image: '${mostDemandedProduct.mostDemandedProductModel?.bannerFullUrl}'
                 ))),
             const SizedBox(height: Dimensions.paddingSizeDefault),
 

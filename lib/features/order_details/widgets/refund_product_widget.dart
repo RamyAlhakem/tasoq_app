@@ -80,7 +80,6 @@ class _RefundProductWidgetState extends State<RefundProductWidget> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  /// --- Product Image ---
                   Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
@@ -98,13 +97,11 @@ class _RefundProductWidgetState extends State<RefundProductWidget> {
                   ),
                   const SizedBox(width: Dimensions.paddingSizeSmall),
 
-                  /// --- Product Info ---
                   Expanded(
                     flex: 3,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        /// --- Product Name ---
                         InkWell(
                           onTap: () {
                             RouterHelper.getProductDetailsRoute(
@@ -125,7 +122,6 @@ class _RefundProductWidgetState extends State<RefundProductWidget> {
                         ),
                         const SizedBox(height: Dimensions.marginSizeExtraSmall),
 
-                        /// --- Quantity ---
                         Text(
                           '${getTranslated('qty', context)}: ${widget.orderDetailsModel.qty}',
                           style: titilliumRegular.copyWith(
@@ -135,7 +131,6 @@ class _RefundProductWidgetState extends State<RefundProductWidget> {
                         ),
                         const SizedBox(height: Dimensions.marginSizeExtraSmall),
 
-                        /// --- Price + Refund (if no variation) ---
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -144,7 +139,12 @@ class _RefundProductWidgetState extends State<RefundProductWidget> {
                               style: titilliumSemiBold.copyWith(color: Theme.of(context).textTheme.bodyMedium?.color, fontSize: Dimensions.fontSizeDefault),
                             ),
                             if (widget.orderDetailsModel.variant == null || widget.orderDetailsModel.variant!.isEmpty)
-                              _buildRefundButton(context, configModel),
+                              RefundButton(
+                                orderDetailsModel: widget.orderDetailsModel,
+                                orderType: widget.orderType,
+                                orderId: widget.orderId,
+                                configModel: configModel,
+                              ),
                           ],
                         ),
                         const SizedBox(height: Dimensions.marginSizeExtraSmall),
@@ -153,7 +153,6 @@ class _RefundProductWidgetState extends State<RefundProductWidget> {
                         ),
 
 
-                        /// --- Variation + Refund (if available) ---
                         if (widget.orderDetailsModel.variant != null && widget.orderDetailsModel.variant!.isNotEmpty)
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -175,7 +174,12 @@ class _RefundProductWidgetState extends State<RefundProductWidget> {
                                   ],
                                 ),
                               ),
-                              _buildRefundButton(context, configModel),
+                              RefundButton(
+                                orderDetailsModel: widget.orderDetailsModel,
+                                orderType: widget.orderType,
+                                orderId: widget.orderId,
+                                configModel: configModel,
+                              ),
                             ],
                           ),
 
@@ -192,7 +196,6 @@ class _RefundProductWidgetState extends State<RefundProductWidget> {
             ],
           ),
 
-          /// --- Discount Badge ---
           if (widget.orderDetailsModel.discount! > 0 &&
               (widget.orderDetailsModel.productDetails?.discount != null ||
                   widget.orderDetailsModel.productDetails?.clearanceSale != null))
@@ -237,19 +240,60 @@ class _RefundProductWidgetState extends State<RefundProductWidget> {
   }
 
 
-  Widget _buildRefundButton(BuildContext context, ConfigModel? configModel) {
-    final orderDetails = widget.orderDetailsModel;
-    final orderType = widget.orderType;
+  void _downloadProduct(){
+    String url = widget.orderDetailsModel.productDetails!.digitalProductType == 'ready_after_sell'?
+    '${widget.orderDetailsModel.digitalFileAfterSellFullUrl?.path}':
+    '${widget.orderDetailsModel.productDetails?.digitalFileReadyFullUrl?.path}';
 
+    String filename = widget.orderDetailsModel.productDetails!.digitalProductType == 'ready_after_sell'?
+    '${widget.orderDetailsModel.digitalFileAfterSellFullUrl?.key}':
+    '${widget.orderDetailsModel.productDetails?.digitalFileReadyFullUrl?.key}';
+
+    Provider.of<OrderDetailsController>(context, listen: false).productDownload(
+        url: url,
+        fileName: filename,
+        index: widget.index
+    );
+  }
+}
+
+class RefundButton extends StatelessWidget {
+  final OrderDetailsModel orderDetailsModel;
+  final String orderType;
+  final String orderId;
+  final ConfigModel? configModel;
+
+  const RefundButton({
+    super.key,
+    required this.orderDetailsModel,
+    required this.orderType,
+    required this.orderId,
+    this.configModel,
+  });
+
+  bool get _canRefundRequest => orderDetailsModel.order?.status == 'delivered'
+      && orderDetailsModel.refundReq == 0
+      && orderType != "POS"
+      && orderDetailsModel.refundStartedAt != null
+      && DateTime.parse(orderDetailsModel.refundStartedAt!).difference(DateTime.now()).inDays.abs() <= (configModel?.refundDayLimit ?? 0)
+      && (configModel?.refundDayLimit != 0);
+
+  bool _isRefundDetailButtonPressed(RefundController refundController) {
+    return refundController.isRefund
+        && (orderDetailsModel.id == refundController.getSelectedOrderDetailsId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Consumer2<OrderController, RefundController>(
       builder: (context, orderController, refundController, _) {
 
-        bool isLoadingRefund = refundController.isRefund && (orderDetails.id == refundController.getSelectedOrderDetailsId);
+        bool isLoadingRefund = refundController.isRefund && (orderDetailsModel.id == refundController.getSelectedOrderDetailsId);
 
-        bool canRefund = _canRefundRequest(configModel);
+        bool canRefund = _canRefundRequest;
 
         bool showRefundStatusButton = orderController.orderTypeIndex == 1 &&
-          orderDetails.refundReq != 0 && orderType != "POS";
+          orderDetailsModel.refundReq != 0 && orderType != "POS";
 
         // --- CASE: Refund Request Button ---
         if (canRefund) {
@@ -258,14 +302,14 @@ class _RefundProductWidgetState extends State<RefundProductWidget> {
               Provider.of<ReviewController>(context, listen: false).removeData();
               refundController.removeRefundDetails();
 
-              refundController.getRefundReqInfo(orderDetails.id).then((value) {
+              refundController.getRefundReqInfo(orderDetailsModel.id).then((value) {
                 if (value.response?.statusCode == 200 && context.mounted) {
                   Navigator.push(context,
                     MaterialPageRoute(
                       builder: (_) => RefundRequestWidget(
-                        product: orderDetails.productDetails,
-                        orderDetailsId: orderDetails.id!,
-                        orderId: widget.orderId,
+                        product: orderDetailsModel.productDetails,
+                        orderDetailsId: orderDetailsModel.id!,
+                        orderId: orderId,
                       ),
                     ),
                   );
@@ -298,22 +342,22 @@ class _RefundProductWidgetState extends State<RefundProductWidget> {
 
 
         else if (showRefundStatusButton) {
-          bool isLoadingDetails = refundController.isRefund && isRefundDetailButtonPressed(refundController);
+          bool isLoadingDetails = refundController.isRefund && _isRefundDetailButtonPressed(refundController);
 
           return InkWell(
             onTap: isLoadingDetails ? null : () {
               Provider.of<ReviewController>(context, listen: false).removeData();
               Provider.of<RefundController>(context, listen: false).removeRefundDetails();
-              refundController.getRefundReqInfo(orderDetails.id).then((value) {
+              refundController.getRefundReqInfo(orderDetailsModel.id).then((value) {
                 if (value.response?.statusCode == 200 && context.mounted) {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => RefundDetailsWidget(
-                        product: orderDetails.productDetails,
-                        orderDetailsId: orderDetails.id,
-                        orderDetailsModel: orderDetails,
-                        createdAt: orderDetails.createdAt,
+                        product: orderDetailsModel.productDetails,
+                        orderDetailsId: orderDetailsModel.id,
+                        orderDetailsModel: orderDetailsModel,
+                        createdAt: orderDetailsModel.createdAt,
                       ),
                     ),
                   );
@@ -350,35 +394,6 @@ class _RefundProductWidgetState extends State<RefundProductWidget> {
           return const SizedBox();
         }
       },
-    );
-  }
-
-
-  bool isRefundDetailButtonPressed(RefundController refundController) {
-    return refundController.isRefund
-        && (widget.orderDetailsModel.id == refundController.getSelectedOrderDetailsId);
-  }
-
-  bool _canRefundRequest(ConfigModel? configModel) => widget.orderDetailsModel.order?.status == 'delivered'
-      && widget.orderDetailsModel.refundReq == 0
-      && widget.orderType != "POS"
-      && widget.orderDetailsModel.refundStartedAt != null
-      && DateTime.parse(widget.orderDetailsModel.refundStartedAt!).difference(DateTime.now()).inDays.abs() <= (configModel?.refundDayLimit ?? 0)
-      && (configModel?.refundDayLimit != 0);
-
-  void _downloadProduct(){
-    String url = widget.orderDetailsModel.productDetails!.digitalProductType == 'ready_after_sell'?
-    '${widget.orderDetailsModel.digitalFileAfterSellFullUrl?.path}':
-    '${widget.orderDetailsModel.productDetails?.digitalFileReadyFullUrl?.path}';
-
-    String filename = widget.orderDetailsModel.productDetails!.digitalProductType == 'ready_after_sell'?
-    '${widget.orderDetailsModel.digitalFileAfterSellFullUrl?.key}':
-    '${widget.orderDetailsModel.productDetails?.digitalFileReadyFullUrl?.key}';
-
-    Provider.of<OrderDetailsController>(context, listen: false).productDownload(
-        url: url,
-        fileName: filename,
-        index: widget.index
     );
   }
 }

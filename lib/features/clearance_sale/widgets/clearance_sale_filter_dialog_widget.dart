@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_loader_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/product_filter_dialog_widget.dart' as filter;
 import 'package:flutter_sixvalley_ecommerce/features/product/controllers/product_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/controllers/seller_product_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/search_product/domain/models/author_model.dart';
@@ -199,32 +200,43 @@ class ClearanceProductFilterDialogState extends State<ClearanceProductFilterDial
 
                                 Divider(color: Theme.of(context).hintColor.withValues(alpha:.25), thickness: .5),
 
-                                if(categoryProvider.categoryList.isNotEmpty)
+                                if(categoryProvider.categoryList.isEmpty)
+                                  const Padding(
+                                    padding: EdgeInsets.all(Dimensions.paddingSizeDefault),
+                                    child: Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))),
+                                  )
+                                else
                                   ConstrainedBox(
                                     constraints: const BoxConstraints(
                                       minHeight: 40.0,
                                       maxHeight: 350.0,
                                     ),
                                     child: ListView.builder(
-                                        itemCount: categoryProvider.categoryList.length,
+                                        itemCount: categoryProvider.categoryList.length + 1,
                                         shrinkWrap: true,
                                         itemBuilder: (context, index){
+                                          if(index == categoryProvider.categoryList.length) {
+                                            final total = categoryProvider.categoryResponseModel?.totalSize ?? categoryProvider.categoryList.length;
+                                            final remaining = total - categoryProvider.categoryList.length;
+                                            if(remaining <= 0) return const SizedBox();
+
+                                            return filter.SeeMoreToggle(
+                                              showAll: false,
+                                              remaining: remaining,
+                                              isLoading: categoryProvider.categoryLoading,
+                                              onTap: () => categoryProvider.getCategoryList(
+                                                false,
+                                                offset: (categoryProvider.categoryResponseModel?.offset ?? 1) + 1,
+                                              ));
+                                          }
+
                                           return Column(children: [
                                             CategoryFilterItem(title: categoryProvider.categoryList[index].name,
                                                 checked: categoryProvider.categoryList[index].isSelected!,
                                                 onTap: () => categoryProvider.checkedToggleCategory(index)),
                                             if(categoryProvider.categoryList[index].isSelected!)
                                               Padding(padding: const EdgeInsets.only(left: Dimensions.paddingSizeExtraLarge),
-                                                child: ListView.builder(
-                                                    itemCount: categoryProvider.categoryList[index].subCategories?.length??0,
-                                                    shrinkWrap: true,
-                                                    padding: EdgeInsets.zero,
-                                                    physics: const NeverScrollableScrollPhysics(),
-                                                    itemBuilder: (context, subIndex){
-                                                      return CategoryFilterItem(title: categoryProvider.categoryList[index].subCategories![subIndex].name,
-                                                          checked: categoryProvider.categoryList[index].subCategories![subIndex].isSelected!,
-                                                          onTap: () => categoryProvider.checkedToggleSubCategory(index, subIndex));
-                                                    }),
+                                                child: filter.SubCategoryFilterList(category: categoryProvider.categoryList[index], categoryIndex: index),
                                               )
                                           ],
                                           );

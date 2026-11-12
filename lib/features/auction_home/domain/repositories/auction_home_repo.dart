@@ -26,7 +26,7 @@ class AuctionHomeRepository extends DataSyncService implements AuctionHomeRepoIn
       'limit': 10,
       'offset': offset,
       'auction_status': section.auctionStatus,
-      if (categoryId != null) 'category_id': categoryId,
+      if (categoryId != null) 'category_ids': categoryId,
       if (ownerId != null) 'author_id': ownerId,
       if (section.sortBy != null) 'sort_by': section.sortBy,
     };

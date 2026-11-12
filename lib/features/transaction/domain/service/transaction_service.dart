@@ -18,18 +18,35 @@ class TransactionService implements TransactionServiceInterface {
   }) => transactionRepositoryInterface.payCommission(commissionPayRequest: commissionPayRequest);
 
   @override
-  Future<dynamic> storeOrUpdateWithdraw({
+  Future<dynamic> createWithdraw({
     required int auctionProductId,
     required int withdrawMethodId,
-    int? existingWithdrawId,
     double? amount,
     Map<String, dynamic>? methodInfo,
     String? transactionNote,
     String? currentCurrencyCode,
-  }) => transactionRepositoryInterface.storeOrUpdateWithdraw(
+  }) => transactionRepositoryInterface.createWithdraw(
     auctionProductId: auctionProductId,
     withdrawMethodId: withdrawMethodId,
-    existingWithdrawId: existingWithdrawId,
+    amount: amount,
+    methodInfo: methodInfo,
+    transactionNote: transactionNote,
+    currentCurrencyCode: currentCurrencyCode,
+  );
+
+  @override
+  Future<dynamic> updateWithdraw({
+    required int withdrawId,
+    required int auctionProductId,
+    required int withdrawMethodId,
+    double? amount,
+    Map<String, dynamic>? methodInfo,
+    String? transactionNote,
+    String? currentCurrencyCode,
+  }) => transactionRepositoryInterface.updateWithdraw(
+    withdrawId: withdrawId,
+    auctionProductId: auctionProductId,
+    withdrawMethodId: withdrawMethodId,
     amount: amount,
     methodInfo: methodInfo,
     transactionNote: transactionNote,

@@ -21,9 +21,19 @@ class SplashRepository implements SplashRepositoryInterface{
   }
 
   @override
+  Future<ApiResponseModel> getFaqList() async {
+    try {
+      final response = await dioClient!.get(AppConstants.faqUri);
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
   Future<ApiResponseModel> getBusinessPages(String type) async {
     try {
-      final response = await dioClient!.get(AppConstants.businessPagesUri+type);
+      final response = await dioClient!.get(AppConstants.businessPagesUri);
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));

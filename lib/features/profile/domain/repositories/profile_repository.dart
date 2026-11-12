@@ -30,7 +30,7 @@ class ProfileRepository implements ProfileRepositoryInterface{
   @override
   Future<ApiResponseModel> delete(int customerId) async {
     try {
-      final response = await dioClient!.get('${AppConstants.deleteCustomerAccount}/$customerId');
+      final response = await dioClient!.delete('${AppConstants.deleteCustomerAccount}');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -42,7 +42,7 @@ class ProfileRepository implements ProfileRepositoryInterface{
 
   @override
   Future<http.StreamedResponse> updateProfile(ProfileModel userInfoModel, String pass, File? file, String token) async {
-    http.MultipartRequest request = http.MultipartRequest('POST', Uri.parse('${AppConstants.baseUrl}${AppConstants.updateProfileUri}'));
+    http.MultipartRequest request = http.MultipartRequest('PUT', Uri.parse('${AppConstants.baseUrl}${AppConstants.updateProfileUri}'));
     request.headers.addAll(<String,String>{'Authorization': 'Bearer $token'});
     if(file != null){
       request.files.add(http.MultipartFile('image', file.readAsBytes().asStream(), file.lengthSync(), filename: file.path.split('/').last));
@@ -50,11 +50,11 @@ class ProfileRepository implements ProfileRepositoryInterface{
      Map<String, String> fields = {};
     if(pass.isEmpty) {
       fields.addAll(<String, String>{
-        '_method': 'put', 'f_name': userInfoModel.fName!, 'l_name': userInfoModel.lName!, 'phone': userInfoModel.phone!, 'email': userInfoModel.email!
+        'f_name': userInfoModel.fName!, 'l_name': userInfoModel.lName!, 'phone': userInfoModel.phone!, 'email': userInfoModel.email!
       });
     }else {
       fields.addAll(<String, String>{
-        '_method': 'put', 'f_name': userInfoModel.fName!, 'l_name': userInfoModel.lName!, 'phone': userInfoModel.phone!, 'password': pass, 'email': userInfoModel.email!
+        'f_name': userInfoModel.fName!, 'l_name': userInfoModel.lName!, 'phone': userInfoModel.phone!, 'password': pass, 'email': userInfoModel.email!
       });
     }
     request.fields.addAll(fields);

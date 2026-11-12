@@ -1,3 +1,4 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/controllers/cart_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/reorder/domain/services/re_order_service_interface.dart';
@@ -24,7 +25,7 @@ class ReOrderController with ChangeNotifier {
     ApiResponseModel apiResponse = await reOrderServiceInterface.reorder(orderId!);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       Provider.of<CartController>(Get.context!, listen: false).setIsCartLoading();
-      showCustomSnackBarWidget(apiResponse.response?.data['message'], Get.context!, snackBarType: SnackBarType.success);
+      showCustomSnackBarWidget(ApiEnvelope.message(apiResponse.response?.data), Get.context!, snackBarType: SnackBarType.success);
       RouterHelper.getCartScreenRoute(action: RouteAction.push);
     }else {
       ApiChecker.checkApi(apiResponse);

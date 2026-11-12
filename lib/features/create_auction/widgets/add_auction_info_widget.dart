@@ -183,12 +183,14 @@ class _AddAuctionInfoWidgetState extends State<AddAuctionInfoWidget> {
                 ),
                 const SizedBox(height: Dimensions.paddingSizeSmall),
 
-                if(Provider.of<SplashController>(context, listen: false).configModel?.systemTaxType == 'product_wise')
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-                  child: Consumer<VatTaxController>(
-                      builder: (context, vatTaxController, child) {
-                        return Column(
+                Consumer<VatTaxController>(
+                    builder: (context, vatTaxController, child) {
+                      if (!vatTaxController.isTaxSelectable) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             DropdownDecoratorWidget(
@@ -276,9 +278,9 @@ class _AddAuctionInfoWidgetState extends State<AddAuctionInfoWidget> {
 
                             vatTaxController.selectedTaxList.isNotEmpty ? const SizedBox(height: Dimensions.paddingSizeSmall) : const SizedBox(),
                           ],
-                        );
-                      }
-                  ),
+                        ),
+                      );
+                    },
                 ),
 
                 const SizedBox(height: Dimensions.paddingSizeSmall),

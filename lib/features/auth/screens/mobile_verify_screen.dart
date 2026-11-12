@@ -32,6 +32,13 @@ class MobileVerificationScreenState extends State<MobileVerificationScreen> {
     _countryDialCode = CountryCode.fromCountryCode(Provider.of<SplashController>(context, listen: false).configModel?.countryCode??'BD').dialCode;
   }
 
+  @override
+  void dispose() {
+    _numberController?.dispose();
+    _numberFocus.dispose();
+    super.dispose();
+  }
+
 
   @override
   Widget build(BuildContext context) {

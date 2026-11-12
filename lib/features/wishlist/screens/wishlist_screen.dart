@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/profile/controllers/profile_contrroller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/wishlist/controllers/wishlist_controller.dart';
@@ -25,6 +26,13 @@ class WishListScreen extends StatefulWidget {
 class _WishListScreenState extends State<WishListScreen> {
   final TextEditingController searchTextEditingController = TextEditingController();
   final DebounceHelper debounceHelper = DebounceHelper(milliseconds: 500);
+
+  @override
+  void dispose() {
+    searchTextEditingController.dispose();
+    debounceHelper.dispose();
+    super.dispose();
+  }
 
 
   @override
@@ -137,10 +145,20 @@ class _WishListScreenState extends State<WishListScreen> {
             ? wishListProvider.wishList!.isNotEmpty
             ? RefreshIndicator(
             onRefresh: () async => await  wishListProvider.getWishList(searchTextEditingController.text),
-            child: ListView.builder(
-              padding: EdgeInsets.zero,
-              itemCount: wishListProvider.wishList!.length,
-              itemBuilder: (context, index) => WishListWidget(wishlistModel: wishListProvider.wishList?[index], index: index),
+            child: PaginatedListView(
+              scrollController: null,
+              totalSize: wishListProvider.totalSize,
+              offset: wishListProvider.offset,
+              limit: 10,
+              onPaginate: (int? offset) async => await wishListProvider.getWishList(searchTextEditingController.text, offset: offset ?? 1),
+              itemView: Expanded(
+                child: ListView.builder(
+                  padding: EdgeInsets.zero,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  itemCount: wishListProvider.wishList!.length,
+                  itemBuilder: (context, index) => WishListWidget(wishlistModel: wishListProvider.wishList?[index], index: index),
+                ),
+              ),
             ))
             : NoInternetOrDataScreenWidget(isNoInternet: false, message: searchTextEditingController.text.trim().isNotEmpty ? 'no_product_found' : 'no_wishlist_product', icon: Images.noWishlist)
             : const WishListShimmer();

@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_asset_image_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/product_card_shimmer_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/product_card_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/deal/controllers/flash_deal_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/product/domain/models/product_model.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/responsive_helper.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
+import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -54,7 +57,12 @@ class _FlashDealSectionState extends State<FlashDealSection> {
           );
         }
 
-        if (flashDealController.flashDealList.isEmpty) return const SizedBox.shrink();
+        final List<Product> flashDealList = flashDealController.flashDealList;
+        if (flashDealList.isEmpty) return const SizedBox.shrink();
+
+        const int showLimit = AppConstants.flashDealProductShowLimit;
+        final bool hasMore = flashDealList.length > showLimit || (flashDealController.flashDealProductTotalSize ?? 0) > showLimit;
+        final int productCount = flashDealList.length > showLimit ? showLimit : flashDealList.length;
 
         return Container(
           color: Theme.of(context).primaryColor.withValues(alpha: 0.15),
@@ -76,10 +84,9 @@ class _FlashDealSectionState extends State<FlashDealSection> {
                   padding: const EdgeInsets.only(left: Dimensions.homePagePadding, right: 15),
                   separatorBuilder: (_, __) =>
                   const SizedBox(width: Dimensions.paddingSizeSmall),
-                  itemCount: flashDealController.flashDealList.length > AppConstants.flashDealProductShowLimit ? 11 : flashDealController.flashDealList.length,
+                  itemCount: hasMore ? productCount + 1 : productCount,
                   itemBuilder: (context, listIndex) {
-                    if (flashDealController.flashDealList.length > AppConstants.flashDealProductShowLimit &&
-                        listIndex == 10) {
+                    if (hasMore && listIndex == productCount) {
                       return SizedBox(
                         height: 150,
                         child: ColoredBox(
@@ -102,7 +109,7 @@ class _FlashDealSectionState extends State<FlashDealSection> {
                     }
                     return SizedBox(
                       width: 150,
-                      child: ProductCardWidget(product: flashDealController.flashDealList[listIndex]),
+                      child: ProductCardWidget(product: flashDealList[listIndex]),
                     );
                   },
                 ),
@@ -127,13 +134,32 @@ class HomeFlashDealSectionTitle extends StatelessWidget {
 
     return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
 
-      Row(children: [
-        Text(getTranslated('one_time_deal', context)!, style: titilliumBold.copyWith(
-            fontSize: Dimensions.fontSizeDefault,
-            color: accentColor
-        ),),
-        const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-      ],),
+      Flexible(
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Flexible(
+            child: Selector<FlashDealController, String?>(
+              selector: (_, controller) => controller.flashDealTitle,
+              builder: (_, title, __) => Text(
+                title ?? getTranslated('one_time_deal', context)!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: titilliumBold.copyWith(
+                  fontSize: Dimensions.fontSizeDefault,
+                  color: accentColor,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+          CustomAssetImageWidget(
+            Images.flashDeal,
+            width: 15,
+            height: 15,
+          ),
+        ],),
+      ),
+
+      const SizedBox(width: Dimensions.paddingSizeSmall),
 
       Selector<FlashDealController, Duration?>(
         selector: (_, controller) => controller.duration,

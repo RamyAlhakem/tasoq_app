@@ -2,8 +2,6 @@ import 'package:flutter/widgets.dart';
 
 import 'card_swiper.dart';
 
-/// plugin to display swiper components
-///
 abstract class SwiperPlugin {
   const SwiperPlugin();
 

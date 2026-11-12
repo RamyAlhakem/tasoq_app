@@ -1,3 +1,5 @@
+import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/domain/models/chat_model.dart';
 
 class MessageModel {
@@ -9,14 +11,15 @@ class MessageModel {
   MessageModel({this.totalSize, this.limit, this.offset, this.message});
 
   MessageModel.fromJson(Map<String, dynamic> json) {
-    totalSize = int.tryParse('${json['total_size']}');
-    limit = int.tryParse('${json['limit']}');
-    offset = int.tryParse('${json['offset']}');
-    if (json['message'] != null) {
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json, legacyKeys: ['message']);
+    totalSize = envelope.totalSize;
+    limit = envelope.limit;
+    offset = envelope.offset;
+    if (envelope.data != null) {
       message = <Message>[];
-      json['message'].forEach((v) {
-        message!.add(Message.fromJson(v));
-      });
+      for (final dynamic v in envelope.data!) {
+        if (v is Map) message!.add(Message.fromJson(Map<String, dynamic>.from(v)));
+      }
     }
   }
 
@@ -63,11 +66,12 @@ class Message {
     createdAt = json['created_at'];
     deliveryMan = json['delivery_man'] != null ? DeliveryMan.fromJson(json['delivery_man']) : null;
     sellerInfo = json['seller_info'] != null ? SellerInfo.fromJson(json['seller_info']) : null;
-    if (json['attachment'] != null) {
+    final dynamic attachments = json['attachment'] ?? json['attachment_full_url'];
+    if (attachments is List) {
       attachment = <Attachment>[];
-      json['attachment'].forEach((v) {
-        attachment!.add(Attachment.fromJson(v));
-      });
+      for (final dynamic v in attachments) {
+        if (v is Map) attachment!.add(Attachment.fromJson(Map<String, dynamic>.from(v)));
+      }
     }
   }
 
@@ -84,10 +88,17 @@ class Attachment {
   Attachment({this.type, this.key, this.path, this.size});
 
   Attachment.fromJson(Map<String, dynamic> json) {
-    type = json['type'];
     key = json['key'];
     path = json['path'];
-    size = json['size'];
+    size = json['size']?.toString();
+    type = json['type'] ?? _typeFromExtension(key ?? path);
+  }
+
+  static String? _typeFromExtension(String? name) {
+    if (name == null || !name.contains('.')) return null;
+    final String extension = name.split('?').first.split('.').last.toLowerCase();
+    final bool isMedia = AppConstants.imageExtensions.contains(extension) || AppConstants.videoExtensions.contains(extension);
+    return isMedia ? 'media' : 'file';
   }
 
   Map<String, dynamic> toJson() {

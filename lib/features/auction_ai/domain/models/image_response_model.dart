@@ -1,3 +1,4 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 
 class ImageResponseModel {
   bool? success;
@@ -8,9 +9,9 @@ class ImageResponseModel {
 
   ImageResponseModel.fromJson(Map<String, dynamic> json) {
     success = json['success'];
-    message = json['message'];
-    final rawData = json['data'];
-    if (rawData is Map<String, dynamic>) {
+    message = ApiEnvelope.message(json);
+    final dynamic rawData = json['content'] ?? json['data'];
+    if (rawData is Map) {
       data = rawData['data']?.toString();
     } else if (rawData is String) {
       data = rawData;

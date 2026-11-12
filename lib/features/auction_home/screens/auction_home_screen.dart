@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/app_mode_selector_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_image_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_category/controllers/auction_category_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_home/controllers/auction_home_controller.dart';
@@ -128,163 +129,110 @@ class _AuctionHomeScreenState extends State<AuctionHomeScreen> with TickerProvid
               bottom: false,
               child: Scaffold(
                 body: _tabController == null
-                    ? const Center(child: CircularProgressIndicator())
-                    : NestedScrollView(
+                ? const Center(child: CircularProgressIndicator())
+                : NestedScrollView(
                   controller: _scrollController,
                   headerSliverBuilder: (context, innerBoxIsScrolled) {
                     return [
+                      SliverAppBar(
+                        floating: false,
+                        elevation: 0,
+                        centerTitle: false,
+                        automaticallyImplyLeading: false,
+                        backgroundColor: Theme.of(context).primaryColor,
+                        toolbarHeight: 0,
+                        expandedHeight: 44,
+                        flexibleSpace: _CustomizableSpaceBarWidget(
+                          builder: (ctx, scrollingRate) => SafeArea(
+                            child: Padding(
+                              padding: const EdgeInsets.only(
+                                top: Dimensions.paddingSizeSmall,
+                                left: Dimensions.homePagePadding,
+                                right: Dimensions.homePagePadding
+                              ),
+                              child: Opacity(
+                                opacity: (1 - scrollingRate).clamp(0.0, 1.0),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    const Expanded(child: AppModeSelectorWidget()),
+                                    const SizedBox(width: Dimensions.paddingSizeSmall),
 
-                        SliverAppBar(
-                          floating: false,
-                          elevation: 0,
-                          centerTitle: false,
-                          automaticallyImplyLeading: false,
-                          backgroundColor: Theme.of(context).primaryColor,
-                          expandedHeight: 70,
-                          flexibleSpace: _CustomizableSpaceBarWidget(
-                            builder: (ctx, scrollingRate) => SafeArea(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall, horizontal: Dimensions.homePagePadding),
-                                child: Opacity(
-                                  opacity: (1 - scrollingRate).clamp(0.0, 1.0),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Consumer<ProfileController>(
-                                          builder: (context, profileController, _) {
-                                            final bool isLoggedIn = Provider.of<AuthController>(context, listen: false).isLoggedIn();
-                                            return Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Row(
-                                                  children: [
-                                                    Text(getTranslated('welcome_to', context)!,
-                                                      style: titilliumRegular.copyWith(
-                                                        color: Colors.white,
-                                                        fontSize: Dimensions.fontSizeDefault,
-                                                      ),
-                                                    ),
-                                                    if (isLoggedIn) ...[
-                                                      const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-
-                                                      Container(
-                                                        padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeExtraExtraSmall),
-                                                        decoration: BoxDecoration(
-                                                          color: Theme.of(context).cardColor,
-                                                          borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                                                        ),
-                                                        child: Text(getTranslated('auction', context)!,
-                                                          style: titilliumBold.copyWith(
-                                                            fontSize: Dimensions.fontSizeSmall,
-                                                            color: Theme.of(context).colorScheme.tertiary,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ],
-                                                ),
-                                                const SizedBox(height: Dimensions.paddingSizeExtraExtraSmall),
-                                                isLoggedIn
-                                                    ? Text(
-                                                        profileController.userInfoModel?.fName ?? '',
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow.ellipsis,
-                                                        style: titilliumBold.copyWith(
-                                                          color: Colors.white,
-                                                          fontSize: Dimensions.fontSizeLarge,
-                                                        ),
-                                                      )
-                                                    : Container(
-                                                        padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeExtraExtraSmall),
-                                                        decoration: BoxDecoration(
-                                                          color: Theme.of(context).cardColor,
-                                                          borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                                                        ),
-                                                        child: Text(getTranslated('auction', context)!,
-                                                          style: titilliumBold.copyWith(
-                                                            fontSize: Dimensions.fontSizeSmall,
-                                                            color: Theme.of(context).colorScheme.tertiary,
-                                                          ),
-                                                        ),
-                                                      ),
-                                              ],
-                                            );
-                                          },
+                                    Consumer<ProfileController>(
+                                      builder: (context, profileController, _) => GestureDetector(
+                                        onTap: () => RouterHelper.getMoreScreenRoute(action: RouteAction.push),
+                                        child: ClipOval(
+                                          child: CustomImageWidget(
+                                            image: profileController.userInfoModel?.imageFullUrl?.path ?? '',
+                                            width: 32, height: 32,
+                                            placeholder: Images.guestProfile,
+                                          ),
                                         ),
                                       ),
-                                      Consumer<ProfileController>(
-                                        builder: (context, profileController, _) =>
-                                            GestureDetector(
-                                              onTap: () => RouterHelper.getMoreScreenRoute(action: RouteAction.push),
-                                              child: ClipOval(
-                                                child: CustomImageWidget(
-                                                  image: profileController.userInfoModel?.imageFullUrl?.path ?? '',
-                                                  width: 40, height: 40,
-                                                  placeholder: Images.guestProfile,
-                                                ),
-                                              ),
-                                            ),
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
                           ),
                         ),
+                      ),
 
-                        SliverOverlapAbsorber(
-                          handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-                          sliver: SliverAppBar(
-                              elevation: 0,
-                              backgroundColor: Theme.of(context).primaryColor,
-                              automaticallyImplyLeading: false,
-                              pinned: true,
-                              floating: true,
-                              expandedHeight: 0,
-                              surfaceTintColor: Theme.of(context).primaryColor,
-                              foregroundColor: Theme.of(context).primaryColor,
-                              forceElevated: innerBoxIsScrolled,
-                              bottom: (_tabController != null && _tabController!.length == expectedLength)
-                                  ? TabBar(
-                                controller: _tabController,
-                                isScrollable: true,
-                                tabAlignment: TabAlignment.start,
-                                dividerColor: Colors.transparent,
-                                indicatorColor: Theme.of(context).colorScheme.secondary,
-                                labelStyle: titilliumSemiBold.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: Dimensions.fontSizeSmall,
-                                ),
-                                unselectedLabelStyle: titilliumRegular.copyWith(
-                                  color: Colors.white,
-                                  fontSize: Dimensions.fontSizeSmall,
-                                ),
-                                tabs: [
-                                  Tab(text: getTranslated('explore', context)!),
+                      SliverOverlapAbsorber(
+                        handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+                        sliver: SliverAppBar(
+                          primary: false,
+                          elevation: 0,
+                          backgroundColor: Theme.of(context).primaryColor,
+                          automaticallyImplyLeading: false,
+                          pinned: true,
+                          floating: true,
+                          expandedHeight: 0,
+                          toolbarHeight: 0,
+                          surfaceTintColor: Theme.of(context).primaryColor,
+                          foregroundColor: Theme.of(context).primaryColor,
+                          forceElevated: innerBoxIsScrolled,
+                          bottom: (_tabController != null && _tabController!.length == expectedLength)
+                              ? TabBar(
+                            padding: EdgeInsets.zero,
+                            controller: _tabController,
+                            isScrollable: true,
+                            tabAlignment: TabAlignment.start,
+                            dividerColor: Colors.transparent,
+                            indicatorColor: Theme.of(context).colorScheme.secondary,
+                            labelStyle: titilliumSemiBold.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: Dimensions.fontSizeDefault,
+                              height: 1.0,
+                            ),
+                            unselectedLabelStyle: titilliumRegular.copyWith(
+                              color: Colors.white,
+                              fontSize: Dimensions.fontSizeDefault,
+                              height: 1.0,
+                            ),
+                            tabs: [
+                              Tab(text: getTranslated('explore', context)!),
 
-                                  ...categories.map((c) => Tab(text: getTranslated(c.name, context) ?? c.name ?? ''),
-                                  ),
-                                ],
-                              ) : PreferredSize(preferredSize: const Size.fromHeight(48), child: const SizedBox())
+                              ...categories.map((c) => Tab(text: getTranslated(c.name, context) ?? c.name ?? ''),
+                              ),
+                            ],
+                          ) : PreferredSize(preferredSize: const Size.fromHeight(40), child: const SizedBox())
+                        ),
+                      ),
+
+                      if (_tabController != null && _tabController!.index == 0)
+                      SliverPersistentHeader(
+                        pinned: true,
+                        delegate: _SliverSearchBarDelegate(
+                          child: Container(
+                            color: Theme.of(context).scaffoldBackgroundColor,
+                            child: InkWell(
+                              onTap: () => RouterHelper.getAuctionSearchScreenRoute(action: RouteAction.push),
+                              child: SearchHomePageWidget(isFormAuction: true))
                           ),
                         ),
-
-                        if (_tabController != null && _tabController!.index == 0)
-                          SliverPersistentHeader(
-                            pinned: true,
-                            delegate: _SliverSearchBarDelegate(
-                              child: Container(
-                                color: Theme.of(context).scaffoldBackgroundColor,
-                                child: InkWell(
-                                  onTap: () => RouterHelper.getAuctionSearchScreenRoute(action: RouteAction.push),
-                                  child: SearchHomePageWidget(isFormAuction: true))
-                              ),
-                            ),
-                          ),
+                      )
                       ];
                     },
 

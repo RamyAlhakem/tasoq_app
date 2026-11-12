@@ -125,6 +125,13 @@ class AuctionSearchController extends ChangeNotifier {
   TextEditingController searchController = TextEditingController();
   FocusNode searchFocusNode = FocusNode();
 
+  @override
+  void dispose() {
+    searchController.dispose();
+    searchFocusNode.dispose();
+    super.dispose();
+  }
+
   SuggestionModel? _suggestionModel;
   SuggestionModel? get suggestionModel => _suggestionModel;
 

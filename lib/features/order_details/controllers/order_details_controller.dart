@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/controllers/checkout_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/offline_payment/domain/models/offline_payment_model.dart';
@@ -23,7 +25,6 @@ import 'package:open_file/open_file.dart';
 import 'package:open_file_manager/open_file_manager.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
@@ -82,10 +83,13 @@ class OrderDetailsController with ChangeNotifier {
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       _orderDetails = null;
       _orderDetails = [];
-      apiResponse.response!.data.forEach((order) {
-        OrderDetailsModel orderDetailsModel = OrderDetailsModel.fromJson(order);
-        _orderDetails!.add(orderDetailsModel);
-      });
+      final dynamic itemsData = ApiEnvelope.content(apiResponse.response!.data)['data'];
+      if (itemsData is List) {
+        itemsData.forEach((order) {
+          OrderDetailsModel orderDetailsModel = OrderDetailsModel.fromJson(order);
+          _orderDetails!.add(orderDetailsModel);
+        });
+      }
     }
     notifyListeners();
     return apiResponse;
@@ -103,10 +107,14 @@ class OrderDetailsController with ChangeNotifier {
     _isInvoiceLoading = true;
     notifyListeners();
     ApiResponseModel apiResponse = await orderDetailsServiceInterface.getOrderInvoice(orderID);
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    final dynamic body = apiResponse.response?.data;
+    final dynamic rawContent = body is Map ? body['content'] : null;
+    final dynamic invoiceBytes = body is List ? body : rawContent is List ? rawContent : ApiEnvelope.content(body)['data'];
+
+    if (apiResponse.response?.statusCode == 200 && invoiceBytes is List) {
       await requestPermissions();
       final downloadsDirectory = Directory('/storage/emulated/0/Download');
-      List<int> intList = List<int>.from(apiResponse.response!.data);
+      List<int> intList = List<int>.from(invoiceBytes);
 
       String fileName = '$orderID.pdf';
       var filePath = path.join(downloadsDirectory.path, '$orderID.pdf');
@@ -124,7 +132,7 @@ class OrderDetailsController with ChangeNotifier {
       await OpenFile.open(filePath);
       showCustomSnackBarWidget(getTranslated('invoice_downloaded_successfully', context), Get.context!, snackBarType: SnackBarType.success);
     } else {
-      showCustomSnackBarWidget(getTranslated('invoice_download_failed', context), Get.context!, snackBarType: SnackBarType.success);
+      showCustomSnackBarWidget(getTranslated('invoice_download_failed', context), Get.context!, snackBarType: SnackBarType.error);
     }
     _isInvoiceLoading = false;
     notifyListeners();
@@ -138,7 +146,10 @@ class OrderDetailsController with ChangeNotifier {
   Future <void> getOrderFromOrderId(String orderID) async {
     ApiResponseModel apiResponse = await orderDetailsServiceInterface.getOrderFromOrderId(orderID);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      orders = Orders.fromJson(apiResponse.response!.data);
+      final dynamic orderData = ApiEnvelope.content(apiResponse.response!.data)['data'];
+      if (orderData is Map<String, dynamic>) {
+        orders = Orders.fromJson(orderData);
+      }
     }
     notifyListeners();
   }
@@ -199,7 +210,10 @@ class OrderDetailsController with ChangeNotifier {
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       searching = false;
       _orderDetails = [];
-      apiResponse.response!.data.forEach((order) => _orderDetails!.add(OrderDetailsModel.fromJson(order)));
+      final dynamic itemsData = ApiEnvelope.content(apiResponse.response!.data)['data'];
+      if (itemsData is List) {
+        itemsData.forEach((order) => _orderDetails!.add(OrderDetailsModel.fromJson(order)));
+      }
     } else {
       searching = false;
       ApiChecker.checkApi( apiResponse);
@@ -209,17 +223,17 @@ class OrderDetailsController with ChangeNotifier {
   }
 
 
-  Future<ApiResponseModel> getTrackOrderDetailsId({String? orderId, bool isUpdate = true}) async {
+  Future<ApiResponseModel> getTrackOrderDetailsId({String? orderId, String? phoneNumber, bool isUpdate = true}) async {
     searching = true;
     if(isUpdate) {
       notifyListeners();
     }
 
-    ApiResponseModel apiResponse = await orderDetailsServiceInterface.getTrackOrderDetailsId(orderId!);
+    ApiResponseModel apiResponse = await orderDetailsServiceInterface.getTrackOrderDetailsId(orderId!, phoneNumber);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       searching = false;
       _trackOrderDetailsModel = null;
-      _trackOrderDetailsModel  =  TrackOrderDetailsModel.fromJson(apiResponse.response?.data);
+      _trackOrderDetailsModel  =  TrackOrderDetailsModel.fromJson(ApiEnvelope.content(apiResponse.response!.data)['data']);
     } else {
       searching = false;
       ApiChecker.checkApi( apiResponse);
@@ -232,7 +246,7 @@ class OrderDetailsController with ChangeNotifier {
   Future<ApiResponseModel> downloadDigitalProduct({int? orderDetailsId}) async {
     ApiResponseModel apiResponse = await orderDetailsServiceInterface.downloadDigitalProduct(orderDetailsId!);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      Provider.of<AuthController>(Get.context!, listen: false).resendTime = (apiResponse.response!.data["time_count_in_second"]);
+      Provider.of<AuthController>(Get.context!, listen: false).resendTime = ApiEnvelope.content(apiResponse.response!.data)['time_count_in_second'];
     } else {
       _isLoading = false;
       ApiChecker.checkApi( apiResponse);
@@ -258,14 +272,46 @@ class OrderDetailsController with ChangeNotifier {
     ApiResponseModel apiResponse = await orderDetailsServiceInterface.verifyDigitalProductOtp(orderId, otp);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       Navigator.of(Get.context!).pop();
-      _launchUrl(Uri.parse('${AppConstants.baseUrl}${AppConstants.otpVerificationForDigitalProduct}?order_details_id=$orderId&otp=$otp&guest_id=1&action=download'));
 
+      // v6 streams the file back as raw bytes on success — write it out ourselves
+      // instead of the old GET-and-launch-in-browser approach, since verify is a POST.
+      await requestPermissions();
+      final downloadsDirectory = Directory('/storage/emulated/0/Download');
+      final List<int> fileBytes = List<int>.from(apiResponse.response!.data);
+
+      String fileName = _digitalProductFileName(apiResponse.response!, orderId);
+      var filePath = path.join(downloadsDirectory.path, fileName);
+      final String extension = path.extension(fileName);
+      final String baseName = path.basenameWithoutExtension(fileName);
+
+      int fileCounter = 1;
+      while (await File(filePath).exists()) {
+        fileName = '$baseName($fileCounter)$extension';
+        filePath = path.join(downloadsDirectory.path, fileName);
+        fileCounter++;
+      }
+
+      final file = File(filePath);
+      await file.writeAsBytes(fileBytes);
+      await OpenFile.open(filePath);
     } else {
       _isLoading = false;
       ApiChecker.checkApi( apiResponse);
     }
     notifyListeners();
     return apiResponse;
+  }
+
+  String _digitalProductFileName(Response response, int orderId) {
+    final String? contentDisposition = response.headers.value('content-disposition');
+    if (contentDisposition != null) {
+      final RegExpMatch? match = RegExp('filename\\*?=(?:UTF-8\'\')?"?([^";]+)"?').firstMatch(contentDisposition);
+      final String? extracted = match?.group(1);
+      if (extracted != null && extracted.trim().isNotEmpty) {
+        return Uri.decodeFull(extracted.trim());
+      }
+    }
+    return 'digital_product_$orderId';
   }
 
 
@@ -474,10 +520,13 @@ class OrderDetailsController with ChangeNotifier {
 
 
 
-  Future<ApiResponseModel> duePaymentByCod(int orderId, String paymentMethod, String? bringChangeAmount) async {
+  Future<ApiResponseModel> duePaymentByCod(int orderId, String? bringChangeAmount) async {
     _isLoading = true;
     notifyListeners();
-    ApiResponseModel apiResponse = await orderDetailsServiceInterface.duePaymentByCod(orderId, paymentMethod, bringChangeAmount);
+    ApiResponseModel apiResponse = await orderDetailsServiceInterface.duePaymentByCod(
+        orderId, bringChangeAmount,
+        Provider.of<SplashController>(Get.context!, listen: false).myCurrency?.code
+    );
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       getOrderDetails(orderId.toString());
       getOrderFromOrderId(orderId.toString());
@@ -491,17 +540,18 @@ class OrderDetailsController with ChangeNotifier {
   }
 
 
-  Future<ApiResponseModel> duePaymentByDigitalPayment(int orderId, String paymentMethod, String? guestId, String? orderDuePaymentNote) async {
+  Future<ApiResponseModel> duePaymentByDigitalPayment(int orderId, String paymentMethod, String? orderDuePaymentNote) async {
     _isLoading = true;
     notifyListeners();
     ApiResponseModel apiResponse = await orderDetailsServiceInterface.duePaymentByDigitalPayment(
-        orderId,  paymentMethod, guestId, orderDuePaymentNote,
+        orderId,  paymentMethod, orderDuePaymentNote,
         Provider.of<SplashController>(Get.context!, listen: false).myCurrency?.code
     );
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
 
+      final dynamic paymentData = ApiEnvelope.content(apiResponse.response!.data)['data'];
       RouterHelper.getDigitalPaymentScreenRoute(
-        url: apiResponse.response?.data['redirect_link'] ?? '',
+        url: paymentData is Map ? (paymentData['redirect_link'] ?? '') : '',
         fromWallet: false,
         orderId: orderId.toString(),
         action: RouteAction.pushReplacement,
@@ -520,10 +570,10 @@ class OrderDetailsController with ChangeNotifier {
 
 
 
-  Future<ApiResponseModel> duePaymentByWallet(int orderId, String paymentMethod) async {
+  Future<ApiResponseModel> duePaymentByWallet(int orderId) async {
     _isLoading = true;
     notifyListeners();
-    ApiResponseModel apiResponse = await orderDetailsServiceInterface.duePaymentByWallet(orderId, paymentMethod);
+    ApiResponseModel apiResponse = await orderDetailsServiceInterface.duePaymentByWallet(orderId);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       getOrderDetails(orderId.toString());
       getOrderFromOrderId(orderId.toString());
@@ -536,10 +586,10 @@ class OrderDetailsController with ChangeNotifier {
     return apiResponse;
   }
 
-  Future<ApiResponseModel> duePaymentByOfflinePayment(int orderId, String paymentMethod, String? orderDueNote, String? methodId) async {
+  Future<ApiResponseModel> duePaymentByOfflinePayment(int orderId, int? methodId, List<String?> typeKey, List<String> typeValue, String? orderDueNote) async {
     _isLoading = true;
     notifyListeners();
-    ApiResponseModel apiResponse = await orderDetailsServiceInterface.duePaymentByOfflinePayment(orderId, paymentMethod, orderDueNote, methodId);
+    ApiResponseModel apiResponse = await orderDetailsServiceInterface.duePaymentByOfflinePayment(orderId, methodId, typeKey, typeValue, orderDueNote);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       getOrderDetails(orderId.toString());
       getOrderFromOrderId(orderId.toString());
@@ -556,11 +606,4 @@ class OrderDetailsController with ChangeNotifier {
 
 
 
-}
-
-
-Future<void> _launchUrl(Uri url) async {
-  if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-    throw 'Could not launch $url';
-  }
 }

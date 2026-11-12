@@ -31,7 +31,7 @@ class MostPopularStoreModel {
   int? reviewCount;
   int? totalRating;
   double? positiveReview;
-  int? isVacationModeNow;
+  bool? isVacationModeNow;
   ThumbnailFullUrl? imageFullUrl;
   ThumbnailFullUrl? bottomBannerFullUrl;
   OfferBannerFullUrl? offerBannerFullUrl;
@@ -111,19 +111,11 @@ class MostPopularStoreModel {
     reviewCount = json['review_count'];
     totalRating = json['total_rating'];
     positiveReview = double.tryParse(json['positive_review'].toString());
-    isVacationModeNow = json['is_vacation_mode_now'];
-    imageFullUrl = json['image_full_url'] != null
-        ? ThumbnailFullUrl.fromJson(json['image_full_url'])
-        : null;
-    bottomBannerFullUrl = json['bottom_banner_full_url'] != null
-        ? ThumbnailFullUrl.fromJson(json['bottom_banner_full_url'])
-        : null;
-    offerBannerFullUrl = json['offer_banner_full_url'] != null
-        ? OfferBannerFullUrl.fromJson(json['offer_banner_full_url'])
-        : null;
-    bannerFullUrl = json['banner_full_url'] != null
-        ? ThumbnailFullUrl.fromJson(json['banner_full_url'])
-        : null;
+    isVacationModeNow = json['is_vacation_mode_now'] is bool ? json['is_vacation_mode_now'] : '${json['is_vacation_mode_now']}'.contains('1');
+    imageFullUrl = json['image_full_url'] != null ? ThumbnailFullUrl.fromJson(json['image_full_url']) : null;
+    bottomBannerFullUrl = json['bottom_banner_full_url'] != null ? ThumbnailFullUrl.fromJson(json['bottom_banner_full_url']) : null;
+    offerBannerFullUrl = json['offer_banner_full_url'] != null ? OfferBannerFullUrl.fromJson(json['offer_banner_full_url']) : null;
+    bannerFullUrl = json['banner_full_url'] != null ? ThumbnailFullUrl.fromJson(json['banner_full_url']) : null;
     if (json['storage'] != null) {
       storage = <Storage>[];
       json['storage'].forEach((v) {

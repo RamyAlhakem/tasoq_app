@@ -53,7 +53,7 @@ abstract class AuthRepoInterface<T> implements RepositoryInterface{
 
   Future<ApiResponseModel> verifyPhone(String phone,  String otp, String token);
 
-  Future<ApiResponseModel> verifyOtp(String otp,  String identity);
+  Future<ApiResponseModel> verifyOtp(String identity, String otp, {String purpose});
   
   Future<void> saveUserEmailAndPassword(String userData);
 
@@ -65,13 +65,13 @@ abstract class AuthRepoInterface<T> implements RepositoryInterface{
 
   Future<ApiResponseModel> firebaseAuthVerify({required String phoneNumber, required String session, required String otp, required bool isForgetPassword});
 
-  Future<ApiResponseModel> registerWithOtp(String name, {String? email, required String phone});
+  Future<ApiResponseModel> registerWithOtp({required String fName, String? lName, String? email, required String phone, required String temporaryToken, String? referralCode});
 
-  Future<ApiResponseModel> registerWithSocialMedia(String name, {required String email,String? phone});
+  Future<ApiResponseModel> registerWithSocialMedia({required String token, required String uniqueId, required String medium, required String phone});
 
   Future<ApiResponseModel> verifyToken(String email, String token);
 
-  Future<ApiResponseModel> existingAccountCheck({required String email, required int userResponse, required String medium});
+  Future<ApiResponseModel> existingAccountCheck({required String email, required int userResponse, required String medium, required String token, required String uniqueId});
 
   Future<ApiResponseModel> verifyProfileInfo(String userInput, String token, String type);
 

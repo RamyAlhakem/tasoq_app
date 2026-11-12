@@ -4,6 +4,7 @@ import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_contr
 import 'package:flutter_sixvalley_ecommerce/features/notification/widget/auction_notification_item_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/notification/widget/notification_item_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/notification/widget/notification_shimmer_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/features/notification/widget/wholesale_notification_item_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/profile/controllers/profile_contrroller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
@@ -18,24 +19,30 @@ import 'package:provider/provider.dart';
 
 class NotificationScreen extends StatefulWidget {
   final bool fromNotification;
-  const NotificationScreen({super.key, this.fromNotification = false});
+  final String? initialBusinessModule;
+  const NotificationScreen({super.key, this.fromNotification = false, this.initialBusinessModule});
   @override
   State<NotificationScreen> createState() => _NotificationScreenState();
 }
 
 class _NotificationScreenState extends State<NotificationScreen> with SingleTickerProviderStateMixin {
   bool _isAuctionEnabled = false;
+  bool _isWholesaleEnabled = false;
+  bool get _hasTabs => _isAuctionEnabled || _isWholesaleEnabled;
   TabController? _tabController;
-  final ScrollController _generalScrollController = ScrollController();
+  final ScrollController _retailScrollController = ScrollController();
   final ScrollController _auctionScrollController = ScrollController();
+  final ScrollController _wholesaleScrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _isAuctionEnabled = (Provider.of<SplashController>(context, listen: false).configModel?.isAuctionFeatureEnabled == true) ||
-        (Provider.of<ProfileController>(context, listen: false).userInfoModel?.showAuctionMenuForUser == true);
-    if (_isAuctionEnabled) {
-      _tabController = TabController(length: 2, vsync: this);
+    _isAuctionEnabled = Provider.of<SplashController>(context, listen: false).isAuctionEnabled;
+    _isWholesaleEnabled = Provider.of<SplashController>(context, listen: false).isWholesaleEnabled;
+    if (_hasTabs) {
+      final tabCount = 1 + (_isAuctionEnabled ? 1 : 0) + (_isWholesaleEnabled ? 1 : 0);
+      final initialIndex = (widget.initialBusinessModule == 'wholesale' && _isWholesaleEnabled) ? tabCount - 1 : 0;
+      _tabController = TabController(length: tabCount, vsync: this, initialIndex: initialIndex);
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -51,6 +58,9 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
         if (_isAuctionEnabled) {
           notificationController.getAuctionNotificationList(1);
         }
+        if (_isWholesaleEnabled) {
+          notificationController.getWholesaleNotificationList(1);
+        }
 
         final profileController = Provider.of<ProfileController>(context, listen: false);
         if (profileController.userInfoModel == null) {
@@ -63,8 +73,9 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
   @override
   void dispose() {
     _tabController?.dispose();
-    _generalScrollController.dispose();
+    _retailScrollController.dispose();
     _auctionScrollController.dispose();
+    _wholesaleScrollController.dispose();
     super.dispose();
   }
 
@@ -82,24 +93,29 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
         },
       ),
       body: Provider.of<AuthController>(context, listen: false).isLoggedIn()
-          ? _isAuctionEnabled
+          ? _hasTabs
               ? Column(children: [
                   TabBar(
                     controller: _tabController,
                     dividerColor: Colors.transparent,
                     tabs: [
-                      Tab(text: getTranslated('general', context)),
-                      Tab(text: getTranslated('auction', context)),
+                      Tab(text: getTranslated('retail', context)),
+                      if (_isAuctionEnabled) Tab(text: getTranslated('auction', context)),
+                      if (_isWholesaleEnabled) Tab(text: getTranslated('wholesale', context)),
                     ],
                   ),
                   Expanded(
                     child: TabBarView(
                       controller: _tabController!,
-                      children: [_generalTab(), _auctionTab()],
+                      children: [
+                        RetailNotificationTab(scrollController: _retailScrollController),
+                        if (_isAuctionEnabled) AuctionNotificationTab(scrollController: _auctionScrollController),
+                        if (_isWholesaleEnabled) WholesaleNotificationTab(scrollController: _wholesaleScrollController),
+                      ],
                     ),
                   ),
                 ])
-              : _generalTab()
+              : RetailNotificationTab(scrollController: _retailScrollController)
           : NotLoggedInWidget(
               fromPage: RouterHelper.notificationScreen,
               onLoginSuccess: () {
@@ -108,8 +124,15 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
             ),
     );
   }
+}
 
-  Widget _generalTab() {
+class RetailNotificationTab extends StatelessWidget {
+  final ScrollController scrollController;
+
+  const RetailNotificationTab({super.key, required this.scrollController});
+
+  @override
+  Widget build(BuildContext context) {
     return Consumer<NotificationController>(
       builder: (context, notificationController, child) {
         return notificationController.notificationModel != null
@@ -117,13 +140,13 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                 ? RefreshIndicator(
                     onRefresh: () async => await notificationController.getNotificationList(1),
                     child: PaginatedListView(
-                      scrollController: _generalScrollController,
+                      scrollController: scrollController,
                       onPaginate: (int? offset) => notificationController.getNotificationList(offset ?? 1),
                       totalSize: notificationController.notificationModel?.totalSize,
                       offset: notificationController.notificationModel?.offset,
                       itemView: Flexible(
                         child: ListView.separated(
-                          controller: _generalScrollController,
+                          controller: scrollController,
                           itemCount: notificationController.notificationModel!.notification!.length,
                           itemBuilder: (context, index) => NotificationItemWidget(
                             notificationItem: notificationController.notificationModel!.notification![index],
@@ -139,8 +162,53 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
       },
     );
   }
+}
 
-  Widget _auctionTab() {
+class WholesaleNotificationTab extends StatelessWidget {
+  final ScrollController scrollController;
+
+  const WholesaleNotificationTab({super.key, required this.scrollController});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<NotificationController>(
+      builder: (context, notificationController, child) {
+        return notificationController.wholesaleNotificationModel != null
+            ? (notificationController.wholesaleNotificationModel!.notifications != null && notificationController.wholesaleNotificationModel!.notifications!.isNotEmpty)
+                ? RefreshIndicator(
+                    onRefresh: () async => await notificationController.getWholesaleNotificationList(1),
+                    child: PaginatedListView(
+                      scrollController: scrollController,
+                      onPaginate: (int? offset) => notificationController.getWholesaleNotificationList(offset ?? 1),
+                      totalSize: notificationController.wholesaleNotificationModel?.totalSize,
+                      offset: notificationController.wholesaleNotificationModel?.offset,
+                      itemView: Flexible(
+                        child: ListView.separated(
+                          controller: scrollController,
+                          itemCount: notificationController.wholesaleNotificationModel!.notifications!.length,
+                          itemBuilder: (context, index) => WholesaleNotificationItemWidget(
+                            item: notificationController.wholesaleNotificationModel!.notifications![index],
+                            index: index,
+                          ),
+                          separatorBuilder: (BuildContext context, int index) => const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+                        ),
+                      ),
+                    ),
+                  )
+                : const NoInternetOrDataScreenWidget(isNoInternet: false, message: 'no_notification', icon: Images.noNotification)
+            : const NotificationShimmerWidget();
+      },
+    );
+  }
+}
+
+class AuctionNotificationTab extends StatelessWidget {
+  final ScrollController scrollController;
+
+  const AuctionNotificationTab({super.key, required this.scrollController});
+
+  @override
+  Widget build(BuildContext context) {
     return Consumer<NotificationController>(
       builder: (context, notificationController, child) {
         return notificationController.auctionNotificationModel != null
@@ -148,13 +216,13 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                 ? RefreshIndicator(
                     onRefresh: () async => await notificationController.getAuctionNotificationList(1),
                     child: PaginatedListView(
-                      scrollController: _auctionScrollController,
+                      scrollController: scrollController,
                       onPaginate: (int? offset) => notificationController.getAuctionNotificationList(offset ?? 1),
                       totalSize: notificationController.auctionNotificationModel?.totalSize,
                       offset: notificationController.auctionNotificationModel?.offset,
                       itemView: Flexible(
                         child: ListView.separated(
-                          controller: _auctionScrollController,
+                          controller: scrollController,
                           itemCount: notificationController.auctionNotificationModel!.notifications!.length,
                           itemBuilder: (context, index) => AuctionNotificationItemWidget(
                             item: notificationController.auctionNotificationModel!.notifications![index],

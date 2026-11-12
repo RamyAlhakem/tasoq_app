@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/transaction/domain/models/commission_pay_request_model.dart';
 import 'package:provider/provider.dart';
@@ -31,6 +32,9 @@ class TransactionController extends ChangeNotifier {
   bool get isWithdrawLoading => _isWithdrawLoading;
   WithdrawStoreOrUpdateResponseModel? _withdrawResponse;
   WithdrawStoreOrUpdateResponseModel? get withdrawResponse => _withdrawResponse;
+
+  bool _isWithdrawSubmitted = false;
+  bool get isWithdrawSubmitted => _isWithdrawSubmitted;
   String? _withdrawMethodName;
   String? get withdrawMethodName => _withdrawMethodName;
   String? _withdrawAccountDisplay;
@@ -43,13 +47,11 @@ class TransactionController extends ChangeNotifier {
 
     final response = await transactionServiceInterface.getWithdrawMethodList();
 
-    if (response?.response?.statusCode == 200) {
-      final data = response?.response?.data;
-      if (data is List) {
-        _withdrawMethods = data.map((e) => WithdrawMethodModel.fromJson(e)).toList();
-      }
-    } else {
-      ApiChecker.checkApi(response!);
+    final int? statusCode = response?.response?.statusCode;
+    if (statusCode == 200 || statusCode == 201) {
+      _withdrawMethods = WithdrawMethodList.fromJson(response?.response?.data).methods;
+    } else if (response != null) {
+      ApiChecker.checkApi(response);
     }
 
     _isLoading = false;
@@ -86,20 +88,25 @@ class TransactionController extends ChangeNotifier {
       ),
     );
 
-    if (response?.response?.statusCode == 200) {
-      final data = CommissionPayResponseModel.fromJson(response.response.data);
-      _commissionPayRedirectLink = data.redirectLink;
-      if (_commissionPayRedirectLink == null) {
-        showCustomSnackBarWidget(getTranslated('commission_paid_successfully', Get.context!), Get.context!, snackBarType: SnackBarType.success);
+    final int? statusCode = response?.response?.statusCode;
+    final dynamic data = response?.response?.data;
+
+    if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
+      if (data is Map) {
+        final model = CommissionPayResponseModel.fromJson(Map<String, dynamic>.from(data));
+        _commissionPayRedirectLink = model.redirectLink;
       }
-    } else if (response?.response?.statusCode == 404) {
-      showCustomSnackBarWidget(getTranslated('auction_not_found_or_not_owned', Get.context!), Get.context!, snackBarType: SnackBarType.error);
-    } else if (response?.response?.statusCode == 409) {
-      showCustomSnackBarWidget(getTranslated('commission_already_paid', Get.context!), Get.context!, snackBarType: SnackBarType.error);
-    } else if (response?.response?.statusCode == 422) {
-      showCustomSnackBarWidget(getTranslated('commission_no_due_or_missing_phone', Get.context!), Get.context!, snackBarType: SnackBarType.error);
-    } else if (response?.response?.statusCode == 403) {
-      showCustomSnackBarWidget(getTranslated('auction_not_in_payable_status', Get.context!), Get.context!, snackBarType: SnackBarType.error);
+      if (_commissionPayRedirectLink == null) {
+        showCustomSnackBarWidget(
+          ApiEnvelope.message(data) ?? getTranslated('commission_paid_successfully', Get.context!),
+          Get.context!, snackBarType: SnackBarType.success);
+      }
+    } else if (statusCode == 403 || statusCode == 404 || statusCode == 409 || statusCode == 422) {
+
+      final String? reason = ApiEnvelope.errorMessage(data);
+      showCustomSnackBarWidget(
+        (reason != null && reason.isNotEmpty) ? reason : getTranslated('commission_no_due_or_missing_phone', Get.context!),
+        Get.context!, snackBarType: SnackBarType.error);
     } else {
       ApiChecker.checkApi(response!);
     }
@@ -108,47 +115,94 @@ class TransactionController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> storeOrUpdateWithdraw(
+  Future<void> createWithdraw(
     BuildContext context, {
     required int auctionProductId,
     required int withdrawMethodId,
-    int? existingWithdrawId,
     double? amount,
     Map<String, dynamic>? methodInfo,
     String? transactionNote,
     String? displayMethodName,
     String? displayAccountInfo,
   }) async {
+    await _submitWithdraw(
+      context,
+      request: (currentCurrencyCode) => transactionServiceInterface.createWithdraw(
+        auctionProductId: auctionProductId,
+        withdrawMethodId: withdrawMethodId,
+        amount: amount,
+        methodInfo: methodInfo,
+        transactionNote: transactionNote,
+        currentCurrencyCode: currentCurrencyCode,
+      ),
+      successKey: 'withdrawal_request_submitted_successfully',
+      displayMethodName: displayMethodName,
+      displayAccountInfo: displayAccountInfo,
+    );
+  }
+
+  Future<void> updateWithdraw(
+    BuildContext context, {
+    required int withdrawId,
+    required int auctionProductId,
+    required int withdrawMethodId,
+    double? amount,
+    Map<String, dynamic>? methodInfo,
+    String? transactionNote,
+    String? displayMethodName,
+    String? displayAccountInfo,
+  }) async {
+    await _submitWithdraw(
+      context,
+      request: (currentCurrencyCode) => transactionServiceInterface.updateWithdraw(
+        withdrawId: withdrawId,
+        auctionProductId: auctionProductId,
+        withdrawMethodId: withdrawMethodId,
+        amount: amount,
+        methodInfo: methodInfo,
+        transactionNote: transactionNote,
+        currentCurrencyCode: currentCurrencyCode,
+      ),
+      successKey: 'withdrawal_request_updated_successfully',
+      displayMethodName: displayMethodName,
+      displayAccountInfo: displayAccountInfo,
+    );
+  }
+
+  Future<void> _submitWithdraw(
+    BuildContext context, {
+    required Future<dynamic> Function(String? currentCurrencyCode) request,
+    required String successKey,
+    String? displayMethodName,
+    String? displayAccountInfo,
+  }) async {
     _isWithdrawLoading = true;
     _withdrawResponse = null;
+    _isWithdrawSubmitted = false;
     notifyListeners();
 
     final String? currentCurrencyCode = Provider.of<SplashController>(context, listen: false).myCurrency?.code;
 
-    final response = await transactionServiceInterface.storeOrUpdateWithdraw(
-      auctionProductId: auctionProductId,
-      withdrawMethodId: withdrawMethodId,
-      existingWithdrawId: existingWithdrawId,
-      amount: amount,
-      methodInfo: methodInfo,
-      transactionNote: transactionNote,
-      currentCurrencyCode: currentCurrencyCode,
-    );
+    final response = await request(currentCurrencyCode);
 
-    if (response?.response?.statusCode == 200) {
-      _withdrawResponse = WithdrawStoreOrUpdateResponseModel.fromJson(response.response.data);
+    final int? statusCode = response?.response?.statusCode;
+    final dynamic data = response?.response?.data;
+
+    if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
+      if (data is Map) {
+        _withdrawResponse = WithdrawStoreOrUpdateResponseModel.fromJson(Map<String, dynamic>.from(data));
+      }
+      _isWithdrawSubmitted = true;
       _withdrawMethodName = displayMethodName;
       _withdrawAccountDisplay = displayAccountInfo;
-      final message = existingWithdrawId != null ? 'withdrawal_request_updated_successfully' : 'withdrawal_request_submitted_successfully';
-      showCustomSnackBarWidget(getTranslated(message, Get.context!), Get.context!, snackBarType: SnackBarType.success);
-    } else if (response?.response?.statusCode == 404) {
-      showCustomSnackBarWidget(getTranslated('auction_not_found_or_not_owned', Get.context!), Get.context!, snackBarType: SnackBarType.error);
-    } else if (response?.response?.statusCode == 403) {
-      showCustomSnackBarWidget(getTranslated('withdrawal_method_not_enabled', Get.context!), Get.context!, snackBarType: SnackBarType.error);
-    } else if (response?.response?.statusCode == 409) {
-      showCustomSnackBarWidget(getTranslated('active_withdrawal_already_exists', Get.context!), Get.context!, snackBarType: SnackBarType.error);
-    } else if (response?.response?.statusCode == 422) {
-      showCustomSnackBarWidget(getTranslated('auction_not_eligible_for_withdrawal', Get.context!), Get.context!, snackBarType: SnackBarType.error);
+      showCustomSnackBarWidget(
+        ApiEnvelope.message(data) ?? getTranslated(successKey, Get.context!),
+        Get.context!, snackBarType: SnackBarType.success);
+    } else if (statusCode == 403 || statusCode == 404 || statusCode == 409 || statusCode == 422) {
+      final String? reason = ApiEnvelope.errorMessage(data);
+      showCustomSnackBarWidget(
+        (reason != null && reason.isNotEmpty) ? reason : getTranslated('auction_not_eligible_for_withdrawal', Get.context!),
+        Get.context!, snackBarType: SnackBarType.error);
     } else {
       ApiChecker.checkApi(response!);
     }

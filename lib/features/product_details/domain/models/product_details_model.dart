@@ -1,3 +1,4 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/image_full_url.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/domain/models/product_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shop/domain/models/seller_model.dart';
@@ -399,7 +400,9 @@ class ProductDetailsModel {
   List<String?>? get authors => _authors;
   List<String?>? get publishingHouse => _publishingHouse;
 
-  ProductDetailsModel.fromJson(Map<String, dynamic> json) {
+  ProductDetailsModel.fromJson(Map<String, dynamic> body) {
+    final Map<String, dynamic> json = _payload(body);
+
     _id = json['id'];
     _addedBy = json['added_by'];
     _userId = json['user_id'];
@@ -449,8 +452,9 @@ class ProductDetailsModel {
         _colors!.add(ColorModel.fromJson(v));
       });
     }
-    _variantProduct = int.parse(json['variant_product'].toString());
-    _attributes = json['attributes'].cast<int>();
+    _variantProduct = int.tryParse('${json['variant_product']}');
+    _attributes = json['attributes'] is List
+        ? (json['attributes'] as List).map((attribute) => int.tryParse('$attribute')).whereType<int>().toList() : null;
     if (json['choice_options'] != null) {
       _choiceOptions = <ChoiceOptions>[];
       json['choice_options'].forEach((v) {
@@ -485,12 +489,11 @@ class ProductDetailsModel {
     }
 
     _published = json['published'];
-    _unitPrice = json['unit_price'].toDouble();
-    _purchasePrice = json['purchase_price'].toDouble();
-    // _tax = json['tax'].toDouble();
+    _unitPrice = double.tryParse('${json['unit_price']}');
+    _purchasePrice = double.tryParse('${json['purchase_price']}');
     _taxModel = json['tax_model'];
     _taxType = json['tax_type'];
-    _discount = json['discount'].toDouble();
+    _discount = double.tryParse('${json['discount']}');
     _discountType = json['discount_type'];
     _currentStock = json['current_stock'];
     if(json['minimum_order_qty'] != null){
@@ -508,9 +511,9 @@ class ProductDetailsModel {
     _metaTitle = json['meta_title'];
     _metaDescription = json['meta_description'];
     _metaImage = json['meta_image'];
-    _requestStatus = int.parse(json['request_status'].toString());
+    _requestStatus = int.tryParse('${json['request_status']}');
     _deniedNote = json['denied_note'];
-    _shippingCost = json['shipping_cost'].toDouble();
+    _shippingCost = double.tryParse('${json['shipping_cost']}');
     _multiplyQty = json['multiply_qty'];
     _code = json['code'];
     if(json['reviews_count'] != null){
@@ -544,10 +547,7 @@ class ProductDetailsModel {
       });
     }
 
-    _previewFileFullUrl  = json['preview_file_full_url'] != null
-        ? ImageFullUrl.fromJson(json['preview_file_full_url'])
-        : null;
-
+    _previewFileFullUrl  = json['preview_file_full_url'] != null ? ImageFullUrl.fromJson(json['preview_file_full_url']) : null;
 
     if(json['digital_product_authors_names'] != null && json['digital_product_authors_names'] is !String && json['digital_product_authors_names'] is List){
       _authors = json['digital_product_authors_names'] != null ? json['digital_product_authors_names'].cast<String>() : [];
@@ -567,10 +567,14 @@ class ProductDetailsModel {
 
     isRestockRequested = json['is_restock_requested'];
 
-    clearanceSale = json['clearance_sale'] != null
-      ? ClearanceSale.fromJson(json['clearance_sale'])
-      : null;
+    clearanceSale = json['clearance_sale'] != null ? ClearanceSale.fromJson(json['clearance_sale']) : null;
 
+  }
+
+  static Map<String, dynamic> _payload(Map<String, dynamic> body) {
+    final Map content = ApiEnvelope.content(body);
+    final dynamic data = content['data'];
+    return Map<String, dynamic>.from(data is Map ? data : content);
   }
 }
 
@@ -624,8 +628,6 @@ class ColorModel {
     return data;
   }
 }
-
-
 
 class Reviews {
   int? _id;
@@ -714,9 +716,7 @@ class Reviews {
     _status = json['status'];
     _createdAt = json['created_at'];
     _updatedAt = json['updated_at'];
-    _customer = json['customer'] != null
-      ? Customer.fromJson(json['customer'])
-      : null;
+    _customer = json['customer'] != null ? Customer.fromJson(json['customer']) : null;
     if (json['attachment_images_full_url'] != null) {
       _attachmentFullUrl = <ImageFullUrl>[];
       json['attachment_images_full_url'].forEach((v) {
@@ -841,9 +841,7 @@ class ColorImagesFullUrl {
 
   ColorImagesFullUrl.fromJson(Map<String, dynamic> json) {
     color = json['color'];
-    imageName = json['image_name'] != null
-        ? ImageFullUrl.fromJson(json['image_name'])
-        : null;
+    imageName = json['image_name'] != null ? ImageFullUrl.fromJson(json['image_name']) : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -855,7 +853,6 @@ class ColorImagesFullUrl {
     return data;
   }
 }
-
 
 class DigitalVariation {
   int? id;

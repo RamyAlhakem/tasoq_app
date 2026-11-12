@@ -1,5 +1,6 @@
 abstract class SplashServiceInterface{
   Future<dynamic> getConfig();
+  Future<dynamic> getFaqList();
   Future<dynamic> getBusinessPages(String type);
   void initSharedData();
   String getCurrency();

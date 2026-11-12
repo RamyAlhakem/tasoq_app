@@ -160,20 +160,18 @@ class AddAuctionProductMediaController extends ChangeNotifier {
 
     final configModel = Provider.of<SplashController>(Get.context!, listen: false).configModel;
 
-    FilePickerResult? result = await FilePicker.pickFiles(
+    final PlatformFile? file = await FilePicker.pickFile(
       type: FileType.custom,
-      allowMultiple: false,
       allowedExtensions: [...AppConstants.videoExtensions],
     );
 
-    if (result == null || result.files.isEmpty) {
+    if (file == null) {
       _isPickingMedia = false;
       notifyListeners();
       return;
     }
 
-    final PlatformFile file = result.files.first;
-    final String extension = file.extension?.toLowerCase() ?? '';
+    final String extension = file.fileExtension?.toLowerCase() ?? '';
 
     final bool isValidExtension = [
       ...AppConstants.videoExtensions,

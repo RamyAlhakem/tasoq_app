@@ -24,7 +24,7 @@ class CategoryRepository extends DataSyncService implements CategoryRepoInterfac
   @override
   Future<ApiResponseModel> getSellerWiseCategoryList(String slug) async {
     try {
-      final response = await dioClient!.get('${AppConstants.sellerWiseCategoryList}$slug');
+      final response = await dioClient!.get(AppConstants.sellerWiseCategoryList, queryParameters: {'shop_slug': slug, 'limit': 100, 'offset': 1});
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -58,7 +58,27 @@ class CategoryRepository extends DataSyncService implements CategoryRepoInterfac
   }
 
   @override
-  Future<ApiResponseModel<T>> getCategoryList<T>({required DataSourceEnum source}) async {
-    return await fetchData<T>('${AppConstants.categoriesUri}?guest_id=1',  source);
+  Future<ApiResponseModel<T>> getCategoryList<T>({required DataSourceEnum source, int offset = 1, int limit = 25}) async {
+    return await fetchData<T>('${AppConstants.categoriesUri}?guest_id=1&limit=$limit&offset=$offset',  source);
+  }
+
+  @override
+  Future<ApiResponseModel> getSubCategoryList({required int categoryId, required int offset, int limit = 25}) async {
+    try {
+      final response = await dioClient!.get('${AppConstants.subCategoriesUri}$categoryId?limit=$limit&offset=$offset');
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponseModel> getSubSubCategoryList({required int subCategoryId, required int offset, int limit = 25}) async {
+    try {
+      final response = await dioClient!.get('${AppConstants.subSubCategoriesUri}$subCategoryId?limit=$limit&offset=$offset');
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+    }
   }
 }

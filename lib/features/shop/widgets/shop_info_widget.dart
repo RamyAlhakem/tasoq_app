@@ -52,9 +52,9 @@ class ShopInfoWidget extends StatelessWidget {
             placeholder: Images.placeholder_3x1, width: MediaQuery.of(context).size.width, height: ResponsiveHelper.isTab(context)? 250 : 120),
 
          // if(Platform.isIOS)
-          Positioned(
+          PositionedDirectional(
             top: 40,
-            left: 15,
+            start: 15,
             child: InkWell(
               onTap: () {
                 Provider.of<SellerProductController>(context, listen: false).clearSellerProducts();
@@ -76,7 +76,7 @@ class ShopInfoWidget extends StatelessWidget {
                 ),
                 height: 40, width: 40,
                 child: Padding(
-                  padding: EdgeInsetsGeometry.only(left: Dimensions.paddingSizeSmall),
+                  padding: const EdgeInsetsDirectional.only(start: Dimensions.paddingSizeSmall),
                   child: const Icon(Icons.arrow_back_ios)),
               ),
             ),
@@ -134,7 +134,7 @@ class ShopInfoWidget extends StatelessWidget {
                           Expanded(child: Text(sellerName, style: textMedium.copyWith(fontSize: Dimensions.fontSizeExtraLarge, color: Theme.of(context).textTheme.bodyLarge?.color),
                             maxLines: 1, overflow: TextOverflow.ellipsis,),),
 
-                          Padding(padding: const EdgeInsets.only(left: Dimensions.paddingSizeExtraSmall),
+                          Padding(padding: const EdgeInsetsDirectional.only(start: Dimensions.paddingSizeExtraSmall),
                             child: InkWell(onTap: () {
                               if(temporaryClose) {
                                 showCustomSnackBarWidget("${getTranslated("this_shop_is_close_now", context)}", context, snackBarType: SnackBarType.warning);
@@ -193,16 +193,22 @@ class ShopInfoWidget extends StatelessWidget {
                           ]),
                           SizedBox(height: Dimensions.paddingSizeExtraSmall),
                           Row(children: [
-                            if (sellerProvider.sellerInfoModel?.minimumOrderAmount != null && sellerProvider.sellerInfoModel!.minimumOrderAmount! > 0)
+                            if (sellerProvider.sellerInfoModel?.minimumOrderAmount != null && sellerProvider.sellerInfoModel!.minimumOrderAmount! > 0)...[
                               Text('${PriceConverter.convertPrice(context, sellerProvider.sellerInfoModel!.minimumOrderAmount)} '
-                                  '${getTranslated('minimum_order', context)}',
-                                  style: titleRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).primaryColor),
-                                  maxLines: 1, overflow: TextOverflow.ellipsis),
+                                '${getTranslated('minimum_order', context)}',
+                                style: titleRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).primaryColor),
+                                maxLines: 1, overflow: TextOverflow.ellipsis),
 
+
+                              if ((totalProduct ?? sellerProvider.sellerInfoModel!.totalProduct)! > 0)
+                              Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraSmall),
+                                child: Text('|', style: textRegular.copyWith(color: Theme.of(context).primaryColor))
+                              ),
+                            ],
 
                             Text('${totalProduct ?? sellerProvider.sellerInfoModel!.totalProduct} ${getTranslated('products', context)}',
-                                style: titleRegular.copyWith(fontSize: Dimensions.fontSizeSmall,
-                                    color: Theme.of(context).primaryColor), maxLines: 1, overflow: TextOverflow.ellipsis)]),
+                              style: titleRegular.copyWith(fontSize: Dimensions.fontSizeSmall,
+                              color: Theme.of(context).primaryColor), maxLines: 1, overflow: TextOverflow.ellipsis)]),
                         ],
                       ],
                       );

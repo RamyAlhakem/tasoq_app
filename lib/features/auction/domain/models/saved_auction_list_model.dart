@@ -1,3 +1,5 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
+
 class SavedAuctionListModel {
   int? totalSize;
   int? limit;
@@ -7,14 +9,15 @@ class SavedAuctionListModel {
   SavedAuctionListModel({this.totalSize, this.limit, this.offset, this.savedProducts});
 
   SavedAuctionListModel.fromJson(Map<String, dynamic> json) {
-    totalSize = json['total_size'];
-    limit = json['limit'];
-    offset = json['offset'];
-    if (json['saved_products'] != null) {
-      savedProducts = <SavedAuctionProduct>[];
-      for (var item in json['saved_products']) {
-        savedProducts!.add(SavedAuctionProduct.fromJson(item));
-      }
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json, legacyKeys: ['saved_products']);
+    totalSize = envelope.totalSize;
+    limit = envelope.limit;
+    offset = envelope.offset;
+    if (envelope.data != null) {
+      savedProducts = <SavedAuctionProduct>[
+        for (final Map item in envelope.data!.whereType<Map>())
+          SavedAuctionProduct.fromJson(Map<String, dynamic>.from(item)),
+      ];
     }
   }
 
@@ -37,8 +40,13 @@ class SavedAuctionProduct {
   SavedAuctionProduct({this.id, this.auctionProduct});
 
   SavedAuctionProduct.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    auctionProduct = json['auction_product'] != null ? AuctionProductSummary.fromJson(json['auction_product']) : null;
+    final dynamic product = json['auction_product'];
+    if (product is Map) {
+      id = json['id'];
+      auctionProduct = AuctionProductSummary.fromJson(Map<String, dynamic>.from(product));
+    } else {
+      auctionProduct = AuctionProductSummary.fromJson(json);
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -85,7 +93,7 @@ class AuctionProductSummary {
     productType = json['product_type'];
     startingPrice = json['starting_price'] != null ? double.tryParse(json['starting_price'].toString()) : null;
     final highestBidMap = json['highest_bid'];
-    highestBid = highestBidMap != null && highestBidMap['bid_amount'] != null ? double.tryParse(highestBidMap['bid_amount'].toString()) : null;
+    highestBid = highestBidMap is Map && highestBidMap['bid_amount'] != null ? double.tryParse(highestBidMap['bid_amount'].toString()) : null;
     startTime = json['start_time'];
     endTime = json['end_time'];
     totalViews = json['total_views'];

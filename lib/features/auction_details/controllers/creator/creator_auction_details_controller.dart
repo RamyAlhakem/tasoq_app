@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_details/domain/enum/creator/auction_delivery_status_enum.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_details/domain/models/creator/creator_auction_details_model.dart';
@@ -40,6 +41,8 @@ class CreatorAuctionDetailsController extends ChangeNotifier {
 
   int? _bidTotalSize;
   int? get bidTotalSize => _bidTotalSize;
+
+  int? _bidLastPage;
 
   bool _isBidPaginating = false;
   bool get isBidPaginating => _isBidPaginating;
@@ -111,16 +114,19 @@ class CreatorAuctionDetailsController extends ChangeNotifier {
     _allBids = [];
     _bidOffset = 1;
     _bidTotalSize = null;
+    _bidLastPage = null;
     _isCollapsed = true;
     notifyListeners();
 
     try {
       final response = await serviceInterface.getAuctionBidList(auctionProductId: productId, offset: 1, limit: _bidLimit);
-      if (response?.response?.statusCode == 200) {
+      final int? statusCode = response?.response?.statusCode;
+      if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
         final data = response?.response?.data;
-        if (data != null) {
-          final model = AuctionBidListModel.fromJson(data);
+        if (data is Map) {
+          final model = AuctionBidListModel.fromJson(Map<String, dynamic>.from(data));
           _bidTotalSize = model.totalSize;
+          _bidLastPage = model.lastPage;
           _allBids = model.bids ?? [];
           _bidListModel = model;
         }
@@ -141,11 +147,13 @@ class CreatorAuctionDetailsController extends ChangeNotifier {
 
     try {
       final response = await serviceInterface.getAuctionBidList(auctionProductId: productId, offset: nextOffset, limit: _bidLimit);
-      if (response?.response?.statusCode == 200) {
+      final int? statusCode = response?.response?.statusCode;
+      if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
         final data = response?.response?.data;
-        if (data != null) {
-          final model = AuctionBidListModel.fromJson(data);
+        if (data is Map) {
+          final model = AuctionBidListModel.fromJson(Map<String, dynamic>.from(data));
           _bidTotalSize = model.totalSize;
+          _bidLastPage = model.lastPage;
           _allBids.addAll(model.bids ?? []);
           _bidOffset = nextOffset;
           _isCollapsed = false;
@@ -158,6 +166,7 @@ class CreatorAuctionDetailsController extends ChangeNotifier {
   }
 
   bool get hasMoreBids {
+    if (_bidLastPage != null) return _bidOffset < _bidLastPage!;
     if (_bidTotalSize == null) return false;
     return _allBids.length < _bidTotalSize!;
   }
@@ -181,7 +190,8 @@ class CreatorAuctionDetailsController extends ChangeNotifier {
       _isTrackingUrlSaving = false;
       notifyListeners();
 
-      if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+      final int? statusCode = apiResponse.response?.statusCode;
+      if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
         return true;
       } else {
         ApiChecker.checkApi(apiResponse);
@@ -207,8 +217,9 @@ class CreatorAuctionDetailsController extends ChangeNotifier {
         final statusCode = apiResponse.response!.statusCode;
         final data = apiResponse.response!.data;
 
-        if (statusCode == 200) {
-          _currentDeliveryStatus = AuctionDeliveryStatus.fromValue(data['delivery_status'] as String?);
+        if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
+          final Map content = ApiEnvelope.content(data);
+          _currentDeliveryStatus = AuctionDeliveryStatus.fromValue(content['delivery_status'] as String?) ?? status;
           notifyListeners();
           return true;
         } else if (statusCode == 403) {

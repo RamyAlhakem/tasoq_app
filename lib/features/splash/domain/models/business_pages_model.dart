@@ -3,12 +3,16 @@ class BusinessPageModel {
   String? title;
   String? slug;
   String? description;
-  int? status;
-  int? defaultStatus;
+
+  bool? status;
+
+  bool? isDefault;
+
   String? createdAt;
   String? updatedAt;
-  BannerFullUrl? bannerFullUrl;
   Banner? banner;
+
+  BannerFullUrl? bannerFullUrl;
 
   BusinessPageModel(
       {this.id,
@@ -16,7 +20,7 @@ class BusinessPageModel {
         this.slug,
         this.description,
         this.status,
-        this.defaultStatus,
+        this.isDefault,
         this.createdAt,
         this.updatedAt,
         this.bannerFullUrl,
@@ -27,8 +31,8 @@ class BusinessPageModel {
     title = json['title'];
     slug = json['slug'];
     description = json['description'];
-    status = json['status'];
-    defaultStatus = json['default_status'];
+    status = _asBool(json['status']);
+    isDefault = _asBool(json['is_default'] ?? json['default_status']);
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
     bannerFullUrl = json['banner_full_url'] != null
@@ -38,6 +42,13 @@ class BusinessPageModel {
     json['banner'] != null ? Banner.fromJson(json['banner']) : null;
   }
 
+  static bool? _asBool(dynamic value) {
+    if (value == null) return null;
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    return bool.tryParse('$value') ?? (int.tryParse('$value') ?? 0) != 0;
+  }
+
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
@@ -45,7 +56,7 @@ class BusinessPageModel {
     data['slug'] = slug;
     data['description'] = description;
     data['status'] = status;
-    data['default_status'] = defaultStatus;
+    data['is_default'] = isDefault;
     data['created_at'] = createdAt;
     data['updated_at'] = updatedAt;
     if (bannerFullUrl != null) {

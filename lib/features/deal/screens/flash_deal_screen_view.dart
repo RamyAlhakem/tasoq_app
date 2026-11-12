@@ -15,11 +15,12 @@ class FlashDealScreenView extends StatefulWidget {
 class _FlashDealScreenViewState extends State<FlashDealScreenView> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: CustomAppBar(title: getTranslated('flash_deal', context)),
-      body: Column(children: [
-        // CustomAppBar(title: getTranslated('flash_deal', context)?.toUpperCase()),
+    final FlashDealController flashDealController = Provider.of<FlashDealController>(context);
+    final String title = flashDealController.flashDealTitle ?? getTranslated('one_time_deal', context)!;
 
+    return Scaffold(
+      appBar: CustomAppBar(title: title),
+      body: Column(children: [
         SafeArea(
           child: Padding(padding: const EdgeInsets.only(
             left:  Dimensions.paddingSizeSmall,
@@ -27,8 +28,8 @@ class _FlashDealScreenViewState extends State<FlashDealScreenView> {
             top:  Dimensions.paddingSizeSmall,
           ),
             child: FlashDealBar(
-              title: getTranslated('flash_deal', context)!.toUpperCase(),
-              eventDuration: Provider.of<FlashDealController>(context).duration,
+              title: title.toUpperCase(),
+              eventDuration: flashDealController.duration,
               isBackExist : false,
             )),
         ),

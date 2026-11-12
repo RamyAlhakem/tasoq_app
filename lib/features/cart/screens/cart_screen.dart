@@ -267,8 +267,8 @@ class CartScreenState extends State<CartScreen> {
                             Stack(
                               children: [
                                 Padding(
-                                  padding : EdgeInsetsGeometry.only(
-                                    right : Dimensions.paddingSizeSmall,
+                                  padding : EdgeInsetsDirectional.only(
+                                    end : Dimensions.paddingSizeSmall,
                                     top : Dimensions.paddingSizeSmall,
                                     bottom : Dimensions.paddingSizeSmall
                                   ),
@@ -278,8 +278,8 @@ class CartScreenState extends State<CartScreen> {
                                   ),
                                 ),
 
-                                Positioned(
-                                  top: 2, right: 5,
+                                PositionedDirectional(
+                                  top: 2, end: 5,
                                   child: Container(
                                     padding: EdgeInsetsGeometry.all(5),
                                     decoration: BoxDecoration(
@@ -535,8 +535,11 @@ class CartScreenState extends State<CartScreen> {
                                       key: sellerKeys[index],
                                       duration: duration,
                                       decoration: BoxDecoration(
-                                        color : showColor ? _currentColor :
-                                        index.floor().isOdd ? Theme.of(context).cardColor : Theme.of(context).cardColor,
+                                        color : showColor ? Provider.of<ThemeController>(context).darkTheme ? Theme.of(context).cardColor :  _currentColor : index.floor().isOdd ?
+                                        Theme.of(context).cardColor : Theme.of(context).cardColor,
+
+                                        // color: Theme.of(context).cardColor,
+
                                         boxShadow :  Provider.of<ThemeController>(context,listen: false).darkTheme ? null :
                                         [BoxShadow(color: Colors.grey.withValues(alpha:0.3), spreadRadius: 1, blurRadius: 5)],
 

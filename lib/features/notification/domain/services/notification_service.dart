@@ -25,4 +25,14 @@ class NotificationService implements NotificationServiceInterface{
   Future markAuctionSeen({int? id}) {
     return notificationRepositoryInterface.markAuctionSeen(id: id);
   }
+
+  @override
+  Future getWholesaleList({int limit = 10, int offset = 1}) {
+    return notificationRepositoryInterface.getWholesaleList(limit: limit, offset: offset);
+  }
+
+  @override
+  Future markWholesaleSeen(int id) {
+    return notificationRepositoryInterface.markWholesaleSeen(id);
+  }
 }

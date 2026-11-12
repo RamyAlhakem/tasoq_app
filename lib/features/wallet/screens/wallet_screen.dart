@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/filter_icon_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/no_internet_screen_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/not_loggedin_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_sliver_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/screens/aster_theme_home_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/shimmers/transaction_shimmer.dart';
@@ -57,10 +57,11 @@ class _WalletScreenState extends State<WalletScreen> {
 
   @override
   void dispose() {
-    super.dispose();
-
     tooltipController.dispose();
     inputAmountController.dispose();
+    focusNode.dispose();
+    scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -142,46 +143,43 @@ class _WalletScreenState extends State<WalletScreen> {
               ]),
             ))),
 
-            SliverToBoxAdapter(
-              child: Consumer<WalletController>(
-                builder: (context, walletController, _) {
-                  return (walletController.walletTransactionModel?.walletTransactionList?.isNotEmpty ?? false)
-                      ? PaginatedListView(
-                          scrollController: scrollController,
-                          onPaginate: (int? offset) async => walletController.getTransactionList(
-                            offset ?? 1,
-                            startDate: walletController.walletTransactionModel?.startDate,
-                            endDate: walletController.walletTransactionModel?.endDate,
-                            filterBy: walletController.walletTransactionModel?.filterBy,
-                            transactionTypes: walletController.walletTransactionModel?.transactionTypes,
+            Consumer<WalletController>(
+              builder: (context, walletController, _) {
+                return (walletController.walletTransactionModel?.walletTransactionList?.isNotEmpty ?? false)
+                    ? PaginatedSliverListView(
+                        scrollController: scrollController,
+                        onPaginate: (int? offset) async => walletController.getTransactionList(
+                          offset ?? 1,
+                          startDate: walletController.walletTransactionModel?.startDate,
+                          endDate: walletController.walletTransactionModel?.endDate,
+                          filterBy: walletController.walletTransactionModel?.filterBy,
+                          transactionTypes: walletController.walletTransactionModel?.transactionTypes,
+                        ),
+                        totalSize: walletController.walletTransactionModel?.totalSize,
+                        offset: walletController.walletTransactionModel?.offset,
+                        itemView: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (ctx, index) {
+                              return TransactionWidget(
+                                transactionModel: walletController.walletTransactionModel?.walletTransactionList?[index],
+                                isLastIndex: index + 1 == walletController.walletTransactionModel?.walletTransactionList?.length,
+                              );
+                            },
+                            childCount: walletController.walletTransactionModel?.walletTransactionList?.length,
                           ),
-                          totalSize: walletController.walletTransactionModel?.totalSize,
-                          offset: walletController.walletTransactionModel?.offset,
-                          itemView: RepaintBoundary(
-                            child: ListView.builder(
-                              shrinkWrap: true,
-                              padding: EdgeInsets.zero,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: walletController.walletTransactionModel?.walletTransactionList?.length,
-                              itemBuilder: (ctx, index) {
-                                return TransactionWidget(
-                                  transactionModel: walletController.walletTransactionModel?.walletTransactionList?[index],
-                                  isLastIndex: index + 1 == walletController.walletTransactionModel?.walletTransactionList?.length,
-                                );
-                              },
-                            ),
-                          ),
-                        )
-                      : (walletController.walletTransactionModel?.walletTransactionList?.isEmpty ?? false)
-                          ? const NoInternetOrDataScreenWidget(
+                        ),
+                      )
+                    : (walletController.walletTransactionModel?.walletTransactionList?.isEmpty ?? false)
+                        ? const SliverToBoxAdapter(
+                            child: NoInternetOrDataScreenWidget(
                               padding: EdgeInsets.only(top: 50),
                               isNoInternet: false,
                               message: 'no_transaction_history',
                               icon: Images.noTransactionIcon,
-                            )
-                          : const TransactionShimmer();
-                },
-              ),
+                            ),
+                          )
+                        : const SliverToBoxAdapter(child: TransactionShimmer());
+              },
             ),
           ],
         ]),

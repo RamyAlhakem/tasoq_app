@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/features/create_auction/widgets/auction_brand_dropdown_field.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
@@ -17,7 +18,6 @@ class GeneralSetupWidget extends StatefulWidget {
   final List<String> categoryList;
   final ValueChanged<String?> onCategoryChanged;
   final String? brand;
-  final List<String> brandList;
   final ValueChanged<String?> onBrandChanged;
   final String? itemCondition;
   final ValueChanged<String?> onItemConditionChanged;
@@ -34,7 +34,6 @@ class GeneralSetupWidget extends StatefulWidget {
     this.categoryList = const [],
     required this.onCategoryChanged,
     this.brand,
-    this.brandList = const [],
     required this.onBrandChanged,
     this.itemCondition,
     required this.onItemConditionChanged,
@@ -131,10 +130,9 @@ class _GeneralSetupWidgetState extends State<GeneralSetupWidget> {
                   ),
                   const SizedBox(height: Dimensions.paddingSizeSmall),
 
-                  AuctionDropdownField(
+                  AuctionBrandDropdownField(
                     hintText: getTranslated('brand', context) ?? "",
                     value: widget.brand,
-                    items: widget.brandList,
                     onChanged: widget.onBrandChanged,
                   ),
                   const SizedBox(height: Dimensions.paddingSizeSmall),

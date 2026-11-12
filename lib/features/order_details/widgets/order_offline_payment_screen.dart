@@ -30,6 +30,11 @@ class _OrderOfflinePaymentScreenState extends State<OrderOfflinePaymentScreen> {
   TextEditingController paymentController = TextEditingController();
   final GlobalKey<FormState> offlineFormKey = GlobalKey<FormState>();
 
+  @override
+  void dispose() {
+    paymentController.dispose();
+    super.dispose();
+  }
 
 
 
@@ -43,95 +48,101 @@ class _OrderOfflinePaymentScreenState extends State<OrderOfflinePaymentScreen> {
             builder: (context, checkoutProvider, _) {
               return Consumer<OrderDetailsController>(
                 builder: (context, orderDetailsController, _) {
-                  return CustomScrollView(slivers: [
-                    SliverToBoxAdapter(child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: Dimensions.homePagePadding),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start,mainAxisSize: MainAxisSize.min, children: [
-                        Center(child: SizedBox(height: 100, child: Image.asset(Images.offlinePayment))),
-                        Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-                          child: Text('${getTranslated('offline_payment_helper_text', context)}', textAlign: TextAlign.center,
-                              style: textRegular.copyWith(color: Theme.of(context).hintColor, fontSize: Dimensions.fontSizeDefault)),),
+                  return Form(
+                    key: offlineFormKey,
+                    child: CustomScrollView(slivers: [
+                      SliverToBoxAdapter(child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: Dimensions.homePagePadding),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start,mainAxisSize: MainAxisSize.min, children: [
+                          Center(child: SizedBox(height: 100, child: Image.asset(Images.offlinePayment))),
+                          Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
+                            child: Text('${getTranslated('offline_payment_helper_text', context)}', textAlign: TextAlign.center,
+                                style: textRegular.copyWith(color: Theme.of(context).hintColor, fontSize: Dimensions.fontSizeDefault)),),
 
-                        if(checkoutProvider.offlinePaymentModel != null && checkoutProvider.offlinePaymentModel!.offlineMethods != null &&
-                            checkoutProvider.offlinePaymentModel!.offlineMethods!.isNotEmpty)
-                          SizedBox(height: 190,
-                            child: RepaintBoundary(
-                              child: ListView.builder(
-                                padding: EdgeInsets.zero,
-                                scrollDirection: Axis.horizontal,
-                                shrinkWrap: true,
-                                itemCount: checkoutProvider.offlinePaymentModel!.offlineMethods!.length,
-                                itemBuilder: (context, index){
-                                  return InkWell(
-                                    splashColor: Colors.transparent,
-                                    onTap: (){
-                                      if(checkoutProvider.offlinePaymentModel?.offlineMethods != null &&
-                                          checkoutProvider.offlinePaymentModel!.offlineMethods!.isNotEmpty) {
-                                        orderDetailsController.setOfflinePaymentMethodSelectedIndex(index, checkoutProvider.offlinePaymentModel );
-                                      }
-                                    }, child: OfflineCardWidget(
-                                    offlinePaymentModel: checkoutProvider.offlinePaymentModel!.offlineMethods![index],
-                                    index: index, selectedIndex: orderDetailsController.offlineMethodSelectedIndex )
-                                  );
-                                }
-                              ),
-                            )
-                          ),
-
-
-                          Center(child: Padding(padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
-                            child: Text('${getTranslated('amount', context)} : ${PriceConverter.convertPrice(context, widget.payableAmount)}',
-                              style: textBold.copyWith(fontSize: Dimensions.fontSizeLarge)))
-                          ),
+                          if(checkoutProvider.offlinePaymentModel != null && checkoutProvider.offlinePaymentModel!.offlineMethods != null &&
+                              checkoutProvider.offlinePaymentModel!.offlineMethods!.isNotEmpty)
+                            SizedBox(height: 190,
+                              child: RepaintBoundary(
+                                child: ListView.builder(
+                                  padding: EdgeInsets.zero,
+                                  scrollDirection: Axis.horizontal,
+                                  shrinkWrap: true,
+                                  itemCount: checkoutProvider.offlinePaymentModel!.offlineMethods!.length,
+                                  itemBuilder: (context, index){
+                                    return InkWell(
+                                      splashColor: Colors.transparent,
+                                      onTap: (){
+                                        if(checkoutProvider.offlinePaymentModel?.offlineMethods != null &&
+                                            checkoutProvider.offlinePaymentModel!.offlineMethods!.isNotEmpty) {
+                                          orderDetailsController.setOfflinePaymentMethodSelectedIndex(index, checkoutProvider.offlinePaymentModel );
+                                        }
+                                      }, child: OfflineCardWidget(
+                                      offlinePaymentModel: checkoutProvider.offlinePaymentModel!.offlineMethods![index],
+                                      index: index, selectedIndex: orderDetailsController.offlineMethodSelectedIndex )
+                                    );
+                                  }
+                                ),
+                              )
+                            ),
 
 
-                        Text('${getTranslated('payment_info', context)}', style: textBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
+                            Center(child: Padding(padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+                              child: Text('${getTranslated('amount', context)} : ${PriceConverter.convertPrice(context, widget.payableAmount)}',
+                                style: textBold.copyWith(fontSize: Dimensions.fontSizeLarge)))
+                            ),
 
-                        Form(
-                          key: offlineFormKey,
-                          child: RepaintBoundary(
-                            child: ListView.builder(
-                              physics: const NeverScrollableScrollPhysics(),
-                              shrinkWrap: true,
-                              itemCount: checkoutProvider.offlinePaymentModel!.offlineMethods![orderDetailsController.offlineMethodSelectedIndex].methodInformations?.length,
-                              itemBuilder: (context, index){
-                                MethodInformations? methodInformation = checkoutProvider.offlinePaymentModel!.offlineMethods![orderDetailsController.offlineMethodSelectedIndex].methodInformations?[index];
 
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: Dimensions.paddingSizeDefault),
-                                  child: CustomTextFieldWidget(
-                                    controller: checkoutProvider.inputFieldControllerList[index],
-                                    required: methodInformation?.isRequired == 1,
-                                    labelText: '${methodInformation?.customerInput}'.replaceAll('_', ' ').capitalize(),
-                                    hintText: '${methodInformation?.customerPlaceholder}'.replaceAll('_', ' ').capitalize(),
-                                    validator: (value) {
-                                      if(methodInformation?.isRequired == 1) {
-                                        return ValidateCheck.validateEmptyText(value, '${methodInformation?.customerInput}'.replaceAll('_', ' ').capitalize());
+                          Text('${getTranslated('payment_info', context)}', style: textBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
+                        ]),
+                      )),
 
-                                      }else{
-                                        return null;
-                                      }
-                                    },
-                                  ),
-                                );
-                              }),
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: Dimensions.homePagePadding),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index){
+                              MethodInformations? methodInformation = checkoutProvider.offlinePaymentModel!.offlineMethods![orderDetailsController.offlineMethodSelectedIndex].methodInformations?[index];
+
+                              return Padding(
+                                padding: const EdgeInsets.only(top: Dimensions.paddingSizeDefault),
+                                child: CustomTextFieldWidget(
+                                  controller: checkoutProvider.inputFieldControllerList[index],
+                                  required: methodInformation?.isRequired == 1,
+                                  labelText: '${methodInformation?.customerInput}'.replaceAll('_', ' ').capitalize(),
+                                  hintText: '${methodInformation?.customerPlaceholder}'.replaceAll('_', ' ').capitalize(),
+                                  validator: (value) {
+                                    if(methodInformation?.isRequired == 1) {
+                                      return ValidateCheck.validateEmptyText(value, '${methodInformation?.customerInput}'.replaceAll('_', ' ').capitalize());
+
+                                    }else{
+                                      return null;
+                                    }
+                                  },
+                                ),
+                              );
+                            },
+                            childCount: checkoutProvider.offlinePaymentModel!.offlineMethods![orderDetailsController.offlineMethodSelectedIndex].methodInformations?.length,
                           ),
                         ),
+                      ),
 
-
-                        const SizedBox(height: 20,),
-                        CustomTextFieldWidget(controller: paymentController,
-                          labelText:  getTranslated('note', context),
-                          hintText: getTranslated('note', context),),
-                        const SizedBox(height: 20,),
-                      ])))]);});
-
-
-
-
-            }
+                      SliverToBoxAdapter(child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: Dimensions.homePagePadding),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start,mainAxisSize: MainAxisSize.min, children: [
+                          const SizedBox(height: 20,),
+                          CustomTextFieldWidget(controller: paymentController,
+                            labelText:  getTranslated('note', context),
+                            hintText: getTranslated('note', context),),
+                          const SizedBox(height: 20,),
+                        ]),
+                      )),
+                    ]),
+                  );
+                },
+              );
+            },
           );
-        }
+        },
       ),
 
 
@@ -143,11 +154,14 @@ class _OrderOfflinePaymentScreenState extends State<OrderOfflinePaymentScreen> {
               isLoading: orderDetailsController.isLoading,
               onTap: () {
                 if(offlineFormKey.currentState?.validate() ?? false) {
+                  final checkoutController = Provider.of<CheckoutController>(context, listen: false);
+                  final List<String> typeValue = checkoutController.inputFieldControllerList.map((c) => c.text.trim()).toList();
                   orderDetailsController.duePaymentByOfflinePayment(
                     int.parse(widget.orderId),
-                    'offline_payment',
+                    orderDetailsController.offlineMethodSelectedId,
+                    checkoutController.keyList,
+                    typeValue,
                     paymentController.text,
-                    orderDetailsController.offlineMethodSelectedId.toString()
                   ).then((value) {
                     if (value.isSuccess) {
                       Navigator.pop(Get.context!);

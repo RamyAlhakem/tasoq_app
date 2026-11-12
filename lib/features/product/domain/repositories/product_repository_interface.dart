@@ -14,8 +14,6 @@ abstract class ProductRepositoryInterface extends RepositoryInterface {
 
   Future<dynamic> getRelatedProductList(String id);
 
-  Future<dynamic> getLatestProductList(String offset);
-
   Future<ApiResponseModel<T>> getRecommendedProduct<T>({required DataSourceEnum source});
 
   Future<ApiResponseModel<T>> getMostDemandedProduct<T>({required DataSourceEnum source});

@@ -1,3 +1,4 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/image_full_url.dart';
 
 
@@ -10,12 +11,13 @@ class Brand {
   Brand({this.totalSize, this.limit, this.offset, this.brands});
 
   Brand.fromJson(Map<String, dynamic> json) {
-    totalSize = json['total_size'];
-    limit = json['limit'];
-    offset = json['offset'];
-    if (json['brands'] != null) {
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json);
+    totalSize = envelope.totalSize;
+    limit = envelope.limit;
+    offset = envelope.offset;
+    if (envelope.data != null) {
       brands = <BrandModel>[];
-      json['brands'].forEach((v) {
+      envelope.data!.forEach((v) {
         brands!.add(BrandModel.fromJson(v));
       });
     }

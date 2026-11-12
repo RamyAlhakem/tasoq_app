@@ -17,6 +17,12 @@ class _SearchInboxWidgetState extends State<SearchInboxWidget> {
   final TextEditingController searchController = TextEditingController();
 
   @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return  Consumer<ChatController>(builder: (context, chat,_) {
       return Row(

@@ -288,7 +288,7 @@ class _ProfileScreen1State extends State<ProfileScreen1> {
 
 
                         CustomTextFieldWidget(
-                          isEnabled: config?.customerVerification?.phone == 0 || profile.userInfoModel?.isPhoneVerified == 0,
+                          isEnabled: config?.customerVerification?.phone == 0 || profile.userInfoModel?.isPhoneVerified == false,
                           labelText: getTranslated('phone', context),
                           inputType: TextInputType.phone,
                           focusNode: _phoneFocus,
@@ -297,10 +297,10 @@ class _ProfileScreen1State extends State<ProfileScreen1> {
                           controller: _phoneController,
                           toolTipKey: phoneToolTipKey,
                           isToolTipSuffix: (isPhoneChanged  || (config?.customerVerification?.phone == 0)) ? false : true,
-                          toolTipMessage: (profile.userInfoModel?.isPhoneVerified == 0 && config?.customerVerification?.phone == 1) ? getTranslated('phone_number_not_verified', context)! : '',
-                          suffixIcon:  (isPhoneChanged   || (config?.customerVerification?.phone == 0)) ? null : config?.customerVerification?.phone == 1 && profile.userInfoModel?.isPhoneVerified == 0 ? Images.notVerifiedSvg : Images.verifiedSvg,
+                          toolTipMessage: (profile.userInfoModel?.isPhoneVerified == true && config?.customerVerification?.phone == 1) ? getTranslated('phone_number_not_verified', context)! : '',
+                          suffixIcon:  (isPhoneChanged   || (config?.customerVerification?.phone == 0)) ? null : config?.customerVerification?.phone == 1 && profile.userInfoModel?.isPhoneVerified == false ? Images.notVerifiedSvg : Images.verifiedSvg,
                           suffixOnTap: () {
-                            if(profile.userInfoModel?.isPhoneVerified == 0) {
+                            if(profile.userInfoModel?.isPhoneVerified == false) {
                               final configModel = Provider.of<SplashController>(context, listen : false).configModel;
                               SignUpModel signUpModel = SignUpModel(
                                 phone : _phoneController.text.trim(),

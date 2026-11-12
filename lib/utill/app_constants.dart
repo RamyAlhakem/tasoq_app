@@ -5,7 +5,7 @@ import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
 class AppConstants {
   static const String appName = 'Tasoq';
   static const String slogan = 'E-Commerce Marketplace';
-  static const String appVersion = '16.5';
+  static const String appVersion = '16.6';
 
   ///Flutter SDK 3.47.0
   static const bool demo = false;
@@ -21,339 +21,391 @@ class AppConstants {
   static const String userId = 'userId';
 
   static const String name = 'name';
-  static const String categoriesUri = '/api/v1/categories';
-  static const String brandUri = '/api/v1/brands?guest_id=1';
+  static const String categoriesUri = '/api/v6/categories';
+  static const String subCategoriesUri = '/api/v6/categories/sub-categories/';
+  static const String subSubCategoriesUri =
+      '/api/v6/categories/sub-sub-categories/';
+  static const String brandUri = '/api/v6/brands?guest_id=1';
 
-  static const String brandProductUri = '/api/v1/brands/products/';
-  static const String categoryProductUri = '/api/v1/categories/products/';
-  static const String registrationUri = '/api/v1/auth/register';
-  static const String loginUri = '/api/v1/auth/login';
+  static const String categoryProductUri = '/api/v6/categories/';
+  static const String brandProductUri = '/api/v6/brands/';
+  static const String registrationUri = '/api/v6/auth/register';
+  static const String loginUri = '/api/v6/auth/login';
 
-  static const String logOut = '/api/v1/auth/logout';
-  static const String latestProductUri =
-      '/api/v1/products/latest?guest_id=1&limit=10&&offset=';
-  static const String newArrivalProductUri =
-      '/api/v1/products/new-arrival?guest_id=1&limit=10&&offset=';
-  static const String topProductUri =
-      '/api/v1/products/top-rated?guest_id=1&limit=10&&offset=';
-  static const String bestSellingProductUri =
-      '/api/v1/products/best-sellings?guest_id=1&limit=10&offset=';
-  static const String discountedProductUri =
-      '/api/v1/products/discounted-product?guest_id=1&limit=10&&offset=';
-  static const String featuredProductUri =
-      '/api/v1/products/featured?guest_id=1&limit=10&&offset=';
-  static const String homeCategoryProductUri =
-      '/api/v1/products/home-categories?guest_id=1';
-  static const String productDetailsUri = '/api/v1/products/details/';
-  static const String productReviewUri = '/api/v1/products/reviews/';
-  static const String searchUri = '/api/v1/products/filter';
+  static const String logOut = '/api/v6/auth/logout';
+  static const String latestProductUri = '/api/v6/products/latest';
+  static const String newArrivalProductUri = '/api/v6/products/new-arrival';
+  static const String topProductUri = '/api/v6/products/top-rated';
+  static const String bestSellingProductUri = '/api/v6/products/best-selling';
+  static const String discountedProductUri = '/api/v6/products/discounted';
+  static const String featuredProductUri = '/api/v6/products/featured';
+  static const String homeCategoryProductUri = '/api/v6/categories/home';
+  static const String productDetailsUri = '/api/v6/products/';
+  static const String productReviewUri = '/api/v6/products/';
+  static const String searchUri = '/api/v6/products/filter';
   static const String getSuggestionProductName =
-      '/api/v1/products/suggestion-product?guest_id=1&name=';
-  static const String configUri = '/api/v1/config';
-  static const String addWishListUri =
-      '/api/v1/customer/wish-list/add?product_id=';
-  static const String removeWishListUri =
-      '/api/v1/customer/wish-list/remove?product_id=';
-  static const String updateProfileUri = '/api/v1/customer/update-profile';
-  static const String customerUri = '/api/v1/customer/info';
-  static const String addressListUri = '/api/v1/customer/address/list';
-  static const String removeAddressUri = '/api/v1/customer/address';
-  static const String addAddressUri = '/api/v1/customer/address/add';
-  static const String getWishListUri = '/api/v1/customer/wish-list';
-  static const String supportTicketUri =
-      '/api/v1/customer/support-ticket/create';
-  static const String getBannerList = '/api/v1/banners';
-  static const String relatedProductUri = '/api/v1/products/related-products/';
-  static const String orderUri = '/api/v1/customer/order/list?limit=10&offset=';
-  static const String orderDetailsUri =
-      '/api/v1/customer/order/details?order_id=';
-  static const String orderPlaceUri = '/api/v1/customer/order/place';
-  static const String sellerUri = '/api/v1/seller?slug=';
-  static const String sellerProductUri = '/api/v1/seller/';
-  static const String sellerList = '/api/v1/seller/list/';
-  static const String trackingUri = '/api/v1/order/track?order_id=';
-  static const String forgetPasswordUri = '/api/v1/auth/forgot-password';
-  static const String getSupportTicketUri =
-      '/api/v1/customer/support-ticket/get';
+      '/api/v6/products/suggestions?name=';
+  static const String configUri = '/api/v6/config';
+  static const String faqUri = '/api/v6/faq';
+  static const String addWishListUri = '/api/v6/customer/wishlist';
+  static const String removeWishListUri = '/api/v6/customer/wishlist/';
+  static const String updateProfileUri = '/api/v6/customer/profile';
+  static const String customerUri = '/api/v6/customer/profile';
+  static const String addressListUri = '/api/v6/customer/addresses';
+  static const String removeAddressUri = '/api/v6/customer/addresses';
+  static const String addAddressUri = '/api/v6/customer/addresses';
+  static const String updateAddressUri = '/api/v6/customer/addresses';
+  static const String getWishListUri = '/api/v6/customer/wishlist';
+  static const String supportTicketUri = '/api/v6/customer/support-tickets';
+  static const String getBannerList = '/api/v6/banners';
+  static const String relatedProductUri = '/api/v6/products/';
+  static const String orderUri = '/api/v6/customer/orders?limit=10&offset=';
+  static const String orderDetailsUri = '/api/v6/customer/orders/';
+  static const String orderPlaceUri =
+      '/api/v6/customer/orders/cash-on-delivery';
+  static const String sellerUri = '/api/v6/shops/';
+  static const String sellerProductUri = '/api/v6/shops/';
+  static const String sellerList = '/api/v6/shops';
+  static const String forgetPasswordUri = '/api/v6/auth/password/forgot';
+  static const String getSupportTicketUri = '/api/v6/customer/support-tickets';
+
   static const String supportTicketConversationUri =
-      '/api/v1/customer/support-ticket/conv/';
+      '/api/v6/customer/support-tickets/';
   static const String supportTicketReplyUri =
-      '/api/v1/customer/support-ticket/reply/';
+      '/api/v6/customer/support-tickets/';
+
   static const String closeSupportTicketUri =
-      '/api/v1/customer/support-ticket/close/';
-  static const String submitReviewUri = '/api/v1/products/reviews/submit';
-  static const String getOrderWiseReview = '/api/v1/products/review/';
-  static const String updateOrderWiseReview = '/api/v1/products/review/update';
-  static const String deleteOrderWiseReviewImage =
-      '/api/v1/products/review/delete-image';
-  static const String flashDealUri = '/api/v1/flash-deals';
-  static const String featuredDealUri = '/api/v1/deals/featured';
-  static const String flashDealProductUri = '/api/v1/flash-deals/products/';
-  static const String counterUri = '/api/v1/products/counter/';
-  static const String socialLinkUri = '/api/v1/products/social-share-link/';
-  static const String shippingUri = '/api/v1/products/shipping-methods';
-  static const String couponUri = '/api/v1/coupon/apply?code=';
-  static const String messageUri = '/api/v1/customer/chat/get-messages/';
-  static const String chatInfoUri = '/api/v1/customer/chat/list/';
-  static const String searchChat = '/api/v1/customer/chat/search/';
-  static const String sendMessageUri = '/api/v1/customer/chat/send-message/';
-  static const String seenMessageUri = '/api/v1/customer/chat/seen-message/';
-  static const String tokenUri = '/api/v1/customer/cm-firebase-token';
-  static const String notificationUri = '/api/v1/notifications';
-  static const String seenNotificationUri = '/api/v1/notifications/seen';
-  static const String getCartDataUri = '/api/v1/cart';
-  static const String addToCartUri = '/api/v1/cart/add';
-  static const String updateCartQuantityUri = '/api/v1/cart/update';
-  static const String removeFromCartUri = '/api/v1/cart/remove';
-  static const String getShippingMethod = '/api/v1/shipping-method/by-seller';
+      '/api/v6/customer/support-tickets/';
+  static const String submitReviewUri = '/api/v6/customer/reviews';
+  static const String updateReviewUri = '/api/v6/customer/reviews/';
+  static const String getOrderWiseReview = '/api/v6/customer/orders/';
+  static const String deleteOrderWiseReviewImage = '/api/v6/customer/reviews/';
+  static const String flashDealUri = '/api/v6/flash-deals';
+  static const String featuredDealUri = '/api/v6/featured-deals';
+  static const String featuredDealProductUri = '/api/v6/featured-deals/';
+  static const String clearanceSaleProductUri =
+      '/api/v6/clearance-sale/products';
+  static const String flashDealProductUri = '/api/v6/flash-deals/';
+  static const String counterUri = '/api/v6/products/';
+  static const String socialLinkUri = '/api/v6/products/';
+  static const String shippingUri = '/api/v6/products/shipping-methods';
+  static const String couponUri = '/api/v6/customer/coupons/discount';
+  static const String messageUri = '/api/v6/customer/chats/';
+  static const String chatInfoUri = '/api/v6/customer/chats';
+  static const String searchChat = '/api/v6/customer/chats';
+  static const String sendMessageUri = '/api/v6/customer/chats/';
+  static const String seenMessageUri = '/api/v6/customer/chats/';
+  static const String tokenUri = '/api/v6/customer/device-token';
+  static const String notificationUri = '/api/v6/notifications';
+  static const String seenNotificationUri = '/api/v6/notifications/';
+  static const String getCartDataUri = '/api/v6/customer/cart';
+  static const String addToCartUri = '/api/v6/customer/cart/items';
+  static const String updateCartQuantityUri = '/api/v6/customer/cart/items';
+  static const String removeFromCartUri = '/api/v6/customer/cart/items';
+  static const String getShippingMethod = '/api/v6/customer/shipping-methods';
   static const String chooseShippingMethod =
-      '/api/v1/shipping-method/choose-for-order';
-  static const String chosenShippingMethod = '/api/v1/shipping-method/chosen';
-  static const String sendOtpToPhone = '/api/v1/auth/check-phone';
-  static const String resendPhoneOtpUri = '/api/v1/auth/resend-otp-check-phone';
-  static const String verifyPhoneUri = '/api/v1/auth/verify-phone';
-  static const String socialLoginUri = '/api/v1/auth/social-customer-login';
-  static const String sendOtpToEmail = '/api/v1/auth/check-email';
-  static const String resendEmailOtpUri = '/api/v1/auth/resend-otp-check-email';
-  static const String verifyEmailUri = '/api/v1/auth/verify-email';
-  static const String resetPasswordUri = '/api/v1/auth/reset-password';
-  static const String verifyOtpUri = '/api/v1/auth/verify-otp';
-  static const String refundRequestUri = '/api/v1/customer/order/refund-store';
-  static const String refundRequestPreReqUri = '/api/v1/customer/order/refund';
-  static const String refundResultUri = '/api/v1/customer/order/refund-details';
-  static const String cancelOrderUri = '/api/v1/order/cancel-order';
+      '/api/v6/customer/cart/shipping-methods';
+  static const String chosenShippingMethod =
+      '/api/v6/customer/cart/shipping-methods';
+  static const String sendOtpToPhone = '/api/v6/auth/otp/send';
+  static const String resendPhoneOtpUri = '/api/v6/auth/otp/send';
+  static const String verifyPhoneUri = '/api/v6/auth/otp/verify';
+  static const String socialLoginUri = '/api/v6/auth/social/login';
+  static const String sendOtpToEmail = '/api/v6/auth/otp/send';
+  static const String resendEmailOtpUri = '/api/v6/auth/otp/send';
+  static const String verifyEmailUri = '/api/v6/auth/otp/verify';
+  static const String resetPasswordUri = '/api/v6/auth/password/reset';
+  static const String verifyOtpUri = '/api/v6/auth/otp/verify';
+  static const String refundRequestUri = '/api/v6/customer/refunds';
+  static const String refundRequestPreReqUri =
+      '/api/v6/customer/refunds/eligibility/';
+  static const String refundResultUri = '/api/v6/customer/refunds/';
+  static const String cancelOrderUri = '/api/v6/customer/orders/';
   static const String getSelectedShippingTypeUri =
-      '/api/v1/shipping-method/check-shipping-type';
-  static const String dealOfTheDay = '/api/v1/dealsoftheday/deal-of-the-day';
-  static const String walletTransactionUri = '/api/v1/customer/wallet/list';
-  static const String loyaltyPointUri = '/api/v1/customer/loyalty/list';
+      '/api/v6/customer/cart/shipping-type';
+  static const String dealOfTheDay = '/api/v6/deal-of-the-day';
+  static const String walletTransactionUri =
+      '/api/v6/customer/wallet/transactions';
+  static const String loyaltyPointUri = '/api/v6/customer/loyalty/transactions';
   static const String loyaltyPointConvert =
-      '/api/v1/customer/loyalty/loyalty-exchange-currency';
-  static const String deleteCustomerAccount = '/api/v1/customer/account-delete';
+      '/api/v6/customer/loyalty/conversions';
+  static const String deleteCustomerAccount = '/api/v6/customer/account';
   static const String deliveryRestrictedCountryList =
-      '/api/v1/customer/get-restricted-country-list';
+      '/api/v6/customer/delivery-restrictions/countries';
   static const String deliveryRestrictedZipList =
-      '/api/v1/customer/get-restricted-zip-list';
-  static const String getOrderFromOrderId =
-      '/api/v1/customer/order/get-order-by-id?order_id=';
+      '/api/v6/customer/delivery-restrictions/zip-codes';
+  static const String getOrderFromOrderId = '/api/v6/customer/orders/';
   static const String offlinePayment =
-      '/api/v1/customer/order/place-by-offline-payment';
-  static const String walletPayment = '/api/v1/customer/order/place-by-wallet';
-  static const String couponListApi = '/api/v1/coupon/list?limit=100&offset=';
-  static const String sellerWiseCouponListApi = '/api/v1/coupons/';
-  static const String sellerWiseBestSellingProduct = '/api/v1/seller/';
-  static const String digitalPayment = '/api/v1/digital-payment';
+      '/api/v6/customer/orders/offline-payment';
+  static const String walletPayment = '/api/v6/customer/orders/wallet';
+  static const String couponListApi = '/api/v6/coupons';
+  static const String sellerWiseCouponListApi = '/api/v6/shops/';
+  static const String sellerWiseBestSellingProduct = '/api/v6/shops/';
+  static const String digitalPayment = '/api/v6/customer/payments/digital';
   static const String offlinePaymentList =
-      '/api/v1/customer/order/offline-payment-method-list';
-  static const String sellerWiseCategoryList = '/api/v1/categories?shop_slug=';
-  static const String sellerWiseBrandList = '/api/v1/brands?shop_slug=';
-  static const String getDigitalAuthorList =
-      '/api/v1/products/digital-author-list?guest_id=1';
+      '/api/v6/customer/offline-payment-methods';
+  static const String sellerWiseCategoryList = '/api/v6/categories';
+  static const String sellerWiseBrandList = '/api/v6/brands';
+  static const String getDigitalAuthorList = '/api/v6/digital-authors';
   static const String getDigitalPublishingHouse =
-      '/api/v1/products/digital-publishing-house-list?guest_id=1';
-  static const String verifyProfileInfo = '/api/v1/auth/verify-profile-info';
-  static const String firebaseAuthTokenStore =
-      '/api/v1/auth/firebase-auth-token-store';
+      '/api/v6/digital-publishing-houses';
+  static const String verifyProfileInfo = '/api/v6/auth/identity/verify';
+  static const String firebaseAuthTokenStore = '/api/v6/auth/firebase/session';
   static const String productRestockRequest =
-      '/api/v1/cart/product-restock-request';
-  static const String productRestockList =
-      '/api/v1/customer/restock-requests/list?';
+      '/api/v6/customer/restock-requests';
+  static const String productRestockList = '/api/v6/customer/restock-requests';
   static const String productRestockDelete =
-      '/api/v1/customer/restock-requests/delete';
-  static const String clearanceAllProductUri =
-      '/api/v1/products/clearance-sale';
-  static const String clearanceShopProductUri = '/api/v1/seller/';
-  static const String clearanceShopSearchProductUri = '/api/v1/seller/';
-  static const String businessPagesUri = '/api/v1/business-pages?type=';
-  static const String getDeliveryManReview =
-      '/api/v1/customer/order/deliveryman-review?order_id=';
-  static const String submitDeliveryManReview =
-      '/api/v1/customer/order/deliveryman-review/update?order_id=';
-  static const String mergeGuestCart = '/api/v1/cart/get-merge-guest-cart';
-  static const String orderDetailsTrack =
-      '/api/v1/order/track-order-details?order_id=';
+      '/api/v6/customer/restock-requests';
+  static const String clearanceShopProductUri = '/api/v6/shops/';
+  static const String clearanceShopSearchProductUri = '/api/v6/shops/';
+  static const String businessPagesUri = '/api/v6/business-pages';
+  static const String getDeliveryManReview = '/api/v6/customer/orders/';
+  static const String submitDeliveryManReview = '/api/v6/customer/orders/';
+  static const String mergeGuestCart = '/api/v6/customer/cart/merge-guest';
+  static const String wholesaleMergeGuestCart =
+      '/api/v6/wholesale/customer/cart/merge-guest';
+  static const String orderDetailsTrack = '/api/v6/orders/';
 
   //address
-  static const String updateAddressUri = '/api/v1/customer/address/update';
-  static const String geocodeUri = '/api/v1/mapapi/geocode-api';
-  static const String searchLocationUri =
-      '/api/v1/mapapi/place-api-autocomplete';
-  static const String placeDetailsUri = '/api/v1/mapapi/place-api-details';
-  static const String distanceMatrixUri = '/api/v1/mapapi/distance-api';
-  static const String chatWithDeliveryMan = '/api/v1/mapapi/distance-api';
+  static const String geocodeUri = '/api/v6/maps/geocode';
+  static const String searchLocationUri = '/api/v6/maps/places';
+  static const String placeDetailsUri = '/api/v6/maps/places/';
 
-  static const String getGuestIdUri = '/api/v1/get-guest-id';
-  static const String mostDemandedProduct =
-      '/api/v1/products/most-demanded-product?guest_id=1';
+  static const String getGuestIdUri = '/api/v6/get-guest-id';
+  static const String mostDemandedProduct = '/api/v6/products/most-demanded';
   static const String shopAgainFromRecentStore =
-      '/api/v1/products/shop-again-product';
-  static const String findWhatYouNeed = '/api/v1/categories/find-what-you-need';
-  static const String orderTrack = '/api/v1/order/track-order';
-  static const String addFundToWallet = '/api/v1/add-to-fund';
-  static const String reorder = '/api/v1/customer/order/again';
-  static const String walletBonusList = '/api/v1/customer/wallet/bonus-list';
-  static const String moreStore = '/api/v1/seller/more';
-  static const String justForYou = '/api/v1/products/just-for-you?guest_id=1';
-  static const String mostSearching = '/api/v1/products/most-searching';
-  static const String contactUsUri = '/api/v1/contact-us';
-  static const String attributeUri = '/api/v1/attributes';
-  static const String availableCoupon = '/api/v1/coupon/applicable-list';
-  static const String downloadDigitalProduct =
-      '/api/v1/customer/order/digital-product-download/';
+      '/api/v6/customer/products/shop-again';
+  static const String findWhatYouNeed = '/api/v6/categories/find-what-you-need';
+  static const String orderTrack = '/api/v6/orders/track';
+  static const String addFundToWallet = '/api/v6/customer/wallet/funds';
+  static const String reorder = '/api/v6/customer/orders/';
+  static const String walletBonusList = '/api/v6/customer/wallet/bonuses';
+  static const String moreStore = '/api/v6/shops';
+  static const String justForYou = '/api/v6/products/just-for-you';
+  static const String mostSearching = '/api/v6/products/most-searched';
+  static const String contactUsUri = '/api/v6/contact-us';
+  static const String attributeUri = '/api/v6/attributes';
+  static const String availableCoupon = '/api/v6/customer/coupons/applicable';
+  static const String downloadDigitalProduct = '/api/v6/customer/order-items/';
   static const String otpVResendForDigitalProduct =
-      '/api/v1/customer/order/digital-product-download-otp-resend';
+      '/api/v6/customer/order-items/';
   static const String otpVerificationForDigitalProduct =
-      '/api/v1/customer/order/digital-product-download-otp-verify';
-  static const String selectCartItemsUri = '/api/v1/cart/select-cart-items';
-  static const String generateInvoice =
-      '/api/v1/customer/order/generate-invoice?order_id=';
+      '/api/v6/customer/order-items/';
+  static const String selectCartItemsUri = '/api/v6/customer/cart/selection';
+  static const String generateInvoice = '/api/v6/customer/orders/';
 
-  static const String checkEmailUri = '/api/v1/auth/check-email';
-  static const String checkPhoneUri = '/api/v1/auth/check-phone?phone=';
-  static const String firebaseAuthVerify = '/api/v1/auth/firebase-auth-verify';
-  static const String registerWithOtp = '/api/v1/auth/registration-with-otp';
-  static const String verifyTokenUri = '/api/v1/auth/verify-token';
+  static const String checkEmailUri = '/api/v6/auth/availability/email';
+  static const String checkPhoneUri = '/api/v6/auth/availability/phone';
+  static const String firebaseAuthVerify = '/api/v6/auth/firebase/verify';
+  static const String registerWithOtp = '/api/v6/auth/register/otp';
+  static const String verifyTokenUri = '/api/v6/auth/password/verify-otp';
   static const String existingAccountCheck =
-      '/api/v1/auth/existing-account-check';
+      '/api/v6/auth/social/existing-account';
   static const String referralAmountUri =
-      '/api/v1/cart/get-referral-discount-redeem';
+      '/api/v6/customer/cart/referral-discount';
 
-  static const String duePaymentByCodUri =
-      '/api/v1/edit-order/due-payment-by-cod';
-  static const String duePaymentByDigitalPayment =
-      '/api/v1/edit-order/due-payment-by-digital-payment';
-  static const String duePaymentByWallet =
-      '/api/v1/edit-order/due-payment-by-wallet';
-  static const String duePaymentByOfflinePayment =
-      '/api/v1/edit-order/due-payment-by-offline-payment';
+  static const String duePaymentByCodUri = '/api/v6/customer/orders/';
+  static const String duePaymentByDigitalPayment = '/api/v6/customer/orders/';
+  static const String duePaymentByWallet = '/api/v6/customer/orders/';
+  static const String duePaymentByOfflinePayment = '/api/v6/customer/orders/';
 
-  static const String getCompareList = '/api/v1/customer/compare/list';
-  static const String addToCompareList =
-      '/api/v1/customer/compare/product-store';
-  static const String removeAllFromCompareList =
-      '/api/v1/customer/compare/clear-all';
-  static const String replaceFromCompareList =
-      '/api/v1/customer/compare/product-replace';
-  static const String setCurrentLanguage = '/api/v1/customer/language-change';
-  static const String registerWithSocialMedia =
-      '/api/v1/auth/registration-with-social-media';
+  static const String wholesaleEditOrderDuePaymentUri =
+      '/api/dummy/edit-payment';
 
-  // vat-tax
-  static const String getTaxVatList = '/api/v1/vat-tax/get-taxVat-list';
+  // wholesale ai-shopping
+  static const String wholesaleAiShoppingSessions =
+      '/api/v6/wholesale/ai/assistant/sessions';
+  static const String wholesaleAiShoppingUploadImage =
+      '/api/v6/wholesale/ai/assistant/upload-image';
+  static const String wholesaleAttributeUri = '/api/v6/wholesale/attributes';
+  static const String wholesaleBannerUri = '/api/v6/wholesale/banners';
+  static const String wholesaleBrandUri = '/api/v6/wholesale/brands';
+  static const String wholesaleCategoryUri = '/api/v6/wholesale/categories';
+  static const String wholesaleSubCategoryUri =
+      '/api/v6/wholesale/categories/sub-categories/';
+  static const String wholesaleSubSubCategoryUri =
+      '/api/v6/wholesale/categories/sub-sub-categories/';
+  static const String wholesaleCategoryProductUri =
+      '/api/v6/wholesale/products';
+  static const String wholesaleProductSuggestionUri =
+      '/api/v6/wholesale/products/suggestions';
+  static const String wholesaleTagsUri = '/api/v6/wholesale/tags';
+  static const String wholesaleDiscountedProductsUri =
+      '/api/v6/wholesale/products/discounted';
+  static const String wholesalePriceDropProductsUri =
+      '/api/v6/wholesale/products/price-drop';
+  static const String wholesaleReducedMoqProductsUri =
+      '/api/v6/wholesale/products/reduced-moq';
+  static const String wholesaleProductDetailsUri =
+      '/api/v6/wholesale/products/';
+  static const String wholesaleSellerProductUri = '/api/v6/wholesale/products/';
+  static const String wholesaleSimilarProductUri =
+      '/api/v6/wholesale/products/';
+  static const String wholesalePriceQuoteUri = '/api/v6/wholesale/products/';
+  static const String wholesaleCartItemUri =
+      '/api/v6/wholesale/customer/cart/items';
+  static const String wholesaleCartUri = '/api/v6/wholesale/customer/cart';
+  static const String wholesaleCartSelectionUri =
+      '/api/v6/wholesale/customer/cart/selection';
+  static const String wholesaleCartShippingMethodUri =
+      '/api/v6/wholesale/customer/cart/shipping-method';
+  static const String wholesaleCartCouponUri =
+      '/api/v6/wholesale/customer/cart/coupon';
+  static const String wholesaleApplicableCouponUri =
+      '/api/v6/wholesale/customer/coupons/applicable';
+  static const String wholesaleRestockRequestUri =
+      '/api/v6/wholesale/customer/restock-requests';
+  static const String wholesaleOrderCashOnDeliveryUri =
+      '/api/v6/wholesale/customer/orders/cash-on-delivery';
+  static const String wholesaleOrderOfflinePaymentUri =
+      '/api/v6/wholesale/customer/orders/offline-payment';
+  static const String wholesaleOrderWalletUri =
+      '/api/v6/wholesale/customer/orders/wallet';
+  static const String wholesaleOrderDigitalPaymentUri =
+      '/api/v6/wholesale/customer/orders/digital-payment';
+  static const String wholesaleOrderDigitalPaymentByRefUri =
+      '/api/v6/wholesale/customer/orders/digital-payment/';
+  static const String wholesaleCustomerOrderUri =
+      '/api/v6/wholesale/customer/orders';
+  static const String wholesaleOrderDetailsUri =
+      '/api/v6/wholesale/customer/orders/';
+  static const String wholesaleOrderStatusHistoryUri =
+      '/api/v6/wholesale/orders/';
+  static const String wholesaleOrderTrackUri = '/api/v6/wholesale/orders/track';
+  static const String wholesaleOrderTrackingUri = '/api/v6/wholesale/orders/';
+  static const String wholesaleOrderInvoiceUri =
+      '/api/v6/wholesale/customer/orders/';
+  static const String wholesaleOrderCancelUri =
+      '/api/v6/wholesale/customer/orders/';
+  static const String wholesaleRefundRequestUri =
+      '/api/v6/wholesale/customer/refunds';
+  static const String wholesaleRefundEligibilityUri =
+      '/api/v6/wholesale/customer/refunds/eligibility/';
+  static const String wholesaleRefundResultUri =
+      '/api/v6/wholesale/customer/refunds/';
+  static const String wholesaleOrderProductReviewUri =
+      '/api/v6/wholesale/customer/orders/';
+  static const String wholesaleReviewUri = '/api/v6/wholesale/customer/reviews';
+  static const String wholesaleRecentlyViewedProductUri =
+      '/api/v6/wholesale/customer/products/recently-viewed';
+  static const String wholesaleShopListUri = '/api/v6/wholesale/shops';
+  static const String wholesaleRecentlyViewedShopUri =
+      '/api/v6/wholesale/customer/shops/recently-viewed';
+  static const String wholesaleCouponUri = '/api/v6/wholesale/coupons';
+  static const String wholesaleCampaignUri = '/api/v6/wholesale/campaigns';
+  static const String wholesaleCampaignDetailsUri =
+      '/api/v6/wholesale/campaigns/';
+  static const String wholesaleShopCouponUri = '/api/v6/wholesale/shops/';
+  static const String wholesaleShopDetailsUri = '/api/v6/wholesale/shops/';
+  static const String wholesaleNotificationUri =
+      '/api/v6/wholesale/notifications';
+  static const String wholesaleNotificationSeenUri =
+      '/api/v6/wholesale/notifications/';
+  static const String wholesaleAddWishListUri =
+      '/api/v6/wholesale/customer/wishlist';
+  static const String wholesaleRemoveWishListUri =
+      '/api/v6/wholesale/customer/wishlist/';
+  static const String wholesaleGetWishListUri =
+      '/api/v6/wholesale/customer/wishlist';
+
+  static const String getCompareList = '/api/v6/customer/compare';
+  static const String addToCompareList = '/api/v6/customer/compare';
+  static const String removeAllFromCompareList = '/api/v6/customer/compare';
+  static const String replaceFromCompareList = '/api/v6/customer/compare/';
+  static const String setCurrentLanguage = '/api/v6/customer/language';
+  static const String registerWithSocialMedia = '/api/v6/auth/register/social';
+
+  // vat-tax (auction)
+  static const String auctionVatTaxSetup = '/api/v6/auction/vat-tax/setup';
+  static const String auctionVatTaxListUri = '/api/v6/auction/vat-tax/list';
 
   static const String auctionAddonPurchaseUrl = '';
 
   // auction
-  static const String createAuctionProductsUri =
-      '/api/v1/customer/auction/products/store';
-  static const String updateAuctionProductsUri =
-      '/api/v1/customer/auction/products/update';
+  static const String createAuctionProductsUri = '/api/v6/auction/products';
+  static const String updateAuctionProductsUri = '/api/v6/auction/products';
   static const String creatorAuctionProductDetailsUri =
-      '/api/v1/customer/auction/products/details';
+      '/api/v6/auction/products';
   static const String customerAuctionProductRequestListUri =
-      '/api/v1/customer/auction/products/pending-approval-list';
+      '/api/v6/auction/products/pending-approval';
   static const String customerAuctionProductListUri =
-      '/api/v1/customer/auction/products/list';
-  static const String customerMyBidList =
-      '/api/v1/customer/auction/products/my-bid-list';
-  static const String auctionCategoriesUri =
-      '/api/v1/customer/auction/categories';
+      '/api/v6/auction/products';
+  static const String customerMyBidList = '/api/v6/auction/products/my-bids';
+  static const String auctionCategoriesUri = '/api/v6/auction/categories';
   static const String auctionCategoryProductListUri =
-      '/api/v1/customer/auction/products/category';
+      '/api/v6/auction/products';
   static const String customerAuctionProductDeleteUri =
-      '/api/v1/customer/auction/products/delete/';
+      '/api/v6/auction/products/';
   static const String customerAuctionProductCancelUri =
-      '/api/v1/customer/auction/products/cancel/';
-  static const String auctionPopularTags =
-      '/api/v1/customer/auction/products/popular-tags';
-  static const String auctionProductListUri =
-      '/api/v1/customer/auction/products/filter';
+      '/api/v6/auction/products/';
+  static const String auctionPopularTags = '/api/v6/auction/tags';
+  static const String auctionProductListUri = '/api/v6/auction/products';
   static const String getAuctionSuggestionProductName =
-      '/api/v1/customer/auction/products/suggestion-product';
+      '/api/v6/auction/products/suggestions';
   static const String participationAuctionProductDetailsUri =
-      '/api/v1/customer/auction/products/overview/';
-  static const String auctionEntryFeeUri =
-      '/api/v1/customer/auction/entry-fees/store';
-  static const String auctionPlaceBidUri =
-      '/api/v1/customer/auction/bids/place';
-  static const String auctionWithdrawBidUri =
-      '/api/v1/customer/auction/bids/withdraw';
-  static const String auctionRollbackBidUri =
-      '/api/v1/customer/auction/bids/rollback';
-  static const String auctionBidListUri = '/api/v1/customer/auction/bids/list/';
-  static const String auctionCreatorBidListUri =
-      '/api/v1/customer/auction/my-auction/bids/';
-  static const String auctionSaveUri =
-      '/api/v1/customer/auction/saved-products/store';
-  static const String auctionClaimUri = '/api/v1/customer/auction/claims/store';
-  static const String auctionSocialShareUri =
-      '/api/v1/customer/auction/products/social-share-link/';
-  static const String auctionSaveListUri =
-      '/api/v1/customer/auction/saved-products/list';
-  static const String auctionGenerateInvoice =
-      '/api/v1/customer/auction/products/generate-invoice/';
-  static const String auctionRecentViewsUri =
-      '/api/v1/customer/auction/recent-views/list';
-  static const String auctionUploadTrackingUri =
-      '/api/v1/customer/auction/products/tracking-url/';
-  static const String auctionDeliveryStatusUri =
-      '/api/v1/customer/auction/products/delivery-status/';
+      '/api/v6/auction/products';
+  static const String auctionEntryFeeUri = '/api/v6/auction/entry-fees';
+  static const String auctionPlaceBidUri = '/api/v6/auction/bids';
+  static const String auctionWithdrawBidUri = '/api/v6/auction/bids/withdraw';
+  static const String auctionRollbackBidUri = '/api/v6/auction/bids/rollback';
+  static const String auctionBidListUri = '/api/v6/auction/products/';
+  static const String auctionCreatorBidListUri = '/api/v6/auction/my-auctions/';
+  static const String auctionSaveUri = '/api/v6/auction/saved-products';
+  static const String auctionClaimUri = '/api/v6/auction/claims';
+  static const String auctionSocialShareUri = '/api/v6/auction/products/';
+  static const String auctionSaveListUri = '/api/v6/auction/saved-products';
+  static const String auctionGenerateInvoice = '/api/v6/auction/products/';
+  static const String auctionRecentViewsUri = '/api/v6/auction/recent-views';
+  static const String auctionUploadTrackingUri = '/api/v6/auction/products/';
+  static const String auctionDeliveryStatusUri = '/api/v6/auction/products/';
 
   static const String userCreatedAuctionList =
-      '/api/v1/customer/auction/products/my-auction-list';
-  static const String auctionSalesReportUri =
-      '/api/v1/customer/auction/sales-report';
+      '/api/v6/auction/products/my-auctions';
+  static const String auctionSalesReportUri = '/api/v6/auction/sales-report';
   static const String withdrawMethodListUri =
-      '/api/v1/customer/auction/withdraw-methods/list';
-  static const String auctionCommissionPayUri =
-      '/api/v1/customer/auction/commission/pay/';
-  static const String auctionWithdrawStoreOrUpdateUri =
-      '/api/v1/customer/auction/withdraws/store-or-update';
-  static const String auctionRelaunchUri =
-      '/api/v1/customer/auction/products/relaunch/';
+      '/api/v6/auction/withdraw-methods';
+  static const String auctionCommissionPayUri = '/api/v6/auction/products/';
+  static const String auctionWithdrawStoreUri = '/api/v6/auction/withdraws';
+  static const String auctionWithdrawUpdateUri = '/api/v6/auction/withdraws/';
+  static const String auctionRelaunchUri = '/api/v6/auction/products/';
   static const String auctionTransactionHistoryUri =
-      '/api/v1/customer/auction/transaction-history';
+      '/api/v6/auction/transactions';
+  static const String auctionBrandUri = '/api/v6/auction/brands';
 
   // ai-
   static const String auctionTitleAutoFill =
-      '/api/v1/customer/auction/product/title-auto-fill';
+      '/api/v6/auction/product/title-auto-fill';
   static const String auctionDescriptionAutoFill =
-      '/api/v1/customer/auction/product/description-auto-fill';
+      '/api/v6/auction/product/description-auto-fill';
   static const String auctionGeneralSetupAutoFill =
-      '/api/v1/customer/auction/product/general-setup-auto-fill';
+      '/api/v6/auction/product/general-setup-auto-fill';
   static const String auctionShippingPolicyAutoFill =
-      '/api/v1/customer/auction/product/shipping-policy-auto-fill';
+      '/api/v6/auction/product/shipping-policy-auto-fill';
   static const String auctionInfoAutoFill =
-      '/api/v1/customer/auction/product/auction-info-auto-fill';
+      '/api/v6/auction/product/auction-info-auto-fill';
   static const String auctionSeoSectionAutoFill =
-      '/api/v1/customer/auction/product/seo-section-auto-fill';
+      '/api/v6/auction/product/seo-section-auto-fill';
   static const String auctionAnalyzeImageAutoFill =
-      '/api/v1/customer/auction/product/analyze-image-auto-fill';
+      '/api/v6/auction/product/analyze-image-auto-fill';
   static const String auctionSetupAutoFill =
-      '/api/v1/customer/auction/product/setup-auto-fill';
+      '/api/v6/auction/product/setup-auto-fill';
   static const String auctionGenerateTitleSuggestions =
-      '/api/v1/customer/auction/product/generate-title-suggestions';
+      '/api/v6/auction/product/generate-title-suggestions';
   static const String auctionGenerateLimitCheck =
-      '/api/v1/customer/auction/product/generate-limit-check';
+      '/api/v6/auction/product/generate-limit-check';
 
-  // ai-shopping (legacy)
-  static const String aiShoppingSearch = '/api/v1/customer/ai-shopping/search';
-  static const String aiShoppingImageSearch =
-      '/api/v1/customer/ai-shopping/image-search';
-  static const String aiShoppingLimitCheck =
-      '/api/v1/customer/ai-shopping/generate-limit-check';
-
-  // ai-shopping assistant v1
+  // ai-shopping
+  static const String aiShoppingSearch = '/api/v6/ai/assistant/sessions';
   static const String aiShoppingUploadImage =
-      '/api/v1/ai/assistant/upload-image';
-  static const String aiShoppingSessions = '/api/v1/ai/assistant/sessions';
+      '/api/v6/ai/assistant/upload-image';
+  static const String aiShoppingSessions = '/api/v6/ai/assistant/sessions';
 
   static const String auctionDashboardSummaryUri =
-      '/api/v1/customer/auction/dashboard-summary';
+      '/api/v6/auction/dashboard-summary';
   static const String auctionNotificationListUri =
-      '/api/v1/customer/auction/notifications/list';
+      '/api/v6/auction/notifications';
   static const String auctionNotificationSeenUri =
-      '/api/v1/customer/auction/notifications/seen';
+      '/api/v6/auction/notifications/seen';
 
   // sharePreference
   static const String userLoginToken = 'user_login_token';
@@ -364,6 +416,8 @@ class AppConstants {
   static const String homeAddress = 'home_address';
   static const String searchProductName = 'search_product';
   static const String auctionSearchProductName = 'auction_search_product_name';
+  static const String wholesaleSearchProductName =
+      'wholesale_search_product_name';
   static const String officeAddress = 'office_address';
   static const String config = 'config';
   static const String guestMode = 'guest_mode';
@@ -393,6 +447,7 @@ class AppConstants {
   static const String languageCode = 'language_code';
   static const String theme = 'theme';
   static const String topic = 'sixvalley';
+  static const String wholesaleTopic = 'sixvalley_wholesale';
   static const String demoTopic = 'demo_reset';
   static const String userAddress = 'user_address';
 
@@ -430,7 +485,7 @@ class AppConstants {
   static const double maxLimitOfTotalFileSent = 5;
   static const double maxLimitOfFileSentINConversation = 25;
   static const int fileImageMaxLimit = 2;
-  static const int flashDealProductShowLimit = 13;
+  static const int flashDealProductShowLimit = 10;
   static const int flashDealProductShowMaximumLimit = 99;
   static const int auctionProductProductShowLimit = 13;
   static const int auctionProductShowMaximumLimit = 99;
@@ -444,16 +499,35 @@ class AppConstants {
   ];
 
   static const List<String> walletEarnTypeList = [
-    'add_fund_by_admin',
-    'loyalty_point',
-    'order_place',
     'order_refund',
-    'added_via_payment_method',
-    'earned_by_referral',
+    'order_place',
+    'loyalty_point',
+    'add_fund',
+    'add_fund_by_admin',
     'due_payment_for_order',
     'return_order_amount_by_admin',
-    'return_order_amount_by_seller'
+    'return_order_amount_by_seller',
+    'auction_entry_fee',
+    'auction_claim_payment',
+    'auction_commission_payment',
+    'added_via_payment_method',
+    'earned_by_referral',
+    'auction',
   ];
+
+  static const List<String> auctionWalletEarnTypeList = [
+    'auction_entry_fee',
+    'auction_claim_payment',
+    'auction_commission_payment',
+    'auction',
+  ];
+
+  static List<String> getWalletEarnTypeList({required bool isAuctionEnabled}) =>
+      isAuctionEnabled
+          ? walletEarnTypeList
+          : walletEarnTypeList
+              .where((type) => !auctionWalletEarnTypeList.contains(type))
+              .toList();
 
   static const List<String> videoExtensions = [
     'mp4',

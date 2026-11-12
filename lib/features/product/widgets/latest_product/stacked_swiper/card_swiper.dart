@@ -1,4 +1,3 @@
-/// This library is for swiper
 library;
 
 export 'flutter_page_indicator/flutter_page_indicator.dart';

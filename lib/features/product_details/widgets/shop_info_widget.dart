@@ -53,6 +53,9 @@ class _ShopInfoWidgetState extends State<ShopInfoWidget> {
           isInHouseSeller: widget.sellerId == '0',
         );
 
+        final bool isTemporaryClosed = isSeller ? (sellerShop.temporaryClose ?? false) : (splash.configModel?.inhouseTemporaryClose?.status ?? false);
+        final bool showOverlay = isTemporaryClosed || isVacationActive;
+
         return Container(
           margin: const EdgeInsets.only(top: Dimensions.paddingSizeSmall),
           padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
@@ -65,14 +68,35 @@ class _ShopInfoWidgetState extends State<ShopInfoWidget> {
             children: [
               Row(
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(Dimensions.paddingSizeEight),
-                    child: CustomImageWidget(
-                      image: isSeller ? sellerShop.imageFullUrl?.path ?? '' : inHouseShop?.imageFullUrl?.path ?? '',
-                      height: 40,
-                      width: 40,
+                  Stack(children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(Dimensions.paddingSizeEight),
+                      child: CustomImageWidget(
+                        image: isSeller ? sellerShop.imageFullUrl?.path ?? '' : inHouseShop?.imageFullUrl?.path ?? '',
+                        height: 40,
+                        width: 40,
+                      ),
                     ),
-                  ),
+
+                    if (showOverlay)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(Dimensions.paddingSizeEight),
+                        child: Container(width: 40, height: 40, color: Colors.black.withValues(alpha: .5)),
+                      ),
+
+                    if (showOverlay)
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: Center(
+                          child: Text(
+                            isTemporaryClosed ? getTranslated('temporary_closed', context)! : getTranslated('close_for_now', context)!,
+                            textAlign: TextAlign.center,
+                            style: textRegular.copyWith(color: Colors.white, fontSize: Dimensions.fontSizeExtraSmall),
+                          ),
+                        ),
+                      ),
+                  ]),
                   const SizedBox(width: Dimensions.paddingSizeSmall),
 
                   Expanded(
@@ -100,7 +124,7 @@ class _ShopInfoWidgetState extends State<ShopInfoWidget> {
                         ),
                         const SizedBox(width: 4),
 
-                        Icon(Icons.arrow_forward_ios, size: 16, color: Theme.of(context).hintColor),
+                        Icon(Icons.arrow_forward_ios, size: 16, color: Theme.of(context).primaryColor),
                       ],
                     ),
                   )

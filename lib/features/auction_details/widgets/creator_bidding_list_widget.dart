@@ -67,71 +67,99 @@ class _CreatorBiddingListWidgetState extends State<CreatorBiddingListWidget> {
         final isCollapsed = detailsController.isCollapsed;
         final isPaginating = detailsController.isBidPaginating;
         final isLoading = detailsController.isBidListLoading;
+        final showList = !isLoading && bids.isNotEmpty;
+        final cardColor = Theme.of(context).cardColor;
 
-        return Container(
-          color: Theme.of(context).cardColor,
-          padding: const EdgeInsets.symmetric(
-            horizontal: Dimensions.paddingSizeDefault,
-            vertical: Dimensions.paddingSizeTwelve,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                getTranslated('live_bidding_activity', context) ?? "",
-                style: titilliumBold.copyWith(
-                  fontSize: Dimensions.fontSizeDefault,
-                  color: Theme.of(context).textTheme.titleMedium?.color,
-                ),
+        return SliverMainAxisGroup(slivers: [
+          SliverToBoxAdapter(
+            child: Container(
+              color: cardColor,
+              padding: const EdgeInsets.only(
+                left: Dimensions.paddingSizeDefault,
+                right: Dimensions.paddingSizeDefault,
+                top: Dimensions.paddingSizeTwelve,
               ),
-              const SizedBox(height: Dimensions.paddingSizeTwelve),
-
-              if (isLoading)
-                const BiddingListShimmerWidget()
-              else if (bids.isEmpty)
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
-                    child: Text(
-                      getTranslated('no_bids_yet', context) ?? 'No bids yet',
-                      style: titilliumRegular.copyWith(
-                        color: Theme.of(context).hintColor,
-                        fontSize: Dimensions.fontSizeSmall,
-                      ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    getTranslated('live_bidding_activity', context) ?? "",
+                    style: titilliumBold.copyWith(
+                      fontSize: Dimensions.fontSizeDefault,
+                      color: Theme.of(context).textTheme.titleMedium?.color,
                     ),
                   ),
-                )
-              else
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: bids.length,
-                  separatorBuilder: (_, __) => const SizedBox.shrink(),
-                  itemBuilder: (_, index) => BidRow(item: widget.bids[index]),
-                ),
+                  const SizedBox(height: Dimensions.paddingSizeTwelve),
 
-              if (!isLoading && bids.isNotEmpty) ...[
-                const SizedBox(height: Dimensions.paddingSizeSmall),
-                if (isPaginating)
-                  const Center(child: CircularProgressIndicator())
-                else if (hasMore)
-                  _SeeMoreLessButton(
-                    label: getTranslated('see_more', context) ?? 'See More',
-                    icon: Icons.keyboard_arrow_down_rounded,
-                    onTap: () => detailsController.loadMoreBids(
-                      productId: widget.productId,
+                  if (isLoading)
+                    const BiddingListShimmerWidget()
+                  else if (bids.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
+                        child: Text(
+                          getTranslated('no_bids_yet', context) ?? 'No bids yet',
+                          style: titilliumRegular.copyWith(
+                            color: Theme.of(context).hintColor,
+                            fontSize: Dimensions.fontSizeSmall,
+                          ),
+                        ),
+                      ),
                     ),
-                  )
-                else if (!isCollapsed)
-                    _SeeMoreLessButton(
-                      label: getTranslated('see_less', context) ?? 'See Less',
-                      icon: Icons.keyboard_arrow_up_rounded,
-                      onTap: () => detailsController.collapseBids(),
-                    ),
-              ],
-            ],
+                ],
+              ),
+            ),
           ),
-        );
+
+          if (showList)
+            DecoratedSliver(
+              decoration: BoxDecoration(color: cardColor),
+              sliver: SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (_, index) => BidRow(item: widget.bids[index]),
+                    childCount: bids.length,
+                  ),
+                ),
+              ),
+            ),
+
+          SliverToBoxAdapter(
+            child: Container(
+              color: cardColor,
+              padding: const EdgeInsets.only(
+                left: Dimensions.paddingSizeDefault,
+                right: Dimensions.paddingSizeDefault,
+                bottom: Dimensions.paddingSizeTwelve,
+              ),
+              child: !showList
+                  ? const SizedBox.shrink()
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: Dimensions.paddingSizeSmall),
+                        if (isPaginating)
+                          const Center(child: CircularProgressIndicator())
+                        else if (hasMore)
+                          _SeeMoreLessButton(
+                            label: getTranslated('see_more', context) ?? 'See More',
+                            icon: Icons.keyboard_arrow_down_rounded,
+                            onTap: () => detailsController.loadMoreBids(
+                              productId: widget.productId,
+                            ),
+                          )
+                        else if (!isCollapsed)
+                          _SeeMoreLessButton(
+                            label: getTranslated('see_less', context) ?? 'See Less',
+                            icon: Icons.keyboard_arrow_up_rounded,
+                            onTap: () => detailsController.collapseBids(),
+                          ),
+                      ],
+                    ),
+            ),
+          ),
+        ]);
       },
     );
   }

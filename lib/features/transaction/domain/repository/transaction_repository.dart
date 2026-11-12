@@ -16,7 +16,7 @@ class TransactionRepository implements TransactionRepositoryInterface {
       final response = await dioClient!.get(AppConstants.withdrawMethodListUri);
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
@@ -24,41 +24,87 @@ class TransactionRepository implements TransactionRepositoryInterface {
   Future<ApiResponseModel> payCommission({required CommissionPayRequestModel commissionPayRequest,
   }) async {
     try {
-      final response = await dioClient!.post('${AppConstants.auctionCommissionPayUri}${commissionPayRequest.auctionProductId}', data: commissionPayRequest.toJson());
+      final response = await dioClient!.post(
+        '${AppConstants.auctionCommissionPayUri}${commissionPayRequest.auctionProductId}/commission',
+        data: commissionPayRequest.toJson(),
+      );
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
   @override
-  Future<ApiResponseModel> storeOrUpdateWithdraw({
+  Future<ApiResponseModel> createWithdraw({
     required int auctionProductId,
     required int withdrawMethodId,
-    int? existingWithdrawId,
     double? amount,
     Map<String, dynamic>? methodInfo,
     String? transactionNote,
     String? currentCurrencyCode,
   }) async {
     try {
-      final Map<String, dynamic> fields = {};
-      fields['auction_product_id'] = auctionProductId;
-      fields['withdraw_method_id'] = withdrawMethodId;
-      if (existingWithdrawId != null) fields['existing_withdraw_id'] = existingWithdrawId;
-      if (amount != null) fields['amount'] = amount;
-      if (methodInfo != null) fields['method_info'] = methodInfo;
-      if (transactionNote != null) fields['transaction_note'] = transactionNote;
-      if (currentCurrencyCode != null) fields['current_currency_code'] = currentCurrencyCode;
-
       final response = await dioClient!.post(
-        AppConstants.auctionWithdrawStoreOrUpdateUri,
-        data: fields,
+        AppConstants.auctionWithdrawStoreUri,
+        data: _withdrawFields(
+          auctionProductId: auctionProductId,
+          withdrawMethodId: withdrawMethodId,
+          amount: amount,
+          methodInfo: methodInfo,
+          transactionNote: transactionNote,
+          currentCurrencyCode: currentCurrencyCode,
+        ),
       );
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
+  }
+
+  @override
+  Future<ApiResponseModel> updateWithdraw({
+    required int withdrawId,
+    required int auctionProductId,
+    required int withdrawMethodId,
+    double? amount,
+    Map<String, dynamic>? methodInfo,
+    String? transactionNote,
+    String? currentCurrencyCode,
+  }) async {
+    try {
+      final response = await dioClient!.put(
+        '${AppConstants.auctionWithdrawUpdateUri}$withdrawId',
+        data: _withdrawFields(
+          auctionProductId: auctionProductId,
+          withdrawMethodId: withdrawMethodId,
+          amount: amount,
+          methodInfo: methodInfo,
+          transactionNote: transactionNote,
+          currentCurrencyCode: currentCurrencyCode,
+        ),
+      );
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
+    }
+  }
+
+  Map<String, dynamic> _withdrawFields({
+    required int auctionProductId,
+    required int withdrawMethodId,
+    double? amount,
+    Map<String, dynamic>? methodInfo,
+    String? transactionNote,
+    String? currentCurrencyCode,
+  }) {
+    final Map<String, dynamic> fields = {};
+    fields['auction_product_id'] = auctionProductId;
+    fields['withdraw_method_id'] = withdrawMethodId;
+    if (amount != null) fields['amount'] = amount;
+    if (methodInfo != null) fields['method_info'] = methodInfo;
+    if (transactionNote != null) fields['transaction_note'] = transactionNote;
+    if (currentCurrencyCode != null) fields['current_currency_code'] = currentCurrencyCode;
+    return fields;
   }
 
   @override

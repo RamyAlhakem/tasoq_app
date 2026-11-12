@@ -16,7 +16,7 @@ class AuctionCategoryRepository extends DataSyncService implements AuctionCatego
       final response = await dioClient!.get(AppConstants.auctionCategoriesUri);
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
@@ -27,29 +27,15 @@ class AuctionCategoryRepository extends DataSyncService implements AuctionCatego
     required DataSourceEnum source,
     String searchProduct = '',
   }) async {
+    final Map<String, String> queryParams = {
+      'limit': '10',
+      'offset': '$offset',
+      'category_ids[]': '$categoryId',
+      if (searchProduct.isNotEmpty) 'search': searchProduct,
+    };
 
-    final String searchQuery = searchProduct.isNotEmpty ? '&search=$searchProduct' : '';
-    final String cacheUrl = '${AppConstants.auctionCategoryProductListUri}?category_id=$categoryId&offset=1&limit=10$searchQuery';
-
-    if (offset == 1 && source == DataSourceEnum.local) {
-      return await dataSyncRepoInterface.fetchData<T>(cacheUrl, DataSourceEnum.local);
-    }
-
-    try {
-      final Map<String, dynamic> fields = {};
-      fields['category_id'] = categoryId;
-      fields['limit'] = 10;
-      fields['offset'] = offset;
-      if (searchProduct.isNotEmpty) fields['search'] = searchProduct;
-
-      final response = await dioClient!.post(
-        AppConstants.auctionCategoryProductListUri,
-        data: fields,
-      );
-      return ApiResponseModel.withSuccess(response) as ApiResponseModel<T>;
-    } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
-    }
+    final String url = Uri(path: AppConstants.auctionCategoryProductListUri, queryParameters: queryParams).toString();
+    return await fetchData<T>(url, source);
   }
 
   @override

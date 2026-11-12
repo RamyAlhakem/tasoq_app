@@ -23,6 +23,13 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   ScrollController scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     Provider.of<SearchProductController>(context, listen: false).cleanSearchProduct();

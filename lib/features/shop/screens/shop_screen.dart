@@ -66,6 +66,14 @@ class _TopSellerProductScreenState extends State<TopSellerProductScreen> with Ti
   TabController? _tabController;
   int selectedIndex = 0;
 
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    searchController.dispose();
+    _tabController?.dispose();
+    super.dispose();
+  }
+
   void _load() async {
     await Provider.of<ShopController>(Get.context!, listen: false).getClearanceShopProductList('clearance_sale', '1', widget.slug.toString());
     await Provider.of<SellerProductController>(Get.context!, listen: false).getSellerProductList(widget.slug.toString(), 1, "");
@@ -256,8 +264,7 @@ class _TopSellerProductScreenState extends State<TopSellerProductScreen> with Ti
                 )
               ),
 
-              SliverToBoxAdapter(
-                child: sellerProvider.shopMenuIndex == 0 ? ShopOverviewScreen(slug: widget.slug!, scrollController: _scrollController,
+              sellerProvider.shopMenuIndex == 0 ? ShopOverviewScreen(slug: widget.slug!, scrollController: _scrollController,
                   sellerNavigationModel: SellerNavigationModel(
                       slug:  widget.slug,
                       sellerId: widget.sellerId ?? 0,
@@ -275,31 +282,32 @@ class _TopSellerProductScreenState extends State<TopSellerProductScreen> with Ti
                       image: widget.image
                   )
                 ) :
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12,  Dimensions.paddingSizeSmall,  12, 0),
-                  child: ShopProductViewList(
-                    scrollController: _scrollController,
-                    sellerId: widget.sellerId ?? 0,
-                    slug:  widget.slug ?? '',
-                    sellerNavigationModel: SellerNavigationModel(
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12,  Dimensions.paddingSizeSmall,  12, 0),
+                    child: ShopProductViewList(
+                      scrollController: _scrollController,
                       sellerId: widget.sellerId ?? 0,
-                      banner: widget.banner ?? '',
-                      temporaryClose: widget.temporaryClose ?? false,
-                      slug:  widget.slug,
-                      totalReview: widget.totalReview,
-                      totalProduct: widget.totalProduct,
-                      rating: widget.rating,
-                      fromMore: widget.fromMore,
-                      vacationDurationType: widget.vacationDurationType,
-                      vacationEndDate: widget.vacationEndDate,
-                      vacationStartDate: widget.vacationStartDate,
-                      vacationStatus: widget.vacationStatus,
-                      name: widget.name,
-                      image: widget.image
+                      slug:  widget.slug ?? '',
+                      sellerNavigationModel: SellerNavigationModel(
+                        sellerId: widget.sellerId ?? 0,
+                        banner: widget.banner ?? '',
+                        temporaryClose: widget.temporaryClose ?? false,
+                        slug:  widget.slug,
+                        totalReview: widget.totalReview,
+                        totalProduct: widget.totalProduct,
+                        rating: widget.rating,
+                        fromMore: widget.fromMore,
+                        vacationDurationType: widget.vacationDurationType,
+                        vacationEndDate: widget.vacationEndDate,
+                        vacationStartDate: widget.vacationStartDate,
+                        vacationStatus: widget.vacationStatus,
+                        name: widget.name,
+                        image: widget.image
+                      ),
                     ),
-                  )
-                )
-              ),
+                  ),
+                ),
 
             ]);
           }

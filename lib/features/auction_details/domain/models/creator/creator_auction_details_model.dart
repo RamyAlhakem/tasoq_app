@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'package:flutter_sixvalley_ecommerce/common/enums/payment_status_enum.dart';
 import 'package:flutter_sixvalley_ecommerce/common/enums/user_created_auction_enum.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_list/domain/models/auction_product_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/brand/domain/models/brand_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/category/domain/models/category_model.dart';
@@ -13,9 +15,14 @@ class CreatorAuctionDetailsModel {
   CreatorAuctionDetailsModel({this.product});
 
   CreatorAuctionDetailsModel.fromJson(Map<String, dynamic> json) {
-    product = json['product'] != null ? CreatorAuctionProduct.fromJson(json['product']) : null;
-    deliveredPayout = json['delivered_payout'] != null ? DeliveredPayout.fromJson(json['delivered_payout']) : null;
-    auctionWithdraw = json['auction_withdraw'] != null ? AuctionWithdrawModel.fromJson(json['auction_withdraw']) : null;
+    final Map content = ApiEnvelope.content(json);
+    final dynamic productJson = content['product'] ?? content['data'];
+    product = productJson is Map ? CreatorAuctionProduct.fromJson(Map<String, dynamic>.from(productJson)) : null;
+    dynamic field(String key) => content[key] ?? (productJson is Map ? productJson[key] : null);
+    final dynamic deliveredPayoutJson = field('delivered_payout');
+    final dynamic auctionWithdrawJson = field('auction_withdraw');
+    deliveredPayout = deliveredPayoutJson is Map ? DeliveredPayout.fromJson(Map<String, dynamic>.from(deliveredPayoutJson)) : null;
+    auctionWithdraw = auctionWithdrawJson is Map ? AuctionWithdrawModel.fromJson(Map<String, dynamic>.from(auctionWithdrawJson)) : null;
   }
 }
 
@@ -75,9 +82,10 @@ class CreatorAuctionProduct {
   CategoryModel? category;
   dynamic highestBid;
   dynamic winningBid;
-  dynamic winner;
+  AuctionWinner? winner;
   List<dynamic>? participants;
   List<AuctionTransaction>? transactions;
+  AuctionPaymentInfo? paymentInfo;
   AuctionSeoInfo? seoInfo;
   List<Translations>? translations;
   List<TaxVats>? taxVats;
@@ -152,6 +160,7 @@ class CreatorAuctionProduct {
     this.winner,
     this.participants,
     this.transactions,
+    this.paymentInfo,
     this.seoInfo,
     this.translations,
     this.taxVats,
@@ -195,7 +204,7 @@ class CreatorAuctionProduct {
     endTime = json['end_time'];
     status = json['status']?.toString();
     approvalStatus = json['approval_status'];
-    deliveryStatus = json['delivery_status'];
+    deliveryStatus = json['delivery_status'] ?? json['auction_current_status'];
     approvedByAdminId = json['approved_by_admin_id'];
     approvedAt = json['approved_at'];
     rejectedNote = json['rejected_note'];
@@ -209,7 +218,7 @@ class CreatorAuctionProduct {
     updatedAt = json['updated_at'];
     bidsCount = json['bids_count'];
     participantsCount = json['participants_count'];
-    auctionStatus = json['auction_status'];
+    auctionStatus = json['auction_status'] ?? json['auction_current_status'];
     highestBidAmount = json['highest_bid_amount'] != null ? double.tryParse('${json['highest_bid_amount']}') : null;
     totalBidsCount = json['total_bids_count'];
     totalParticipantsCount = json['total_participants_count'];
@@ -227,12 +236,13 @@ class CreatorAuctionProduct {
     category = json['category'] != null ? CategoryModel.fromJson(json['category']) : null;
     highestBid = json['highest_bid'];
     winningBid = json['winning_bid'];
-    winner = json['winner'];
+    winner = json['winner'] is Map ? AuctionWinner.fromJson(Map<String, dynamic>.from(json['winner'])) : null;
     participants = json['participants'] != null ? List<dynamic>.from(json['participants']) : null;
     if (json['transactions'] != null) {
       transactions = <AuctionTransaction>[];
       json['transactions'].forEach((v) {transactions!.add(AuctionTransaction.fromJson(v));});
     }
+    paymentInfo = json['payment_info'] is Map ? AuctionPaymentInfo.fromJson(Map<String, dynamic>.from(json['payment_info'])) : null;
     seoInfo = json['seo_info'] != null ? AuctionSeoInfo.fromJson(json['seo_info']) : null;
     if (json['translations'] != null) {
       translations = <Translations>[];
@@ -255,10 +265,7 @@ class CreatorAuctionProduct {
     trackingUrl = json['tracking_url'];
     isSameAddress = json['billing_same_as_shipping'];
     if (json['tags'] is List) {
-      tags = (json['tags'] as List)
-          .map((e) => e is Map ? (e['tag'] ?? e['name'] ?? '').toString() : e.toString())
-          .where((s) => s.isNotEmpty)
-          .toList();
+      tags = (json['tags'] as List).map((e) => e is Map ? (e['tag'] ?? e['name'] ?? '').toString() : e.toString()).where((s) => s.isNotEmpty).toList();
     } else if (json['tags'] is String && (json['tags'] as String).isNotEmpty) {
       tags = (json['tags'] as String).split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
     }
@@ -271,8 +278,7 @@ class CreatorAuctionProduct {
   );
 
   bool get hasPendingOfflineCommissionPayment =>
-    transactions?.any((t) =>
-      t.type == 'commission_payment' && t.paymentMethod == 'offline_payment' && t.paymentStatus == 'pending') ?? false;
+    transactions?.any((t) => t.type == 'commission_payment' && t.paymentMethod == 'offline_payment' && t.paymentStatus == 'pending') ?? false;
 }
 
 class AuctionSeoInfo {
@@ -396,6 +402,22 @@ class AuctionAddressInfo {
   }
 }
 
+class AuctionWinner {
+  String? fName;
+  String? lName;
+  ThumbnailFullUrl? imageFullUrl;
+
+  AuctionWinner({this.fName, this.lName, this.imageFullUrl});
+
+  AuctionWinner.fromJson(Map<String, dynamic> json) {
+    fName = json['f_name'];
+    lName = json['l_name'];
+    imageFullUrl = json['image_full_url'] != null ? ThumbnailFullUrl.fromJson(json['image_full_url']) : null;
+  }
+
+  String get fullName => '${fName ?? ''} ${lName ?? ''}'.trim();
+}
+
 class TransactionMethodInformations {
   final String? mobileNumber;
   final String? transactionId;
@@ -424,9 +446,21 @@ class AuctionTransactionPaymentInfo {
     paymentNote: json['payment_note']?.toString(),
     methodId: json['method_id'] != null ? int.tryParse(json['method_id'].toString()) : null,
     methodName: json['method_name']?.toString(),
-    methodInformations: json['method_informations'] != null
-        ? TransactionMethodInformations.fromJson(json['method_informations'])
-        : null,
+    methodInformations: json['method_informations'] != null ? TransactionMethodInformations.fromJson(json['method_informations']) : null,
+  );
+}
+
+class AuctionPaymentInfo {
+  final PaymentStatus? paymentStatus;
+  final String? paymentMethod;
+  final double? paidAmount;
+
+  AuctionPaymentInfo({this.paymentStatus, this.paymentMethod, this.paidAmount});
+
+  factory AuctionPaymentInfo.fromJson(Map<String, dynamic> json) => AuctionPaymentInfo(
+    paymentStatus: PaymentStatus.fromString(json['payment_status']?.toString()),
+    paymentMethod: json['payment_method']?.toString(),
+    paidAmount: json['paid_amount'] != null ? double.tryParse(json['paid_amount'].toString()) : null,
   );
 }
 
@@ -472,10 +506,7 @@ class AuctionTransaction {
     paymentMethod = json['payment_method'];
     paymentInfo = json['payment_info'] != null
         ? AuctionTransactionPaymentInfo.fromJson(
-            json['payment_info'] is String
-                ? Map<String, dynamic>.from(jsonDecode(json['payment_info']))
-                : json['payment_info'] as Map<String, dynamic>)
-        : null;
+            json['payment_info'] is String ? Map<String, dynamic>.from(jsonDecode(json['payment_info'])) : json['payment_info'] as Map<String, dynamic>) : null;
     paymentStatus = json['payment_status'];
     transactionRef = json['transaction_ref'];
     createdAt = json['created_at'];
@@ -512,9 +543,7 @@ class DeliveredPayout {
 
   DeliveredPayout.fromJson(Map<String, dynamic> json) {
     claimPaymentMethod = json['claim_payment_method'];
-    breakdown = json['breakdown'] != null
-        ? PayoutBreakdown.fromJson(json['breakdown'])
-        : null;
+    breakdown = json['breakdown'] != null ? PayoutBreakdown.fromJson(json['breakdown']) : null;
   }
 }
 

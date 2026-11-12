@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/controllers/order_details_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/refund/domain/models/refund_info_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/refund/domain/models/refund_result_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/refund/domain/services/refund_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/helper/api_checker.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/image_size_checker.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
@@ -96,11 +98,14 @@ class RefundController with ChangeNotifier {
 
     ApiResponseModel apiResponse = await refundServiceInterface.getRefundInfo(orderDetailId);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _refundInfoModel = RefundInfoModel.fromJson(apiResponse.response!.data);
+      final dynamic refundData = ApiEnvelope.content(apiResponse.response!.data)['data'];
+      if (refundData is Map<String, dynamic>) {
+        _refundInfoModel = RefundInfoModel.fromJson(refundData);
+      }
       _isRefund = false;
-    } else if(apiResponse.response?.statusCode == 202) {
+    } else {
       _isRefund = false;
-      showCustomSnackBarWidget(apiResponse.response!.data['message'], Get.context!, snackBarType: SnackBarType.warning);
+      ApiChecker.checkApi(apiResponse);
     }
     notifyListeners();
     return apiResponse;
@@ -113,7 +118,10 @@ class RefundController with ChangeNotifier {
     ApiResponseModel apiResponse = await refundServiceInterface.getRefundResult(orderDetailId);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       _isLoading = false;
-      _refundResultModel = RefundResultModel.fromJson(apiResponse.response!.data);
+      final dynamic resultData = ApiEnvelope.content(apiResponse.response!.data)['data'];
+      if (resultData is Map<String, dynamic>) {
+        _refundResultModel = RefundResultModel.fromJson(resultData);
+      }
     }
     notifyListeners();
     return apiResponse;

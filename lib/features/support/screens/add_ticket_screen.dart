@@ -34,6 +34,15 @@ class AddTicketScreenState extends State<AddTicketScreen> {
   final List<String> categories = ['Website problem', 'Partner request', 'Complaint', 'Info Inquiry'];
 
   @override
+  void dispose() {
+    _subjectController.dispose();
+    _descriptionController.dispose();
+    _subjectNode.dispose();
+    _descriptionNode.dispose();
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
     Provider.of<SupportTicketController>(context, listen: false).setInitialSelectedPriority();
@@ -102,42 +111,42 @@ class AddTicketScreenState extends State<AddTicketScreen> {
 
 
             GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount : supportTicketProvider.pickedImageFileStored.length + 1 ,
-                itemBuilder: (BuildContext context, index){
-                  return index ==  supportTicketProvider.pickedImageFileStored.length ?
-                  InkWell(onTap: ()=> supportTicketProvider.pickMultipleImage(false,),
-                    child: DottedBorder(
-                      options: RoundedRectDottedBorderOptions(
-                        strokeWidth: 2,
-                        dashPattern: const [10,5],
-                        color: Theme.of(context).hintColor,
-                        radius: const Radius.circular(Dimensions.paddingSizeSmall),
-                      ),
-                      child: Stack(children: [
-                        ClipRRect(borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
-                          child:  SizedBox(height: MediaQuery.of(context).size.width/4.3,
-                            width: MediaQuery.of(context).size.width, child: Image.asset(Images.placeholder))),
-                        Positioned(bottom: 0, right: 0, top: 0, left: 0,
-                          child: Container(decoration: BoxDecoration(color: Theme.of(context).hintColor.withValues(alpha:0.07),
-                              borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall))))]))) :
-                  Stack(children: [
-                    Padding(padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount : supportTicketProvider.pickedImageFileStored.length + 1 ,
+              itemBuilder: (BuildContext context, index){
+                return index ==  supportTicketProvider.pickedImageFileStored.length ?
+                InkWell(onTap: ()=> supportTicketProvider.pickMultipleImage(false,),
+                  child: DottedBorder(
+                    options: RoundedRectDottedBorderOptions(
+                      strokeWidth: 2,
+                      dashPattern: const [10,5],
+                      color: Theme.of(context).hintColor,
+                      radius: const Radius.circular(Dimensions.paddingSizeSmall),
+                    ),
+                    child: Stack(children: [
+                      ClipRRect(borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
+                        child:  SizedBox(height: MediaQuery.of(context).size.width/4.3,
+                          width: MediaQuery.of(context).size.width, child: Image.asset(Images.placeholder))),
+                      Positioned(bottom: 0, right: 0, top: 0, left: 0,
+                        child: Container(decoration: BoxDecoration(color: Theme.of(context).hintColor.withValues(alpha:0.07),
+                            borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall))))]))) :
+                Stack(children: [
+                  Padding(padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
+                    child: Container(decoration: const BoxDecoration(color: Colors.white,
+                      borderRadius: BorderRadius.all(Radius.circular(20)),),
+                      child: ClipRRect(borderRadius: const BorderRadius.all(Radius.circular(Dimensions.paddingSizeExtraSmall)),
+                        child:  Image.file(File(supportTicketProvider.pickedImageFileStored[index].path),
+                          width: MediaQuery.of(context).size.width, height: MediaQuery.of(context).size.width/4.3, fit: BoxFit.cover)))),
+
+
+                  Positioned(top:0,right:0,
+                    child: InkWell(onTap :() => supportTicketProvider.pickMultipleImage(true, index: index),
                       child: Container(decoration: const BoxDecoration(color: Colors.white,
-                        borderRadius: BorderRadius.all(Radius.circular(20)),),
-                        child: ClipRRect(borderRadius: const BorderRadius.all(Radius.circular(Dimensions.paddingSizeExtraSmall)),
-                          child:  Image.file(File(supportTicketProvider.pickedImageFileStored[index].path),
-                            width: MediaQuery.of(context).size.width, height: MediaQuery.of(context).size.width/4.3, fit: BoxFit.cover)))),
-
-
-                    Positioned(top:0,right:0,
-                      child: InkWell(onTap :() => supportTicketProvider.pickMultipleImage(true, index: index),
-                        child: Container(decoration: const BoxDecoration(color: Colors.white,
-                            borderRadius: BorderRadius.all(Radius.circular(Dimensions.paddingSizeDefault))),
-                            child: const Padding(padding: EdgeInsets.all(4.0),
-                              child: Icon(Icons.delete_forever_rounded,color: Colors.red,size: 15)))))]);
-                }, gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          borderRadius: BorderRadius.all(Radius.circular(Dimensions.paddingSizeDefault))),
+                          child: const Padding(padding: EdgeInsets.all(4.0),
+                            child: Icon(Icons.delete_forever_rounded,color: Colors.red,size: 15)))))]);
+              }, gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 4, crossAxisSpacing: 10, mainAxisSpacing: 10)),
           ]);
         }),

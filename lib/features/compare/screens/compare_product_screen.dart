@@ -196,7 +196,7 @@ class CompareCard extends StatelessWidget {
                   Container(height: 48,padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
                     decoration: BoxDecoration(
                     color: Theme.of(context).cardColor),
-                    child: product != null? product!.colors!.isNotEmpty?
+                    child: product != null? (product!.colors?.isNotEmpty ?? false)?
                     Center(
                       child: ListView.builder(
                         itemCount: product!.colors!.length,
@@ -204,7 +204,12 @@ class CompareCard extends StatelessWidget {
                         scrollDirection: Axis.horizontal,
                         physics: const NeverScrollableScrollPhysics(),
                         itemBuilder: (context, index) {
-                          String colorString = '0xff${product!.colors![index].code!.substring(1, 7)}';
+                          // Codes come straight off the products.colors column, so
+                          // tolerate a missing or malformed value instead of throwing.
+                          final String hex = (product!.colors![index].code ?? '').replaceAll('#', '');
+                          final int colorValue = hex.length >= 6
+                              ? (int.tryParse('0xff${hex.substring(0, 6)}') ?? 0xff000000)
+                              : 0xff000000;
                           return Center(
                             child: Container(decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall)),
@@ -212,7 +217,7 @@ class CompareCard extends StatelessWidget {
                                 child: Container(height: 15, width: 15,
                                   padding: const EdgeInsets.all( Dimensions.paddingSizeExtraSmall),
                                   alignment: Alignment.center,
-                                  decoration: BoxDecoration(color: Color(int.parse(colorString)),
+                                  decoration: BoxDecoration(color: Color(colorValue),
                                     borderRadius: BorderRadius.circular(30),
                                   ),
                                 ),
@@ -234,7 +239,10 @@ class CompareCard extends StatelessWidget {
                             if(product != null && product!.choiceOptions != null && product!.choiceOptions!.isNotEmpty){
                               for(int i =0; i<compareProvider.attributeList!.length; i++){
                                 for(int j =0 ; j< product!.choiceOptions!.length; j++){
-                                  if(compareProvider.attributeList![i].name == product!.choiceOptions![j].title){
+                                  // The attribute table holds both casings ("size" and "Size")
+                                  // while choice_options.title is the raw product value.
+                                  if(compareProvider.attributeList![i].name?.toLowerCase() ==
+                                      product!.choiceOptions![j].title?.toLowerCase()){
                                     variation.insert(i, product!.choiceOptions![j].options!);
                                   }else{
                                     variation.insert(i, ['No ${compareProvider.attributeList![i].name}']);

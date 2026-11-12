@@ -17,23 +17,21 @@ class OrderProductListWidget extends StatelessWidget {
     return  Consumer<OrderDetailsController>(
       builder: (context, orderDetailsController, _) {
 
-        return ListView.builder(
-          shrinkWrap: true,
-          padding: const EdgeInsets.all(0),
-          itemCount:
-          orderDetailsController.orderDetails?.length ?? 0,
-          physics: const NeverScrollableScrollPhysics(),
-          itemBuilder: (context, i) => OrderDetailsWidget(
-            orderDetailsModel: orderDetailsController.orderDetails![i],
-            isGuest: isGuest,
-            fromTrack: fromTrack,
-            callback: () {
-              showCustomSnackBarWidget(getTranslated('review_submitted_successfully', context), context, snackBarType: SnackBarType.success);
-            },
-            orderType: orderType!,
-            paymentStatus: orderDetailsController.orders!.paymentStatus!,
-            orderId: orderId!,
-            index: i,
+        return SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, i) => OrderDetailsWidget(
+              orderDetailsModel: orderDetailsController.orderDetails![i],
+              isGuest: isGuest,
+              fromTrack: fromTrack,
+              callback: () {
+                showCustomSnackBarWidget(getTranslated('review_submitted_successfully', context), context, snackBarType: SnackBarType.success);
+              },
+              orderType: orderType!,
+              paymentStatus: orderDetailsController.orders!.paymentStatus!,
+              orderId: orderId!,
+              index: i,
+            ),
+            childCount: orderDetailsController.orderDetails?.length ?? 0,
           ),
         );
       }

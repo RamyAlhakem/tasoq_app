@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_sliver_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/product_card_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/product_shimmer_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/controllers/seller_product_controller.dart';
@@ -26,25 +26,21 @@ class _ShopRecommandedProductViewListState extends State<ShopRecommandedProductV
           return productController.sellerWiseRecommendedProduct != null?
           (productController.sellerWiseRecommendedProduct != null && productController.sellerWiseRecommendedProduct!.products != null &&
               productController.sellerWiseRecommendedProduct!.products!.isNotEmpty)?
-          PaginatedListView(scrollController: widget.scrollController,
+          PaginatedSliverListView(scrollController: widget.scrollController,
               onPaginate: (offset) async => await productController.getSellerProductList(widget.slug.toString(), offset!, ""),
               totalSize: productController.sellerWiseRecommendedProduct?.totalSize,
               offset: productController.sellerWiseRecommendedProduct?.offset,
-              itemView: RepaintBoundary(
-                child: MasonryGridView.count(
-                  itemCount: productController.sellerWiseRecommendedProduct?.products?.length,
-                  crossAxisCount: 2,
-                  padding: const EdgeInsets.all(0),
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemBuilder: (BuildContext context, int index) {
-                    return Padding(
-                      padding: EdgeInsets.all(Dimensions.paddingSizeEight),
-                      child: ProductCardWidget(product: productController.sellerWiseRecommendedProduct!.products![index], sellerNavigationModel: widget.sellerNavigationModel),
-                    );
-                  },
-                ),
-              )) : const SizedBox() : ProductShimmer(isEnabled: productController.sellerWiseRecommendedProduct == null, isHomePage: false);
+              itemView: SliverMasonryGrid.count(
+                crossAxisCount: 2,
+                itemBuilder: (BuildContext context, int index) {
+                  return Padding(
+                    padding: EdgeInsets.all(Dimensions.paddingSizeEight),
+                    child: ProductCardWidget(product: productController.sellerWiseRecommendedProduct!.products![index], sellerNavigationModel: widget.sellerNavigationModel),
+                  );
+                },
+                childCount: productController.sellerWiseRecommendedProduct?.products?.length,
+              ),
+          ) : const SliverToBoxAdapter(child: SizedBox()) : SliverToBoxAdapter(child: ProductShimmer(isEnabled: productController.sellerWiseRecommendedProduct == null, isHomePage: false));
         }
     );
   }

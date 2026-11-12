@@ -35,6 +35,13 @@ class SearchFilterBottomSheetState extends State<SearchFilterBottomSheet> {
 
   final _debounce = DebounceHelper(milliseconds: 500);
 
+  @override
+  void dispose() {
+    _minController.dispose();
+    _maxController.dispose();
+    super.dispose();
+  }
+
  @override
   void initState() {
     currentRangeValues = RangeValues(Provider.of<SearchProductController>(context, listen: false).minFilterValue, Provider.of<SearchProductController>(context, listen: false).maxFilterValue,);

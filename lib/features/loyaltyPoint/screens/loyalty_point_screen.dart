@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_app_bar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/filter_icon_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/no_internet_screen_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_sliver_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/shimmers/transaction_shimmer.dart';
 import 'package:flutter_sixvalley_ecommerce/features/loyaltyPoint/controllers/loyalty_point_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/loyaltyPoint/domain/models/loyalty_point_model.dart';
@@ -26,7 +27,19 @@ class LoyaltyPointScreen extends StatefulWidget {
   State<LoyaltyPointScreen> createState() => _LoyaltyPointScreenState();
 }
 
+int _getFilterCount(LoyaltyPointModel? model) {
+  if (model == null) return 0;
+
+  final baseFilters = [
+    model.filterBy,
+    model.startDate,
+  ].whereType<Object>().length;
+
+  return baseFilters + (model.transactionTypes?.length ?? 0);
+}
+
 class _LoyaltyPointScreenState extends State<LoyaltyPointScreen> {
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -37,15 +50,10 @@ class _LoyaltyPointScreenState extends State<LoyaltyPointScreen> {
     }
   }
 
-  int _getFilterCount(LoyaltyPointModel? model) {
-    if (model == null) return 0;
-
-    final baseFilters = [
-      model.filterBy,
-      model.startDate,
-    ].whereType<Object>().length;
-
-    return baseFilters + (model.transactionTypes?.length ?? 0);
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   bool _isFilterApplied(LoyaltyPointModel? model) => _getFilterCount(model) > 0;
@@ -77,10 +85,16 @@ class _LoyaltyPointScreenState extends State<LoyaltyPointScreen> {
                     await controller.getLoyaltyPointList(context, 1);
                   },
                   child: CustomScrollView(
+                    controller: _scrollController,
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
-                      if (_showHeaderAndConvert(model)) _buildHeader(context, model),
-                      _buildContent(context, model),
+                      if (_showHeaderAndConvert(model)) LoyaltyPointHeader(model: model),
+                      LoyaltyPointContent(
+                        model: model,
+                        scrollController: _scrollController,
+                        onPaginate: (int? offset) async =>
+                            await controller.getLoyaltyPointList(context, offset ?? 1),
+                      ),
                     ],
                   ),
                 );
@@ -90,38 +104,46 @@ class _LoyaltyPointScreenState extends State<LoyaltyPointScreen> {
       floatingActionButton: isGuest
           ? null
           : Consumer<LoyaltyPointController>(
-              builder: (_, controller, __) {
-                if (!_showHeaderAndConvert(controller.loyaltyPointModel)) {
-                  return const SizedBox.shrink();
-                }
-                return Padding(
-                  padding: const EdgeInsets.only(left: Dimensions.paddingSizeThirty),
-                  child: Consumer<ProfileController>(
-                    builder: (_, profile, __) {
-                      return CustomButton(
-                        leftIcon: Images.dollarIcon,
-                        buttonText: getTranslated('convert_to_currency', context)!,
-                        onTap: () {
-                          showDialog(
-                            context: context,
-                            builder: (_) => Dialog(
-                              backgroundColor: Colors.transparent,
-                              child: LoyaltyPointConverterDialogueWidget(
-                                myPoint: profile.userInfoModel?.loyaltyPoint ?? 0,
-                              ),
+            builder: (_, controller, __) {
+              if (!_showHeaderAndConvert(controller.loyaltyPointModel)) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.only(left: Dimensions.paddingSizeThirty),
+                child: Consumer<ProfileController>(
+                  builder: (_, profile, __) {
+                    return CustomButton(
+                      leftIcon: Images.dollarIcon,
+                      buttonText: getTranslated('convert_to_currency', context)!,
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => Dialog(
+                            backgroundColor: Colors.transparent,
+                            child: LoyaltyPointConverterDialogueWidget(
+                              myPoint: profile.userInfoModel?.loyaltyPoint ?? 0,
                             ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              );
+            },
+          ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, LoyaltyPointModel? model) {
+}
+
+class LoyaltyPointHeader extends StatelessWidget {
+  final LoyaltyPointModel? model;
+
+  const LoyaltyPointHeader({super.key, required this.model});
+
+  @override
+  Widget build(BuildContext context) {
     return SliverPersistentHeader(
       pinned: true,
       delegate: _FilterHeaderDelegate(
@@ -153,8 +175,19 @@ class _LoyaltyPointScreenState extends State<LoyaltyPointScreen> {
       ),
     );
   }
+}
 
-  Widget _buildContent(BuildContext context, LoyaltyPointModel? model) {
+class LoyaltyPointContent extends StatelessWidget {
+  final LoyaltyPointModel? model;
+  final ScrollController scrollController;
+  final Future<void> Function(int? offset) onPaginate;
+
+  const LoyaltyPointContent({
+    super.key, required this.model, required this.scrollController, required this.onPaginate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     if (model == null) {
       return const SliverToBoxAdapter(
         child: Padding(
@@ -167,7 +200,7 @@ class _LoyaltyPointScreenState extends State<LoyaltyPointScreen> {
       );
     }
 
-    final List<LoyaltyPointList> list = model.loyaltyPointList ?? [];
+    final List<LoyaltyPointList> list = model!.loyaltyPointList ?? [];
 
     if (list.isEmpty) {
       return SliverFillRemaining(
@@ -181,13 +214,20 @@ class _LoyaltyPointScreenState extends State<LoyaltyPointScreen> {
         ),
       );
     }
-    return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) => LoyaltyPointWidget(
-          loyaltyPointModel: list[index],
-          isLastItem: index == list.length - 1,
+    return PaginatedSliverListView(
+      scrollController: scrollController,
+      totalSize: model!.totalSize,
+      offset: model!.offset ?? 1,
+      limit: model!.limit ?? 10,
+      onPaginate: onPaginate,
+      itemView: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) => LoyaltyPointWidget(
+            loyaltyPointModel: list[index],
+            isLastItem: index == list.length - 1,
+          ),
+          childCount: list.length,
         ),
-        childCount: list.length,
       ),
     );
   }

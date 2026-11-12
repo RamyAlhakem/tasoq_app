@@ -7,6 +7,7 @@ import 'package:flutter_sixvalley_ecommerce/features/auth/enums/from_page.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/controllers/order_details_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/domain/models/config_model.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/color_helper.dart';
+import 'package:flutter_sixvalley_ecommerce/helper/debounce_helper.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/email_checker_helper.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/number_checker_helper.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
@@ -43,6 +44,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
   int? _seconds = 0;
 
   bool? isPhone;
+  final DebounceHelper _tapGuard = DebounceHelper(milliseconds: 500);
 
   @override
   void initState() {
@@ -69,6 +71,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
   void dispose() {
     super.dispose();
     _timer?.cancel();
+    _tapGuard.dispose();
   }
   @override
   Widget build(BuildContext context) {
@@ -78,7 +81,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
     final isPhone = EmailCheckerHelper.isNotValid(widget.userInput.toString());
     final Size size = MediaQuery.of(context).size;
     final ConfigModel config = Provider.of<SplashController>(context, listen: false).configModel!;
-    final bool isFirebaseOTP = config.customerVerification!.status ==1 && config.customerVerification?.firebase == 1;
+    final bool isFirebaseOTP = (config.customerVerification!.status ==1 && config.customerVerification?.firebase == 1) || (widget.fromPage == FromPage.forgetPassword && config.customerVerification?.firebase == 1);
 
     return Scaffold(
       appBar: CustomAppBar(title: getTranslated('otp_verification', context), isBackButtonExist: true),
@@ -131,34 +134,28 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
 
                       Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: 35),
-                        child: PinCodeTextField(
+                        child: MaterialPinField(
                           length: 6,
-                          appContext: context,
                           obscureText: false,
-                          showCursor: true,
                           keyboardType: TextInputType.number,
-                          animationType: AnimationType.fade,
-                          pinTheme: PinTheme(
-                            shape: PinCodeFieldShape.box,
-                            fieldHeight: 45,
-                            fieldWidth: 45,
+                          theme: MaterialPinTheme(
+                            shape: MaterialPinShape.outlined,
+                            cellSize: const Size(45, 45),
                             borderWidth: 1,
+                            focusedBorderWidth: 1,
                             borderRadius: BorderRadius.circular(10),
-                            selectedColor: ColorHelper.darken(Theme.of(context).colorScheme.secondary, 0.2),
-                            selectedFillColor: Colors.white,
-                            inactiveFillColor: Theme.of(context).cardColor,
-                            inactiveColor: ColorHelper.darken(Theme.of(context).colorScheme.secondary, 0.2),
-                            activeColor: ColorHelper.darken(Theme.of(context).colorScheme.secondary, 0.1),
-                            activeFillColor: Theme.of(context).cardColor,
+                            focusedBorderColor: ColorHelper.darken(Theme.of(context).colorScheme.secondary, 0.2),
+                            focusedFillColor: Colors.white,
+                            fillColor: Theme.of(context).cardColor,
+                            borderColor: ColorHelper.darken(Theme.of(context).colorScheme.secondary, 0.2),
+                            filledBorderColor: ColorHelper.darken(Theme.of(context).colorScheme.secondary, 0.1),
+                            filledFillColor: Theme.of(context).cardColor,
+                            textStyle: titilliumBold.copyWith(fontSize: Dimensions.fontSizeExtraLarge, color: Theme.of(context).textTheme.bodyLarge?.color),
+                            showCursor: true,
+                            entryAnimation: MaterialPinAnimation.fade,
+                            animationDuration: const Duration(milliseconds: 300),
                           ),
-                          textStyle: titilliumBold.copyWith(fontSize: Dimensions.fontSizeExtraLarge, color: Theme.of(context).textTheme.bodyLarge?.color),
-                          animationDuration: const Duration(milliseconds: 300),
-                          backgroundColor: Colors.transparent,
-                          enableActiveFill: true,
                           onChanged: authProvider.updateVerificationCode,
-                          beforeTextPaste: (text) {
-                            return true;
-                          },
                         ),
                       ),
 
@@ -167,17 +164,20 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge),
                           child:  CustomButton(buttonText: getTranslated('verify', context),
                               onTap: (){
-                                Provider.of<OrderDetailsController>(context, listen: false).verifyDigitalProductOtp(orderId: widget.orderId!,
-                                    otp: authProvider.verificationCode).then((value) {
-                                  if(value.response?.statusCode == 200) {
-                                    if(context.mounted) {
-                                      Navigator.of(context).pop();
-                                    }
-                                  }else {
-                                    if(context.mounted) {
-                                      showCustomSnackBarWidget(getTranslated('input_valid_otp', context), context, snackBarType: SnackBarType.warning);
-                                    }
-                                  }});})),
+                                _tapGuard.runOnce(() {
+                                  Provider.of<OrderDetailsController>(context, listen: false).verifyDigitalProductOtp(orderId: widget.orderId!,
+                                      otp: authProvider.verificationCode).then((value) {
+                                    if(value.response?.statusCode == 200) {
+                                      if(context.mounted) {
+                                        Navigator.of(context).pop();
+                                      }
+                                    }else {
+                                      if(context.mounted) {
+                                        showCustomSnackBarWidget(getTranslated('input_valid_otp', context), context, snackBarType: SnackBarType.warning);
+                                      }
+                                    }});
+                                });
+                              })),
 
                       if(!widget.fromDigitalProduct)
                         Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge),
@@ -187,6 +187,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                             buttonText: getTranslated('verify', context),
                             backgroundColor: !authProvider.isEnableVerificationCode ? Theme.of(context).disabledColor : null,
                             onTap: () {
+                              _tapGuard.runOnce(() {
                               if (widget.fromPage == FromPage.login) {
                                 if(config.customerVerification!.status == 1){
                                   if(isPhone && isFirebaseOTP){
@@ -267,6 +268,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                                   isForgetPassword: true,
                                 );
                                 } else {
+
                                   authProvider.verifyToken(widget.userInput ?? '').then((value) {
                                     if (value.isSuccess && context.mounted) {
                                       RouterHelper.getResetPasswordRoute(
@@ -280,8 +282,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
                                       }
                                     }
                                   });
+
                                 }
+
                               }
+                              });
                             },
                           ):  Center(child: CircularProgressIndicator(
                               valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor))) : const  SizedBox.shrink(),
@@ -297,7 +302,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           Text(getTranslated('i_didnt_receive_the_code', context)!),
 
                           authProvider.resendButtonLoading ? const SizedBox(height: 15, width: 15, child: CircularProgressIndicator(strokeWidth: 02,)) : InkWell(
-                            onTap: () async {
+                            onTap: () => _tapGuard.runOnce(() async {
                               if (widget.fromPage != FromPage.forgetPassword) {
                                 await authProvider.sendVerificationCode(
                                   config,
@@ -307,6 +312,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                                   ),
                                   type: isPhone ? 'phone' : 'email',
                                   fromPage: FromPage.verification,
+                                  temporaryToken: authProvider.temporaryToken,
                                   isResend: true
                                 );
                                 _startTimer();
@@ -327,7 +333,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                                   }
                                 });
                               }
-                            },
+                            }),
                             child: Padding(padding: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
                               child: Text(getTranslated('resend_code', context)??"",
                               style: robotoBold.copyWith(color: Theme.of(context).primaryColor))

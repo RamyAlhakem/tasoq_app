@@ -1,14 +1,17 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
+
 class SuggestionModel {
   List<Products>? products;
 
   SuggestionModel({this.products});
 
   SuggestionModel.fromJson(Map<String, dynamic> json) {
-    if (json['products'] != null) {
-      products = <Products>[];
-      json['products'].forEach((v) {
-        products!.add(Products.fromJson(v));
-      });
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json, legacyKeys: ['products']);
+    if (envelope.data != null) {
+      products = <Products>[
+        for (final Map row in envelope.data!.whereType<Map>())
+          Products.fromJson(Map<String, dynamic>.from(row)),
+      ];
     }
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/product_card_shimmer_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/product_card_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/controllers/product_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/redesign/home_title_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/enums/product_type.dart';
@@ -21,8 +22,7 @@ class NewUserExclusiveSection extends StatelessWidget {
       builder: (_, productController, ___) {
         final products = productController.justForYouProductModel?.products;
 
-        // Hide the entire section (title included) when there are no products.
-        if (products != null && products.isEmpty) {
+        if ((products != null && products.isEmpty)) {
           return const SizedBox.shrink();
         }
 

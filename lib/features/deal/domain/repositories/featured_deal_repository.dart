@@ -15,6 +15,11 @@ class FeaturedDealRepository extends DataSyncService implements FeaturedDealRepo
   }
 
   @override
+  Future<ApiResponseModel<T>> getFeaturedDealProducts<T>({required int dealId, required DataSourceEnum source}) async {
+    return await fetchData<T>('${AppConstants.featuredDealProductUri}$dealId/products?limit=100&offset=1', source);
+  }
+
+  @override
   Future add(value) {
     // TODO: implement add
     throw UnimplementedError();

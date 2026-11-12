@@ -48,7 +48,7 @@ class AddressModel {
     country = json['country'];
     latitude = json['latitude'];
     longitude = json['longitude'];
-    isBilling = json['is_billing']??false;
+    isBilling = json['is_billing'] == '1' || json['is_billing'] == 1 || json['is_billing'] == true;
     email = json['email'];
   }
 

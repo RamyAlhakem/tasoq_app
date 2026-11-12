@@ -14,8 +14,8 @@ class ShopService implements ShopServiceInterface {
   }
 
   @override
-  Future<ApiResponseModel<T>> getSellerList<T>({required String type, required int offset, required int limit, required DataSourceEnum source}) async {
-    return await shopRepositoryInterface.getSellerList(source: source, type: type, offset: offset, limit: limit);
+  Future<ApiResponseModel<T>> getSellerList<T>({required String type, required int offset, required int limit, String? search, required DataSourceEnum source}) async {
+    return await shopRepositoryInterface.getSellerList(source: source, type: type, offset: offset, limit: limit, search: search);
   }
 
   @override

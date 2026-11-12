@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/controllers/cart_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/controllers/checkout_controller.dart';
@@ -42,11 +44,10 @@ class CouponController extends ChangeNotifier {
     if (apiResponse.response != null  && apiResponse.response!.statusCode == 200) {
       _isLoading = false;
       _couponCode = coupon;
-      Map map = apiResponse.response!.data;
-      String dis = map['coupon_discount'].toString();
-      if(map['coupon_discount'] !=null){
-        _discount = double.parse(dis);
-      }
+
+      final Map content = ApiEnvelope.content(apiResponse.response!.data);
+      final dynamic data = content['data'] is Map ? content['data'] : content;
+      _discount = double.tryParse('${data['coupon_discount']}') ?? 0;
 
       showCustomSnackBarWidget('${getTranslated('you_got', Get.context!)} '
         '${PriceConverter.convertPrice(Get.context!, _discount)} '
@@ -55,7 +56,8 @@ class CouponController extends ChangeNotifier {
       await Provider.of<CartController>(Get.context!, listen: false).getCartData(Get.context!, couponCode: coupon);
       Provider.of<CheckoutController>(Get.context!, listen: false).getReferralAmount(PriceConverter.convertPriceWithoutSymbol(Get.context!, _discount));
     } else {
-      showCustomSnackBarWidget(apiResponse.response?.data, Get.context!, snackBarType: SnackBarType.error);
+
+      showCustomSnackBarWidget(apiResponse.error?.toString() ?? ApiEnvelope.message(apiResponse.response?.data), Get.context!, snackBarType: SnackBarType.error);
     }
     _isLoading = false;
     notifyListeners();
@@ -67,12 +69,21 @@ class CouponController extends ChangeNotifier {
   CouponItemModel? couponItemModel;
   Future<void> getCouponList(BuildContext context,int offset) async {
     _isLoading = true;
+    if(offset == 1) {
+      couponList = null;
+      notifyListeners();
+    }
+
     ApiResponseModel apiResponse = await couponRepo!.getList(offset : offset);
     if (apiResponse.response != null  && apiResponse.response!.statusCode == 200) {
-      couponList = [];
-      _isLoading = false;
-      couponList!.addAll(CouponItemModel.fromJson(apiResponse.response!.data).coupons!);
-      couponItemModel = CouponItemModel.fromJson(apiResponse.response!.data);
+      final CouponItemModel parsed = CouponItemModel.fromJson(apiResponse.response!.data);
+
+      if(offset == 1) {
+        couponList = [];
+      }
+      couponList ??= [];
+      couponList!.addAll(parsed.coupons ?? []);
+      couponItemModel = parsed;
     }
     _isLoading = false;
     notifyListeners();
@@ -84,7 +95,13 @@ class CouponController extends ChangeNotifier {
     availableCouponList = [];
     ApiResponseModel apiResponse = await couponRepo!.getAvailableCouponList();
     if (apiResponse.response != null  && apiResponse.response!.statusCode == 200) {
-      apiResponse.response?.data.forEach((coupon)=> availableCouponList?.add(Coupons.fromJson(coupon)));
+      final dynamic body = apiResponse.response?.data;
+      // v6 sends the coupons as `content.data`; pre-v6 sent a bare array.
+      final List rows = body is List ? body : (ApiListEnvelope.fromJson(Map<String, dynamic>.from(body as Map)).data ?? const []);
+      availableCouponList = [
+        for (final Map coupon in rows.whereType<Map>())
+          Coupons.fromJson(Map<String, dynamic>.from(coupon)),
+      ];
     }
     notifyListeners();
   }
@@ -99,12 +116,22 @@ class CouponController extends ChangeNotifier {
 
   Future<void> getSellerWiseCouponList(String slug, int offset) async {
     _isLoading = true;
+    if(offset == 1) {
+      couponItemModel = null;
+      notifyListeners();
+    }
+
     ApiResponseModel apiResponse = await couponRepo!.getSellerCouponList(slug, offset);
     if (apiResponse.response != null  && apiResponse.response!.statusCode == 200) {
-      _isLoading = false;
-      couponItemModel = CouponItemModel.fromJson(apiResponse.response!.data);
+      final CouponItemModel parsed = CouponItemModel.fromJson(apiResponse.response!.data);
+
+      if(offset > 1 && couponItemModel?.coupons != null) {
+        parsed.coupons = [...couponItemModel!.coupons!, ...?parsed.coupons];
+      }
+      couponItemModel = parsed;
     } else {
-      showCustomSnackBarWidget(apiResponse.response!.data, Get.context!, snackBarType: SnackBarType.error);
+      showCustomSnackBarWidget(apiResponse.error?.toString() ?? apiResponse.response?.data?.toString(),
+        Get.context!, snackBarType: SnackBarType.error);
     }
     _isLoading = false;
     notifyListeners();

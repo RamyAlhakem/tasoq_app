@@ -66,7 +66,8 @@ class AuctionProductQueueController extends ChangeNotifier {
     try {
       ApiResponseModel apiResponse = await auctionProductQueueServiceInterface.deleteAuctionProduct(id);
 
-      if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+      final int? statusCode = apiResponse.response?.statusCode;
+      if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
         _isDeleting = false;
         notifyListeners();
         return true;

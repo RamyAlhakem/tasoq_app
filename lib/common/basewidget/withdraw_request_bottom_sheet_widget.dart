@@ -152,18 +152,32 @@ class _WithdrawRequestBottomSheetWidgetState extends State<WithdrawRequestBottom
     final accountDisplay = _fieldControllers.values.isNotEmpty ? _fieldControllers.values.first.text.trim() : '';
 
     final txController = Provider.of<TransactionController>(context, listen: false);
-    await txController.storeOrUpdateWithdraw(
-      context,
-      auctionProductId: widget.auctionProductId,
-      withdrawMethodId: _selectedMethod!.id,
-      existingWithdrawId: widget.existingWithdrawId,
-      amount: double.tryParse(_amountController.text),
-      methodInfo: methodInfo,
-      displayMethodName: _selectedMethod!.methodName,
-      displayAccountInfo: accountDisplay,
-    );
+    final int? existingWithdrawId = widget.existingWithdrawId;
 
-    if (txController.withdrawResponse != null && mounted) {
+
+    if (existingWithdrawId != null) {
+      await txController.updateWithdraw(
+        context,
+        withdrawId: existingWithdrawId,
+        auctionProductId: widget.auctionProductId,
+        withdrawMethodId: _selectedMethod!.id,
+        amount: double.tryParse(_amountController.text),
+        methodInfo: methodInfo,
+        displayMethodName: _selectedMethod!.methodName,
+        displayAccountInfo: accountDisplay,
+      );
+    } else {
+      await txController.createWithdraw(
+        context,
+        auctionProductId: widget.auctionProductId,
+        withdrawMethodId: _selectedMethod!.id,
+        amount: double.tryParse(_amountController.text),
+        methodInfo: methodInfo,
+        displayMethodName: _selectedMethod!.methodName,
+        displayAccountInfo: accountDisplay,
+      );
+    }
+    if (txController.isWithdrawSubmitted && mounted) {
       Navigator.pop(context);
       widget.onSuccess?.call();
     }

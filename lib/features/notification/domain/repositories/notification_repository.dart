@@ -22,7 +22,7 @@ class NotificationRepository implements NotificationRepositoryInterface{
   @override
   Future<ApiResponseModel>  seenNotification(int id) async {
     try {
-      Response response = await dioClient!.get('${AppConstants.seenNotificationUri}?id=$id&guest_id=1');
+      Response response = await dioClient!.put('${AppConstants.seenNotificationUri}$id/seen');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -42,9 +42,30 @@ class NotificationRepository implements NotificationRepositoryInterface{
   @override
   Future<ApiResponseModel> markAuctionSeen({int? id}) async {
     try {
-      final Map<String, dynamic> fields = {};
-      if (id != null) fields['id'] = id;
-      Response response = await dioClient!.post(AppConstants.auctionNotificationSeenUri, data: fields);
+      Response response = await dioClient!.put(
+        AppConstants.auctionNotificationSeenUri,
+        queryParameters: {if (id != null) 'id': id},
+      );
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponseModel> getWholesaleList({int limit = 10, int offset = 1}) async {
+    try {
+      Response response = await dioClient!.get('${AppConstants.wholesaleNotificationUri}?limit=$limit&offset=$offset');
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponseModel> markWholesaleSeen(int id) async {
+    try {
+      Response response = await dioClient!.put('${AppConstants.wholesaleNotificationSeenUri}$id/seen');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));

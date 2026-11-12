@@ -1,3 +1,5 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
+
 class AuctionEntryFeeRequestModel {
   final int auctionProductId;
   final double feeAmount;
@@ -110,24 +112,22 @@ class AuctionTransactionModel {
 
 class AuctionEntryFeeResponseModel {
   final String? message;
+  final String? redirectLink;
   final AuctionParticipantModel? participant;
   final AuctionTransactionModel? transaction;
 
-  AuctionEntryFeeResponseModel({
-    this.message,
-    this.participant,
-    this.transaction,
-  });
+  AuctionEntryFeeResponseModel({this.message, this.redirectLink, this.participant, this.transaction});
 
   factory AuctionEntryFeeResponseModel.fromJson(Map<String, dynamic> json) {
+    final Map content = ApiEnvelope.content(json);
+    final dynamic rawRedirect = content['redirect_link'];
     return AuctionEntryFeeResponseModel(
-      message: json['message'],
-      participant: json['participant'] != null
-          ? AuctionParticipantModel.fromJson(json['participant'])
-          : null,
-      transaction: json['transaction'] != null
-          ? AuctionTransactionModel.fromJson(json['transaction'])
-          : null,
+      message: ApiEnvelope.message(json),
+      redirectLink: rawRedirect is String && rawRedirect.isNotEmpty ? rawRedirect : null,
+      participant: content['participant'] is Map
+          ? AuctionParticipantModel.fromJson(Map<String, dynamic>.from(content['participant'])) : null,
+      transaction: content['transaction'] is Map
+          ? AuctionTransactionModel.fromJson(Map<String, dynamic>.from(content['transaction'])) : null,
     );
   }
 }

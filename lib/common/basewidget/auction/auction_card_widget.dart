@@ -178,7 +178,7 @@ class _AuctionCardWidgetState extends State<AuctionCardWidget> {
                     Row(
                       children: [
                         Text(
-                          isLive ? getTranslated('highest_bid', context) ?? ''
+                          isLive && (widget.bidCount ?? 0) > 0 ? getTranslated('highest_bid', context) ?? ''
                             : getTranslated('starting_price', context) ?? '',
                           style: titilliumRegular.copyWith(
                             fontSize: Dimensions.fontSizeExtraSmall,

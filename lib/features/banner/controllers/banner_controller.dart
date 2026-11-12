@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/enums/data_source_enum.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/features/banner/domain/models/banner_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/banner/domain/services/banner_service_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/domain/models/product_model.dart';
@@ -52,7 +53,9 @@ class BannerController extends ChangeNotifier {
         _mainBannerList = [];
         _footerBannerList = [];
 
-        data.forEach((bannerModel) {
+        final ApiListEnvelope envelope = ApiListEnvelope.fromJson(Map<String, dynamic>.from(data));
+
+        envelope.data?.forEach((bannerModel) {
           if(bannerModel['banner_type'] == 'Main Banner'){
             _mainBannerList!.add(BannerModel.fromJson(bannerModel));
           }
@@ -97,44 +100,64 @@ class BannerController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clickBannerRedirect(BuildContext context, BannerModel? banner) {
+    if(banner == null) return;
 
-  void clickBannerRedirect(BuildContext context, int? id, Product? product,  String? type, {String? url}) {
+    final String? type = banner.resourceType;
+    final int? id = banner.resourceId;
 
-    if(type == 'custom' && url != null && url.isNotEmpty) {
-      launchUrl(Uri.parse(url),mode: LaunchMode.externalApplication);
+    if(type == 'custom') {
+      final String? url = banner.url;
+      if(url != null && url.isNotEmpty) {
+        launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      }
+
     } else if(type == 'category') {
-      final cIndex =  Provider.of<CategoryController>(context, listen: false).categoryList.indexWhere((element) => element.id == id);
+      final categories = Provider.of<CategoryController>(context, listen: false).categoryList;
+      final int cIndex = categories.indexWhere((element) => element.id == id);
+      final String? name = cIndex != -1 ? categories[cIndex].name : banner.resourceName;
 
-      if(Provider.of<CategoryController>(context, listen: false).categoryList[cIndex].name != null){
-        RouterHelper.getBrandCategoryRoute(action: RouteAction.push, isBrand: false, id: id ?? 1, name: '${Provider.of<CategoryController>(context, listen: false).categoryList[cIndex].name}');
+      if(name != null){
+        RouterHelper.getBrandCategoryRoute(action: RouteAction.push, isBrand: false, id: id ?? 1, name: name);
       }
 
     } else if(type == 'product') {
-      if(product != null  && product.status == 1) {
-        RouterHelper.getProductDetailsRoute(action: RouteAction.push, productId: product.id! , slug: product.slug!);
+      final Product? product = banner.product;
+
+      if(product != null) {
+        if(product.status == 1 && product.id != null && product.slug != null) {
+          RouterHelper.getProductDetailsRoute(action: RouteAction.push, productId: product.id!, slug: product.slug!);
+        }
+      } else if(id != null && banner.resourceSlug != null) {
+        RouterHelper.getProductDetailsRoute(action: RouteAction.push, productId: id, slug: banner.resourceSlug!);
       }
+
     } else if(type == 'brand') {
-      final bIndex =  Provider.of<BrandController>(context, listen: false).brandList.indexWhere((element) => element.id == id);
+      final brands = Provider.of<BrandController>(context, listen: false).brandList;
+      final int bIndex = brands.indexWhere((element) => element.id == id);
+      final String? name = bIndex != -1 ? brands[bIndex].name : banner.resourceName;
 
-      if(Provider.of<BrandController>(context, listen: false).brandList[bIndex].name != null){
-        RouterHelper.getBrandCategoryRoute(action: RouteAction.push, isBrand: true, id: id!, name: '${Provider.of<BrandController>(context, listen: false).brandList[bIndex].name}');
+      if(id != null && name != null){
+        RouterHelper.getBrandCategoryRoute(action: RouteAction.push, isBrand: true, id: id, name: name);
       }
 
-    }else if( type == 'shop'){
-      final tIndex =  Provider.of<ShopController>(context, listen: false).allSellerModel!.sellers!.indexWhere((element) => element.id == id);
+    } else if(type == 'shop'){
+      final sellers = Provider.of<ShopController>(context, listen: false).allSellerModel?.sellers;
+      final int sIndex = sellers?.indexWhere((element) => element.id == id) ?? -1;
+      final shop = sIndex != -1 ? sellers![sIndex].shop : null;
+      final String? slug = shop?.slug ?? banner.resourceSlug;
 
-      if(Provider.of<ShopController>(context, listen: false).allSellerModel?.sellers?[tIndex].shop?.name != null){
-        final shop = Provider.of<ShopController>(context,listen: false).allSellerModel?.sellers?[tIndex].shop;
+      if(slug != null){
         RouterHelper.getTopSellerRoute(
           action: RouteAction.push,
-          slug: shop?.slug ?? '',
+          slug: slug,
           sellerId: id,
           temporaryClose: shop?.temporaryClose,
           vacationStatus: shop?.vacationStatus,
           vacationEndDate: shop?.vacationEndDate,
           vacationStartDate: shop?.vacationStartDate,
           vacationDurationType: shop?.vacationDurationType,
-          name: shop?.name,
+          name: shop?.name ?? banner.resourceName,
           banner: shop?.bannerFullUrl?.path,
           image: shop?.imageFullUrl?.path,
         );

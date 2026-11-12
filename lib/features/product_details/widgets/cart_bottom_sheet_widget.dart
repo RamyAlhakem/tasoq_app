@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_directionality_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/discount_tag_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/not_logged_in_bottom_sheet_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/domain/models/cart_model.dart';
@@ -486,7 +487,6 @@ class CartBottomSheetWidgetState extends State<CartBottomSheetWidget> {
                                           ),
                                           const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
-                                          /// Grid of options
                                           Expanded(
                                             child:  Wrap(
                                               spacing: 8, // horizontal spacing between options
@@ -755,9 +755,12 @@ class CartBottomSheetWidgetState extends State<CartBottomSheetWidget> {
                               } else if( stock! < widget.product!.minimumOrderQty!  &&  widget.product!.productType == "physical" ) {
                                 showCustomSnackBarWidget(getTranslated('out_of_stock', context), context, snackBarType: SnackBarType.warning);
                               } else if(stock >= widget.product!.minimumOrderQty! || widget.product!.productType == "digital") {
+                                // Button subtree is replaced by a loader while the request runs, so the Consumer's
+                                // `context` gets deactivated; use the State's own context for the overlay toast.
+                                final BuildContext sheetContext = this.context;
                                 final ApiResponseModel apiResponse = await  Provider.of<CartController>(context, listen: false).addToCartAPI(
-                                  cart, context, widget.product!.choiceOptions!,
-                                  productDetailsController.variationIndex, buyNow: 1,
+                                  cart, sheetContext, widget.product!.choiceOptions!,
+                                  productDetailsController.variationIndex, buyNow: 1, useOverlay: true,
                                 );
 
                                 if(apiResponse.response?.statusCode == 200){
@@ -802,10 +805,11 @@ class CartBottomSheetWidgetState extends State<CartBottomSheetWidget> {
   }
 
   void _onTapBuyNow(CartModelBody cart, BuildContext context, List<ChoiceOptions> choices, List<int>? variationIndexes, Response<dynamic>? response) {
+    final dynamic data = ApiEnvelope.content(response?.data)['data'];
     if(_isSelectShippingMethod(response)){
       List<ShippingMethodModel>? shippingMethodList = [];
 
-      response?.data['shipping_method_list'].forEach((element) {
+      data['shipping_method_list'].forEach((element) {
         shippingMethodList.add(ShippingMethodModel.fromJson(element));
       });
 
@@ -815,12 +819,14 @@ class CartBottomSheetWidgetState extends State<CartBottomSheetWidget> {
       ));
 
     } else {
-      CartModel cart = CartModel.fromJson(response?.data['cart']);
+      CartModel cart = CartModel.fromJson(data['cart']);
       _navigateToCheckoutScreen(context, cart, 0);
     }
   }
 
-  bool _isSelectShippingMethod(Response<dynamic>? response) => response?.data['status'] == 2;
+  // v6 signals this via `identical_code` instead of the old `status == 2` flag.
+  bool _isSelectShippingMethod(Response<dynamic>? response) =>
+      response?.data is Map && response?.data['identical_code'] == 'cart_shipping_method_required_200';
 
   void _navigateToCheckoutScreen(BuildContext context, CartModel cart, double shippingCost) {
     final double discount = cart.discount! * cart.quantity!;
@@ -830,8 +836,11 @@ class CartBottomSheetWidgetState extends State<CartBottomSheetWidget> {
     double tax = 0.0;
     double shippingAmount = (shippingCost + cart.shippingCost!);
 
-    if(cart.taxModel == "exclude") {
-      tax += cart.tax! * cart.quantity!;
+    // v6's add-to-cart response doesn't compute `tax`/`tax_model` yet (they're
+    // unset DB-default placeholders there) — use `applied_tax`/`applied_tax_type`
+    // instead, same as the cart-list screen does, once the backend adds them.
+    if(cart.appliedTaxType == "exclude" && cart.appliedTax != null) {
+      tax += cart.appliedTax! * cart.quantity!;
     }
 
     if(cart.freeDeliveryOrderAmount != null  ){

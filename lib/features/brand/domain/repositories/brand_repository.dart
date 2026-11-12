@@ -18,10 +18,16 @@ class BrandRepository extends DataSyncService implements BrandRepoInterface {
   }
 
   @override
+  Future<ApiResponseModel<T>> getAuctionBrandList<T>({int offset = 1, required DataSourceEnum source}) async {
+    return await fetchData<T>(
+        '${AppConstants.auctionBrandUri}?limit=24&offset=$offset', source);
+  }
+
+  @override
   Future<ApiResponseModel> getSellerWiseBrandList(String slug) async {
     try {
       final response =
-          await dioClient.get('${AppConstants.sellerWiseBrandList}$slug');
+          await dioClient.get(AppConstants.sellerWiseBrandList, queryParameters: {'shop_slug': slug, 'limit': 100, 'offset': 1});
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));

@@ -1,5 +1,6 @@
 import 'dart:convert';
-
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/image_full_url.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/domain/models/product_details_model.dart';
 
@@ -24,20 +25,35 @@ class ProductModel {
   List<Product>? get products => _products;
 
   ProductModel.fromJson(Map<String, dynamic> json) {
-    totalSize = json['total_size'];
-    limit = int.parse(json['limit'].toString());
-    offset = int.parse(json['offset'].toString());
-    if (json['min_price'] != null) {
-      minPrice =  double.parse(json['min_price'].toString());
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json, legacyKeys: ['products']);
+    totalSize = envelope.totalSize;
+    limit = envelope.limit;
+    offset = envelope.offset;
+    if (envelope.read('min_price') != null) {
+      minPrice =  double.parse(envelope.read('min_price').toString());
     }
 
-    if(json['max_price'] != null) {
-      maxPrice = double.parse(json['max_price'].toString());
+    if(envelope.read('max_price') != null) {
+      maxPrice = double.parse(envelope.read('max_price').toString());
     }
-    if (json['products'] != null) {
+    if (envelope.data != null) {
       _products = [];
-      json['products'].forEach((v) {_products!.add(Product.fromJson(v));
+      envelope.data!.forEach((v) {_products!.add(Product.fromJson(v));
       });
+    }
+  }
+
+  ProductModel.fromClearanceSaleJson(Map<String, dynamic> json) {
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json);
+    totalSize = envelope.totalSize;
+    limit = envelope.limit;
+    offset = envelope.offset;
+    if (envelope.data != null) {
+      _products = [
+        for (final Map row in envelope.data!.whereType<Map>())
+          row['product'] is Map
+              ? Product.fromClearanceSaleJson(Map<String, dynamic>.from(row)) : Product.fromDealJson(Map<String, dynamic>.from(row)),
+      ];
     }
   }
 
@@ -253,6 +269,43 @@ class Product {
   List<Reviews>? get reviews => _reviews;
   String? get reviewsAvgRating => _reviewsAvgRating;
 
+  factory Product.fromClearanceSaleJson(Map<String, dynamic> json) {
+    final Product product = Product.fromJson(Map<String, dynamic>.from(json['product']));
+    product.clearanceSale = ClearanceSale.fromJson({
+      'id': json['id'],
+      'discount_type': json['discount_type'],
+      'discount_amount': json['discount_amount'],
+    });
+    return product;
+  }
+
+  factory Product.fromDealJson(Map<String, dynamic> json, {dynamic discount, dynamic discountType}) {
+    final Product product = Product.fromJson(json);
+    final Map? deal = json['deal'] is Map ? json['deal'] : null;
+
+    final double amount = double.tryParse('${discount ?? deal?['discount']}') ?? 0;
+    if (amount > 0) {
+      product.clearanceSale = ClearanceSale(
+        discountAmount: amount,
+        discountType: (discountType ?? deal?['discount_type'])?.toString(),
+      );
+    }
+    return product;
+  }
+
+  static Product dealOfTheDayFromJson(dynamic body) {
+    if (body is! Map) return Product(id: -1);
+
+    final dynamic deal = ApiEnvelope.content(body)['data'];
+    if (deal is! Map || deal['product'] is! Map) return Product(id: -1);
+
+    return Product.fromDealJson(
+      Map<String, dynamic>.from(deal['product']),
+      discount: deal['discount'],
+      discountType: deal['discount_type'],
+    );
+  }
+
   Product.fromJson(Map<String, dynamic> json) {
     _id = json['id'];
     _addedBy = json['added_by'];
@@ -312,6 +365,25 @@ class Product {
           _colors!.add(ProductColors.fromJson(v));
         });
       }
+    } else if (json['colors'] != null) {
+      // Some v6 endpoints don't stamp colors_formatted and only expose the raw
+      // ["#RRGGBB", ...] column. Swatches only need the code, so fall back to it.
+      _colors = [];
+      try{
+        dynamic rawColors = json['colors'];
+        if (rawColors is String) rawColors = jsonDecode(rawColors);
+        if (rawColors is List) {
+          for (final dynamic color in rawColors) {
+            if (color is Map) {
+              _colors!.add(ProductColors.fromJson(Map<String, dynamic>.from(color)));
+            } else if (color != null) {
+              _colors!.add(ProductColors(code: color.toString()));
+            }
+          }
+        }
+      }catch(e){
+        _colors = [];
+      }
     }
     if(json['attributes'] != null && json['attributes'] != "null") {
       try{
@@ -370,13 +442,14 @@ class Product {
     _details = json['details'];
     _createdAt = json['created_at'];
     _updatedAt = json['updated_at'];
-    if (json['rating'] != null) {
+    if (json['rating'] is List) {
       _rating = [];
       json['rating'].forEach((v) {
         _rating!.add(Rating.fromJson(v));
       });
-    }else{
-
+    } else if (json['rating'] != null) {
+      // v6 sends the average as a scalar where v1 sent a list of {average}.
+      _rating = [Rating(average: json['rating'].toString())];
     }
     if(json['shipping_cost']!=null){
       _shippingCost = double.parse(json['shipping_cost'].toString());
@@ -384,8 +457,10 @@ class Product {
     if(json['multiply_qty']!=null){
       _isMultiPly = int.parse(json['multiply_qty'].toString());
     }
-    if(json['reviews_count']!=null){
-      _reviewCount = int.parse(json['reviews_count'].toString());
+    // v6 renamed reviews_count to rating_count.
+    final dynamic reviewCountJson = json['reviews_count'] ?? json['rating_count'];
+    if(reviewCountJson != null){
+      _reviewCount = int.tryParse(reviewCountJson.toString());
     }
     _videoUrl = json['video_url'];
     if(json['minimum_order_qty'] != null){
@@ -429,7 +504,7 @@ class Product {
         _reviews!.add(Reviews.fromJson(v));
       });
     }
-    _reviewsAvgRating = json['reviews_avg_rating'];
+    _reviewsAvgRating = json['reviews_avg_rating']?.toString();
   }
 
   Map<String, dynamic> toJson() {

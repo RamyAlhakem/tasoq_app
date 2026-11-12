@@ -11,6 +11,7 @@ class NotificationController extends ChangeNotifier {
 
   NotificationItemModel? notificationModel;
   AuctionNotificationListModel? auctionNotificationModel;
+  WholesaleNotificationListModel? wholesaleNotificationModel;
 
   Future<void> getNotificationList(int offset) async {
     ApiResponseModel apiResponse = await notificationServiceInterface.getList(offset : offset);
@@ -59,6 +60,31 @@ class NotificationController extends ChangeNotifier {
     ApiResponseModel apiResponse = await notificationServiceInterface.markAuctionSeen(id: id);
     if (apiResponse.response != null && apiResponse.response?.statusCode == 200) {
       getAuctionNotificationList(1);
+    }
+    notifyListeners();
+  }
+
+  Future<void> getWholesaleNotificationList(int offset) async {
+    ApiResponseModel apiResponse = await notificationServiceInterface.getWholesaleList(offset: offset);
+    if (apiResponse.response != null && apiResponse.response?.statusCode == 200) {
+      if (offset == 1) {
+        wholesaleNotificationModel = WholesaleNotificationListModel.fromJson(apiResponse.response?.data);
+      } else {
+        final incoming = WholesaleNotificationListModel.fromJson(apiResponse.response?.data);
+        wholesaleNotificationModel?.notifications?.addAll(incoming.notifications ?? []);
+        wholesaleNotificationModel?.offset = incoming.offset;
+        wholesaleNotificationModel?.totalSize = incoming.totalSize;
+      }
+    } else {
+      ApiChecker.checkApi(apiResponse);
+    }
+    notifyListeners();
+  }
+
+  Future<void> markWholesaleSeen(int id) async {
+    ApiResponseModel apiResponse = await notificationServiceInterface.markWholesaleSeen(id);
+    if (apiResponse.response != null && apiResponse.response?.statusCode == 200) {
+      getWholesaleNotificationList(1);
     }
     notifyListeners();
   }

@@ -1,3 +1,5 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
+
 class AuctionDashboardSummaryModel {
   int? totalMyBids;
   int? totalMySavedAuctions;
@@ -12,13 +14,16 @@ class AuctionDashboardSummaryModel {
   });
 
   factory AuctionDashboardSummaryModel.fromJson(Map<String, dynamic> json) {
+    final Map content = ApiEnvelope.content(json);
     return AuctionDashboardSummaryModel(
-      totalMyBids: json['total_my_bids'],
-      totalMySavedAuctions: json['total_my_saved_auctions'],
-      totalMyAuctions: json['total_my_auctions'],
-      totalMyAuctionPending: json['total_my_auction_pending'],
+      totalMyBids: _count(content['total_my_bids']),
+      totalMySavedAuctions: _count(content['total_my_saved_auctions']),
+      totalMyAuctions: _count(content['total_my_auctions']),
+      totalMyAuctionPending: _count(content['total_my_auction_pending']),
     );
   }
+
+  static int? _count(dynamic value) => value is int ? value : int.tryParse('${value ?? ''}');
 
   Map<String, dynamic> toJson() {
     return {

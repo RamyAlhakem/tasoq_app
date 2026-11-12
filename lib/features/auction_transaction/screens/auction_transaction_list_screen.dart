@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_app_bar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_icon_search_field_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/filter_icon_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_sliver_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_transaction/controller/auction_transaction_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_transaction/widgets/auction_transaction_filter_bottom_sheet_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_transaction/widgets/auction_transaction_shimmer_widget.dart';
@@ -58,7 +58,7 @@ class _AuctionTransactionListScreenState extends State<AuctionTransactionListScr
         actions: [
           Consumer<AuctionTransactionController>(
             builder: (context, controller, _) => Padding(
-              padding: const EdgeInsets.only(right: Dimensions.paddingSizeDefault),
+              padding: const EdgeInsetsDirectional.only(end: Dimensions.paddingSizeDefault),
               child: FilterIconWidget(
                 filterCount: controller.activeFilterCount,
                 onTap: () => showModalBottomSheet(
@@ -117,32 +117,37 @@ class _AuctionTransactionListScreenState extends State<AuctionTransactionListScr
                     isRefresh: true,
                     searchAuctionId: _searchAuctionId,
                   ),
-                  child: SingleChildScrollView(
+                  child: CustomScrollView(
                     controller: _scrollController,
-                    child: PaginatedListView(
-                      scrollController: _scrollController,
-                      totalSize: controller.totalSize,
-                      offset: controller.offset,
-                      onPaginate: (offset) => controller.getAuctionTransactionList(context, offset: offset ?? 1, searchAuctionId: _searchAuctionId),
-                      itemView: ListView.builder(
-                        physics: const NeverScrollableScrollPhysics(),
-                        shrinkWrap: true,
-                        padding: const EdgeInsets.only(
-                          top: Dimensions.paddingSizeExtraSmall,
-                          bottom: Dimensions.paddingSizeDefault,
+                    slivers: [
+                      PaginatedSliverListView(
+                        scrollController: _scrollController,
+                        totalSize: controller.totalSize,
+                        offset: controller.offset,
+                        limit: controller.limit ?? 10,
+                        onPaginate: (offset) => controller.getAuctionTransactionList(context, offset: offset ?? 1, searchAuctionId: _searchAuctionId),
+                        itemView: SliverPadding(
+                          padding: const EdgeInsets.only(
+                            top: Dimensions.paddingSizeExtraSmall,
+                            bottom: Dimensions.paddingSizeDefault,
+                          ),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final t = controller.transactions[index];
+                                return AuctionTransactionTileWidget(
+                                  amount: t.amount ?? 0.0,
+                                  auctionNumber: '${t.auctionProductId ?? ''}',
+                                  dateTime: DateTime.tryParse(t.date ?? '') ?? DateTime.now(),
+                                  type: t.isCredit ? TransactionType.credit : TransactionType.debit,
+                                );
+                              },
+                              childCount: controller.transactions.length,
+                            ),
+                          ),
                         ),
-                        itemCount: controller.transactions.length,
-                        itemBuilder: (context, index) {
-                          final t = controller.transactions[index];
-                          return AuctionTransactionTileWidget(
-                            amount: t.amount ?? 0.0,
-                            auctionNumber: '${t.auctionProductId ?? ''}',
-                            dateTime: DateTime.tryParse(t.date ?? '') ?? DateTime.now(),
-                            type: t.type == 'credit' ? TransactionType.credit : TransactionType.debit,
-                          );
-                        },
                       ),
-                    ),
+                    ],
                   ),
                 );
               },

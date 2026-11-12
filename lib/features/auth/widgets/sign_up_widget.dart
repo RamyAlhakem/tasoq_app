@@ -46,6 +46,25 @@ class SignUpWidgetState extends State<SignUpWidget> {
   RegisterModel register = RegisterModel();
   final GlobalKey<FormState> signUpFormKey = GlobalKey<FormState>();
 
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _referController.dispose();
+    _fNameFocus.dispose();
+    _lNameFocus.dispose();
+    _emailFocus.dispose();
+    _phoneFocus.dispose();
+    _passwordFocus.dispose();
+    _confirmPasswordFocus.dispose();
+    _referFocus.dispose();
+    super.dispose();
+  }
+
 
 
   Future<void> route(bool isRoute, String? token, String? tempToken, String? errorMessage) async {

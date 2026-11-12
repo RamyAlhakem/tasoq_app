@@ -1,4 +1,29 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/image_full_url.dart';
+
+class AuctionCategoryList {
+  final List<AuctionCategoryModel> categories;
+
+  const AuctionCategoryList({this.categories = const []});
+
+  factory AuctionCategoryList.fromJson(dynamic json) {
+    final List raw;
+    if (json is List) {
+      raw = json;
+    } else if (json is Map) {
+      final dynamic content = json['content'];
+      raw = content is List ? content
+          : ApiListEnvelope.fromJson(Map<String, dynamic>.from(json), legacyKeys: const ['categories']).data ?? const [];
+    } else {
+      raw = const [];
+    }
+
+    return AuctionCategoryList(
+      categories: raw.whereType<Map>()
+          .map((e) => AuctionCategoryModel.fromJson(Map<String, dynamic>.from(e))).toList(),
+    );
+  }
+}
 
 class AuctionCategoryModel {
   int? id;

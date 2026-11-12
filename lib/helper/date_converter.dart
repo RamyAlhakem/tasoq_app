@@ -211,13 +211,14 @@ class DateConverter {
     return DateFormat('dd MMM, yyyy, HH:mm').format(dateTime.toLocal());
   }
 
+  static String monthDayYear(DateTime dateTime) => DateFormat('MM/dd/yyyy').format(dateTime);
+  static String yearMonthDay(DateTime dateTime) => DateFormat('yyyy-MM-dd').format(dateTime);
+  static String yearMonthDayTime(DateTime dateTime) => DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTime);
+  static String monthDayYearTime(DateTime dateTime) => DateFormat('MM/dd/yyyy, h:mma').format(dateTime);
+
   static String durationDateTime(DateTime dateTime) => DateFormat('MM/dd/yyyy hh:mm:ss a').format(dateTime);
   static DateTime? convertDurationDateTimeFromString(String? dateTime) => DateFormat('MM/dd/yyyy hh:mm:ss a').tryParse(dateTime ?? '');
 
-  /// Calculates the claim deadline for an auction winner.
-  /// [claimStartTime] is the ISO string from `my_bid.claim_start_time`.
-  /// [limitValue] and [limitUnit] come from config's `auction_winner_claim_time_limit`.
-  /// Returns null if inputs are invalid or missing.
   static DateTime? auctionClaimDeadline({
     required String? claimStartTime,
     required int? limitValue,
@@ -238,11 +239,13 @@ class DateConverter {
   }
 
   static String formatDuration(Duration duration) {
-    final int hours = duration.inHours;
+    final int days = duration.inDays;
+    final int hours = duration.inHours.remainder(24);
     final int minutes = duration.inMinutes.remainder(60);
     final int seconds = duration.inSeconds.remainder(60);
 
-    return '${hours}h ${minutes}m ${seconds}s';
+    if (days > 0) return '${days}d ${hours}h ${minutes}m';
+    return '${duration.inHours}h ${minutes}m ${seconds}s';
   }
 
 }

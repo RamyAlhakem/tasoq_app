@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_button_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/controllers/cart_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/domain/models/cart_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/domain/models/product_model.dart';
@@ -44,20 +45,20 @@ class _ChooseShippingMethodDialogState extends State<ChooseShippingMethodDialog>
           child: SingleChildScrollView(
             child: Column(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
             
-                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  const SizedBox(),
-            
-                  Text(getTranslated('shipping_method', context)!, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).textTheme.bodyLarge?.color)),
-            
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: IconButton(
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        style: const ButtonStyle(tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-                        icon: const Icon(Icons.close), onPressed: () => Navigator.of(context).pop())
-                  ),
-                ]),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                const SizedBox(),
+
+                Text(getTranslated('shipping_method', context)!, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).textTheme.bodyLarge?.color)),
+
+                Align(
+                  alignment: Alignment.topRight,
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    style: const ButtonStyle(tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+                    icon: const Icon(Icons.close), onPressed: () => Navigator.of(context).pop())
+                ),
+              ]),
             
             
                 const SizedBox(height: Dimensions.paddingSizeDefault),
@@ -120,11 +121,15 @@ class _ChooseShippingMethodDialogState extends State<ChooseShippingMethodDialog>
                         Provider.of<CartController>(context, listen: false).addToCartAPI(widget.cart, context,
                             widget.choices, widget.variationIndexes, buyNow: 1, shippingMethodExist: 1,
                             shippingMethodId: widget.shippingMethodList![selectedIndex!].id).then((value) {
-                          if(value.response!.statusCode == 200 && value.response?.data['status'] == 1){
-                            CartModel cart = CartModel.fromJson(value.response?.data['cart']);
-                            widget.callback(Get.context!, cart, double.tryParse('${value.response?.data['cart_shipping_cost']}')!);
+                          final bool success = value.response?.statusCode == 200 &&
+                              value.response?.data is Map &&
+                              value.response?.data['identical_code'] == 'cart_item_added_for_checkout_200';
+                          if(success){
+                            final dynamic data = ApiEnvelope.content(value.response?.data)['data'];
+                            CartModel cart = CartModel.fromJson(data['cart']);
+                            widget.callback(Get.context!, cart, double.tryParse('${data['cart_shipping_cost']}')!);
                           } else {
-                            showCustomSnackBarWidget(getTranslated(value.response?.data['message'], Get.context!)!, Get.context!, snackBarType: SnackBarType.warning);
+                            showCustomSnackBarWidget(ApiEnvelope.errorMessage(value.response?.data) ?? 'Something went wrong', Get.context!, snackBarType: SnackBarType.warning);
                           }
                         });
                       }

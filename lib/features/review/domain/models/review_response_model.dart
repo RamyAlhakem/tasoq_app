@@ -1,3 +1,4 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/features/review/domain/models/review_model.dart';
 
 class ReviewResponseModel {
@@ -14,22 +15,25 @@ class ReviewResponseModel {
   });
 
   ReviewResponseModel.fromJson(Map<String, dynamic> json) {
-    totalSize = json['total_size'];
-    averageRating = json['average_rating'];
+    final envelope = ApiListEnvelope.fromJson(json, legacyKeys: ['reviews']);
+    totalSize = envelope.totalSize;
 
-    if (json['group-wise-rating'] != null) {
+    // v6 sends "4.50" when there are reviews but a bare 0 when there are none.
+    averageRating = envelope.read('average_rating')?.toString();
+
+    final dynamic groupWise = envelope.read('group-wise-rating');
+    if (groupWise is List) {
       groupWiseRating = <GroupWiseRating>[];
-      json['group-wise-rating'].forEach((v) {
-        groupWiseRating!.add(GroupWiseRating.fromJson(v));
-      });
+      for (final v in groupWise) {
+        groupWiseRating!.add(GroupWiseRating.fromJson(Map<String, dynamic>.from(v)));
+      }
     }
 
-    if (json['reviews'] != null) {
+    if (envelope.data != null) {
       reviews = <ReviewModel>[];
-      json['reviews'].forEach((v) {
-        reviews!.add(ReviewModel.fromJson(v));
-      });
-
+      for (final v in envelope.data!) {
+        reviews!.add(ReviewModel.fromJson(Map<String, dynamic>.from(v)));
+      }
     }
   }
 }

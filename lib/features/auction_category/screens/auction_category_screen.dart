@@ -29,6 +29,7 @@ class AuctionCategoryScreen extends StatefulWidget {
 }
 
 class _AuctionCategoryScreenState extends State<AuctionCategoryScreen> {
+  static const double _bottomNavHeight = 60;
   final ScrollController _scrollController = ScrollController();
   AuctionFilterParamModel? _currentFilter;
 
@@ -68,6 +69,7 @@ class _AuctionCategoryScreenState extends State<AuctionCategoryScreen> {
                   ),
                 );
           }
+          final double bottomSpace = widget.isBacButtonExist ? 0 : _bottomNavHeight + MediaQuery.of(context).padding.bottom;
           return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Expanded(
                 flex: 3,
@@ -76,7 +78,7 @@ class _AuctionCategoryScreenState extends State<AuctionCategoryScreen> {
                   child: ListView.builder(
                     physics: const BouncingScrollPhysics(),
                     itemCount: categoryProvider.categoryList.length,
-                    padding: EdgeInsets.zero,
+                    padding: EdgeInsets.only(bottom: bottomSpace),
                     itemBuilder: (context, index) {
                       AuctionCategoryModel category = categoryProvider.categoryList[index];
                       return InkWell(
@@ -103,7 +105,13 @@ class _AuctionCategoryScreenState extends State<AuctionCategoryScreen> {
                 flex: 7,
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
-                  child: _buildProductPanel(categoryProvider),
+                  child: AuctionProductPanel(
+                    categoryProvider: categoryProvider,
+                    currentFilter: _currentFilter,
+                    scrollController: _scrollController,
+                    bottomSpace: bottomSpace,
+                    onFilterApplied: (filter) => setState(() => _currentFilter = filter),
+                  ),
                 ),
               ),
             ]);
@@ -111,8 +119,26 @@ class _AuctionCategoryScreenState extends State<AuctionCategoryScreen> {
       ),
     );
   }
+}
 
-  Widget _buildProductPanel(AuctionCategoryController categoryProvider) {
+class AuctionProductPanel extends StatelessWidget {
+  final AuctionCategoryController categoryProvider;
+  final AuctionFilterParamModel? currentFilter;
+  final ScrollController scrollController;
+  final double bottomSpace;
+  final ValueChanged<AuctionFilterParamModel?> onFilterApplied;
+
+  const AuctionProductPanel({
+    super.key,
+    required this.categoryProvider,
+    required this.currentFilter,
+    required this.scrollController,
+    required this.bottomSpace,
+    required this.onFilterApplied,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final selectedIndex = categoryProvider.categorySelectedIndex ?? 0;
 
     if (selectedIndex >= categoryProvider.categoryList.length) {
@@ -128,6 +154,7 @@ class _AuctionCategoryScreenState extends State<AuctionCategoryScreen> {
 
     return Container(
       color: Theme.of(context).cardColor,
+      padding: EdgeInsets.only(bottom: bottomSpace),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Padding(
@@ -162,10 +189,10 @@ class _AuctionCategoryScreenState extends State<AuctionCategoryScreen> {
                     context,
                     isCategoryPage: true,
                     categoryId: categoryId,
-                    currentFilter: _currentFilter,
+                    currentFilter: currentFilter,
                   );
                   if (result != null && context.mounted) {
-                    setState(() => _currentFilter = result);
+                    onFilterApplied(result);
                     searchController.applyFilter(result);
                     await searchController.getAuctionList(offset: 1, reload: true);
                   }
@@ -187,8 +214,8 @@ class _AuctionCategoryScreenState extends State<AuctionCategoryScreen> {
           Expanded(
             child: Builder(
               builder: (_) {
-                if (_currentFilter != null) {
-                  return _AuctionFilteredProductGrid(scrollController: _scrollController);
+                if (currentFilter != null) {
+                  return _AuctionFilteredProductGrid(scrollController: scrollController);
                 }
 
                 if (productListModel == null ||
@@ -204,7 +231,7 @@ class _AuctionCategoryScreenState extends State<AuctionCategoryScreen> {
                 return _AuctionProductGrid(
                   key: ValueKey(categoryId),
                   categoryId: categoryId,
-                  scrollController: _scrollController,
+                  scrollController: scrollController,
                 );
               },
             ),

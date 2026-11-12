@@ -98,8 +98,8 @@ class _ParticipationAuctionDetailsScreenState extends State<ParticipationAuction
       final splashController = Provider.of<SplashController>(context, listen: false);
       final product = detailsController.auctionDetails!.product!;
 
-      final bool isEntryFeeEnabled = ((splashController.configModel?.isAuctionEntryFeeEnabled ?? false) && (splashController.configModel?.auctionEntryFeeAmount ?? 0) > 0);
-      final double entryFeePercentage = splashController.configModel?.auctionEntryFeeAmount ?? 0.0;
+      final bool isEntryFeeEnabled = splashController.configModel?.auctionConfig?.isEntryFeeEnabled ?? false;
+      final double entryFeePercentage = splashController.configModel?.auctionConfig?.entryFee?.amount ?? 0.0;
       final double entryFee = (entryFeePercentage / 100) * (product.startingPrice ?? 0);
       final String selectedCurrency = splashController.myCurrency?.code ?? '';
       final bool isEntryFeePaid = Provider.of<AuctionParticipationController>(context, listen: false).isEntryFeePaid;
@@ -150,28 +150,21 @@ class _ParticipationAuctionDetailsScreenState extends State<ParticipationAuction
 
 
         final DateTime? endTime = product?.auctionStatus?.isUpcoming == true
-          ? DateTime.tryParse(product?.startTime ?? '')
-          : (product?.auctionStatus?.isLive == true || product?.auctionStatus?.isWon == true)
-          ? DateTime.tryParse(product?.endTime ?? '')
-          : null;
+          ? DateTime.tryParse(product?.startTime ?? '') : (product?.auctionStatus?.isLive == true || product?.auctionStatus?.isWon == true)
+          ? DateTime.tryParse(product?.endTime ?? '') : null;
 
-        // TODO: remove ready to delivery
-        final bool isWonOrReadyToClaim = (product?.myAuctionStatus?.isWon == true || product?.auctionStatus?.isClaimed == true) &&  product?.myBid?.claimStartTime != null;
+        final bool isServerReadyToClaim = product?.myAuctionStatus?.isWon == true && product?.auctionCurrentStatus == 'ready_to_claim';
+        final String? claimStartTime = product?.myBid?.claimStartTime ?? (isServerReadyToClaim ? product?.endTime : null);
+        final bool isWonOrReadyToClaim = (product?.myAuctionStatus?.isWon == true || product?.auctionStatus?.isClaimed == true) && claimStartTime != null;
 
-        final claimLimit = splashController.configModel?.auctionWinnerClaimTimeLimit;
+        final claimLimit = splashController.configModel?.auctionConfig?.winnerClaimTimeLimit;
         final DateTime? claimDeadline = isWonOrReadyToClaim ? DateConverter.auctionClaimDeadline(
-          claimStartTime: product?.myBid?.claimStartTime,
-          limitValue: claimLimit?.value,
-          limitUnit: claimLimit?.unit,
-        ) : null;
+          claimStartTime: claimStartTime, limitValue: claimLimit?.value, limitUnit: claimLimit?.unit) : null;
 
         bool? availableClaimDeadline = claimDeadline?.isAfter(DateTime.now());
+        final bool canClaim = isServerReadyToClaim || (isWonOrReadyToClaim && (availableClaimDeadline ?? false));
 
         bool isParticipated = product?.myParticipation != null;
-
-
-
-
 
         return PopScope(
           canPop: !widget.isNotification && !widget.fromDeepLink && Navigator.canPop(context),
@@ -189,10 +182,7 @@ class _ParticipationAuctionDetailsScreenState extends State<ParticipationAuction
               title: getTranslated('auction_details', context) ?? '',
               centerTitle: false,
               onBackPressed: widget.isNotification
-                  ? () => RouterHelper.getDashboardRoute(action: RouteAction.pushNamedAndRemoveUntil, page: 'auction')
-                  : widget.fromDeepLink
-                  ? () => _handleDeepLinkBack()
-                  : null,
+                  ? () => RouterHelper.getDashboardRoute(action: RouteAction.pushNamedAndRemoveUntil, page: 'auction') : widget.fromDeepLink ? () => _handleDeepLinkBack() : null,
               actions: [
                 if (product?.myAuctionStatus?.isClaimed != true) ...[
                   Consumer<AuctionParticipationController>(
@@ -304,16 +294,12 @@ class _ParticipationAuctionDetailsScreenState extends State<ParticipationAuction
               ],
             ),
 
-
-
-
-
-            // TODO: add auction ready to delivery status
             bottomNavigationBar: (controller.isLoading || product == null || product.myAuctionStatus?.isLost == true
               || product.myAuctionStatus?.isClaimExpiredLost == true  || product.myAuctionStatus?.isClaimed == true
               || product.auctionOwnerStatus == 'unsold' || product.myAuctionStatus?.isFinalizing == true
-              || ((product.myAuctionStatus?.isWon == true) &&  isWonOrReadyToClaim  && !(availableClaimDeadline ?? false))
-              || isOwner
+              || ((product.myAuctionStatus?.isWon == true) && isWonOrReadyToClaim && !canClaim)
+              || isOwner || (product.auctionCurrentStatus != null && product.auctionCurrentStatus != 'live' && product.auctionCurrentStatus != 'upcoming'
+                  && !canClaim)
             ) ? null : SafeArea(
               top: false,
               child: Container(
@@ -328,7 +314,7 @@ class _ParticipationAuctionDetailsScreenState extends State<ParticipationAuction
                 ],
               ),
               padding: const EdgeInsets.symmetric(horizontal: Dimensions.homePagePadding, vertical: Dimensions.paddingSizeSmall),
-              child: isWonOrReadyToClaim  &&  (availableClaimDeadline ?? false) ?
+              child: canClaim ?
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -456,7 +442,7 @@ class _ParticipationAuctionDetailsScreenState extends State<ParticipationAuction
                 
                         if (product.myAuctionStatus?.isClaimed == true && product.trackingUrl != null) ...[
                           AuctionTrackOrderWidget(trackingUrl: product.trackingUrl),
-                          const SizedBox(height: Dimensions.homePagePadding),
+                          const SizedBox(height: Dimensions.paddingSizeSmall),
                         ],
                 
                         if(endTime != null && ((product.auctionStatus?.isLive ?? false) || (product.auctionStatus?.isUpcoming ?? false)))...[
@@ -472,7 +458,7 @@ class _ParticipationAuctionDetailsScreenState extends State<ParticipationAuction
                             totalViews: product.totalViews ?? 0,
                             totalBids: product.totalBidsCount ?? 0,
                           ),
-                          const SizedBox(height: Dimensions.homePagePadding),
+                          const SizedBox(height: Dimensions.paddingSizeSmall),
                         ] else ...[
                           ProductImageViewerWidget(
                             images: product.imagesFullUrl != null && product.imagesFullUrl!.isNotEmpty
@@ -494,14 +480,16 @@ class _ParticipationAuctionDetailsScreenState extends State<ParticipationAuction
                 
                         if (product.myParticipation != null && product.myParticipation!.entryFeePaymentMethod == 'offline_payment') ...[
                           ParticipateOfflinePaymentDetailsWidget(
+                            auctionId: product.id ?? 0,
+                            methodInformations: product.myParticipation!.offlinePaymentInfo?.fields,
                             status: _mapParticipationStatus(product.myParticipation!.entryFeePaymentStatus),
                             participateFee: product.myParticipation!.entryFeePaidAmount ?? 0,
                             deniedNote: product.myParticipation!.entryFeeDeniedNote,
-                            methodName: product.myParticipation!.auctionTransaction?.paymentInfo?.methodName,
-                            accountNumber: product.myParticipation!.auctionTransaction?.paymentInfo?.methodInformations?.mobileNumber,
-                            amount: product.myParticipation!.auctionTransaction?.amount,
-                            reference: product.myParticipation!.auctionTransaction?.paymentInfo?.methodInformations?.reference,
-                            paymentNote: product.myParticipation!.auctionTransaction?.paymentInfo?.paymentNote,
+                            methodName: product.myParticipation!.offlinePaymentInfo?.methodName ?? product.myParticipation!.auctionTransaction?.paymentInfo?.methodName,
+                            accountNumber: product.myParticipation!.offlinePaymentInfo?.accountNumber ?? product.myParticipation!.auctionTransaction?.paymentInfo?.methodInformations?.mobileNumber,
+                            amount: product.myParticipation!.offlinePaymentInfo?.amount ?? product.myParticipation!.auctionTransaction?.amount,
+                            reference: product.myParticipation!.offlinePaymentInfo?.reference ?? product.myParticipation!.auctionTransaction?.paymentInfo?.methodInformations?.reference,
+                            paymentNote: product.myParticipation!.offlinePaymentInfo?.paymentNote ?? product.myParticipation!.auctionTransaction?.paymentInfo?.paymentNote,
                           ),
                           const SizedBox(height: Dimensions.homePagePadding),
                         ],
@@ -513,7 +501,7 @@ class _ParticipationAuctionDetailsScreenState extends State<ParticipationAuction
                           videoUrl: product.youtubeVideoUrl,
                           customVideoUrl: product.customVideoUrlFullUrl?.path,
                         ),
-                        const SizedBox(height: Dimensions.homePagePadding),
+                        const SizedBox(height: Dimensions.paddingSizeSmall),
                 
                         if (product.myAuctionStatus?.isClaimed == true) ...[
                           AuctionParticipantAddressWidget(
@@ -533,12 +521,12 @@ class _ParticipationAuctionDetailsScreenState extends State<ParticipationAuction
                               product.billingAddressInfo?.zip,
                             ].where((e) => e != null && e.isNotEmpty).join(', '),
                           ),
-                          const SizedBox(height: Dimensions.homePagePadding),
+                          const SizedBox(height: Dimensions.paddingSizeSmall),
                         ],
                 
                         if (product.myAuctionStatus?.isClaimed == true) ...[
                           AuctionPaymentInfoWidget(paymentStatus: paymentInfo?.paymentStatus, paymentMethod: paymentInfo?.paymentMethod ?? '', paidAmount: paymentInfo?.paidAmount ?? 0),
-                          const SizedBox(height: Dimensions.homePagePadding),
+                          const SizedBox(height: Dimensions.paddingSizeSmall),
                           AuctionParticipantBillingInfoWidget(
                             productPrice: billingInfo?.winningBid ?? 0,
                             shippingFee: billingInfo?.shippingFee ?? 0,
@@ -547,7 +535,7 @@ class _ParticipationAuctionDetailsScreenState extends State<ParticipationAuction
                             paymentMethod: paymentInfo?.paymentMethod ?? '',
                             paidAmount: paymentInfo?.paidAmount ?? 0,
                           ),
-                          const SizedBox(height: Dimensions.homePagePadding),
+                          const SizedBox(height: Dimensions.paddingSizeSmall),
                         ],
                 
                         if (product.auctionStatus?.isLive == true || product.auctionStatus?.isUpcoming == true) ...[
@@ -570,7 +558,7 @@ class _ParticipationAuctionDetailsScreenState extends State<ParticipationAuction
                         ),
                         const SizedBox(height: Dimensions.paddingSizeDefault),
 
-                        AuctionPersonWidget(
+                        if (product.ownerType != AuctionOwnerType.unknown) AuctionPersonWidget(
                           name: product.ownerType == AuctionOwnerType.admin ?
                           (splashController.configModel?.inHouseShop?.name ?? '').trim()
                             : '${product.ownerInfo?.fName ?? ''} ${product.ownerInfo?.lName ?? ''}'.trim(),
@@ -654,8 +642,7 @@ class _ParticipationAuctionDetailsScreenState extends State<ParticipationAuction
     );
   }
   void _handleDeepLinkBack() {
-    final bool isAuctionEnabled = Provider.of<SplashController>(context, listen: false)
-        .configModel?.isAuctionFeatureEnabled ?? false;
+    final bool isAuctionEnabled = Provider.of<SplashController>(context, listen: false).isAuctionEnabled;
     RouterHelper.getDashboardRoute(
       action: RouteAction.pushNamedAndRemoveUntil,
       page: isAuctionEnabled ? 'auction' : 'home',

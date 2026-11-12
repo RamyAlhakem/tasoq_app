@@ -21,8 +21,7 @@ class Errors {
   Errors({this.code, this.message});
 
   Errors.fromJson(Map<String, dynamic> json) {
-    code = json['code']?.toString();
+    code = json['error_code']?.toString();
     message = json['message'];
   }
-
 }

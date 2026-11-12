@@ -64,6 +64,7 @@ abstract class AddAuctionProductRepositoryInterface implements RepositoryInterfa
     String? returnPolicy,
     XFile? thumbnail,
     List<XFile>? images,
+    List<String>? existingImages,
     String? videoType,
     String? youtubeVideo,
     XFile? customerVideo,

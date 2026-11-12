@@ -32,6 +32,7 @@ class _CouponItemWidgetState extends State<CouponItemWidget> {
   @override
   Widget build(BuildContext context) {
     bool showFirstOrderCoupon = (widget.coupons.couponType == 'first_order' && Provider.of<ProfileController>(context, listen: false).userInfoModel!.totalOrder! > 0);
+    final DateTime? expiryDate = DateTime.tryParse(widget.coupons.planExpireDate ?? '');
 
     return showFirstOrderCoupon ? SizedBox() : Padding(padding: widget.fromCheckout? const EdgeInsets.fromLTRB(0,Dimensions.paddingSizeSmall, 0,0):
      EdgeInsets.fromLTRB(Dimensions.homePagePadding,Dimensions.paddingSizeSmall, Dimensions.homePagePadding,0),
@@ -98,10 +99,11 @@ class _CouponItemWidgetState extends State<CouponItemWidget> {
                                      Theme.of(context).hintColor :Theme.of(context).primaryColor, fontSize: Dimensions.fontSizeDefault)))),
 
 
-                          Padding(padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
-                            child: Text('${getTranslated('valid_till', context)}'
-                                ' ${DateConverter.estimatedDateYear(DateTime.parse(widget.coupons.planExpireDate!))}',
-                              style: textRegular.copyWith())),
+                          if(expiryDate != null)
+                            Padding(padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
+                              child: Text('${getTranslated('valid_till', context)}'
+                                  ' ${DateConverter.estimatedDateYear(expiryDate)}',
+                                style: textRegular.copyWith())),
 
                           Padding(padding: const EdgeInsets.only(bottom : Dimensions.paddingSizeSmall),
                             child: Text('${getTranslated('available_from', context)} '

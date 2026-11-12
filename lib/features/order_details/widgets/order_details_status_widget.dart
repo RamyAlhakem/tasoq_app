@@ -103,8 +103,8 @@ class OrderDetailsStatusWidget extends StatelessWidget {
               ),
             ),
 
-            Positioned(
-              right: 0,
+            PositionedDirectional(
+              end: 0,
               child: Consumer<OrderDetailsController>(
                 builder: (context, orderProvider, _) {
                   ConfigModel? configModel = Provider.of<SplashController>(context, listen: false).configModel;

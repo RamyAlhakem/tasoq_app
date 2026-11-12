@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/features/search_product/controllers/search_product_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/search_product/domain/models/suggestion_product_model.dart';
+import 'package:flutter_sixvalley_ecommerce/helper/debounce_helper.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
@@ -21,6 +22,8 @@ class SearchSuggestion extends StatefulWidget{
 }
 
 class _SearchSuggestionState extends State<SearchSuggestion> {
+  final DebounceHelper _debounceHelper = DebounceHelper(milliseconds: 500);
+
   @override
   void initState() {
     super.initState();
@@ -28,6 +31,12 @@ class _SearchSuggestionState extends State<SearchSuggestion> {
     Future.delayed((const Duration(milliseconds: 500))).then((_) {
        // FocusScope.of(Get.context!).requestFocus(Provider.of<SearchProductController>(Get.context!, listen: false).searchFocusNode);
     });
+  }
+
+  @override
+  void dispose() {
+    _debounceHelper.dispose();
+    super.dispose();
   }
 
 
@@ -112,9 +121,11 @@ class _SearchSuggestionState extends State<SearchSuggestion> {
                         focusNode: searchProvider.searchFocusNode,
                         textInputAction: TextInputAction.search,
                         onChanged: (val){
-                          if(val.isNotEmpty){
-                            searchProvider.getSuggestionProductName(searchProvider.searchController.text.trim());
-                          }
+                          _debounceHelper.run((){
+                            if(val.isNotEmpty){
+                              searchProvider.getSuggestionProductName(searchProvider.searchController.text.trim());
+                            }
+                          });
                         },
                         onFieldSubmitted: (value) {
                           if(controller.text.trim().isNotEmpty) {

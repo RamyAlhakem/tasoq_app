@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_app_bar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/no_internet_screen_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_sliver_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/product_card_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/product_shimmer_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
@@ -34,6 +34,13 @@ class _ClearanceSaleAllProductScreenState extends State<ClearanceSaleAllProductS
 
   final categoryController = Provider.of<CategoryController>(Get.context!, listen: false);
   final brandController = Provider.of<BrandController>(Get.context!, listen: false);
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -81,34 +88,32 @@ class _ClearanceSaleAllProductScreenState extends State<ClearanceSaleAllProductS
                     _searchController.clear();
                     await Provider.of<ProductController>(context, listen: false).getClearanceSearchProduct(offset: 1, query: '', isNotify: false);
                   },
-                  child: SingleChildScrollView(
-                    controller: _scrollController,
-                    child: Consumer<ProductController>(builder: (context, productController, _){
+                  child: Consumer<ProductController>(builder: (context, productController, _){
 
-                      ProductModel? productModel =  productController.clearanceSearchProductModel;
+                    ProductModel? productModel =  productController.clearanceSearchProductModel;
 
-                      return (productModel != null && !productController.isSearchLoading)
-                          ? (productModel.products != null && productModel.products!.isNotEmpty)
-                          ? PaginatedListView(scrollController: _scrollController,
-                          onPaginate: (int? offset) async => applyFilter(context: context, fromPagination: true, offset: offset),
-                            totalSize: productModel.totalSize,
-                            offset: productModel.offset,
-                            itemView: RepaintBoundary(
-                              child: MasonryGridView.count(
-                                itemCount: productModel.products?.length,
-                                crossAxisCount: ResponsiveHelper.isTab(context)? 3: 2,
-                                padding: const EdgeInsets.all(0),
-                                physics: const NeverScrollableScrollPhysics(),
-                                shrinkWrap: true,
-                                itemBuilder: (BuildContext context, int index) => Padding(
-                                  padding: const EdgeInsets.all(Dimensions.paddingSizeEight),
-                                  child: ProductCardWidget(product: productModel.products![index]),
+                    return (productModel != null && !productController.isSearchLoading)
+                        ? (productModel.products != null && productModel.products!.isNotEmpty)
+                        ? CustomScrollView(
+                            controller: _scrollController,
+                            slivers: [
+                              PaginatedSliverListView(
+                                scrollController: _scrollController,
+                                onPaginate: (int? offset) async => applyFilter(context: context, fromPagination: true, offset: offset),
+                                totalSize: productModel.totalSize,
+                                offset: productModel.offset,
+                                itemView: SliverMasonryGrid.count(
+                                  crossAxisCount: ResponsiveHelper.isTab(context)? 3: 2,
+                                  itemBuilder: (BuildContext context, int index) => Padding(
+                                    padding: const EdgeInsets.all(Dimensions.paddingSizeEight),
+                                    child: ProductCardWidget(product: productModel.products![index]),
+                                  ),
+                                  childCount: productModel.products?.length,
                                 ),
                               ),
-                            )
+                            ],
                       ) : const NoInternetOrDataScreenWidget(isNoInternet: false) : ProductShimmer(isEnabled: productModel == null, isHomePage: false);
-                    }),
-                  ),
+                  }),
                 ),
               ),
             ),

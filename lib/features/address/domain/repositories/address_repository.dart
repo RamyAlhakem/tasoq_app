@@ -59,9 +59,15 @@ class AddressRepository implements AddressRepoInterface<ApiResponseModel>{
 
 
   @override
-  Future<ApiResponseModel> getList({int? offset}) async {
+  Future<ApiResponseModel> getList({int? offset}) => getAddressList(offset: offset);
+
+  Future<ApiResponseModel> getAddressList({int? offset, String limit = '10'}) async {
     try {
-      final response = await dioClient!.get('${AppConstants.addressListUri}?guest_id=${Provider.of<AuthController>(Get.context!, listen: false).getGuestToken()}');
+      final response = await dioClient!.get(AppConstants.addressListUri, queryParameters: {
+        'limit': limit,
+        'offset': offset ?? 1,
+        'guest_id': Provider.of<AuthController>(Get.context!, listen: false).getGuestToken(),
+      });
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -71,9 +77,9 @@ class AddressRepository implements AddressRepoInterface<ApiResponseModel>{
   @override
   Future<ApiResponseModel> delete(int? id) async {
     try {
-      final response = await dioClient!.post(
-        '${AppConstants.removeAddressUri}?address_id=$id&guest_id=${Provider.of<AuthController>(Get.context!, listen: false).getGuestToken()}',
-        data: {"_method" : 'delete'}
+      final response = await dioClient!.delete(
+        '${AppConstants.removeAddressUri}/$id',
+        queryParameters: {'guest_id': Provider.of<AuthController>(Get.context!, listen: false).getGuestToken()},
       );
       ApiResponseModel res = ApiResponseModel.withSuccess(response);
       return res;
@@ -96,7 +102,7 @@ class AddressRepository implements AddressRepoInterface<ApiResponseModel>{
   @override
   Future<ApiResponseModel> update(Map<String, dynamic> addressModel, int addressId) async {
     try {
-      Response response = await dioClient!.post(AppConstants.updateAddressUri, data: addressModel);
+      Response response = await dioClient!.put('${AppConstants.updateAddressUri}/$addressId', data: addressModel);
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));

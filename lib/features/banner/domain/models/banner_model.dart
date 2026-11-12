@@ -17,6 +17,8 @@ class BannerModel {
   String? buttonText;
   String? backgroundColor;
   ImageFullUrl? photoFullUrl;
+  String? resourceName;
+  String? resourceSlug;
 
   BannerModel(
       {this.id,
@@ -33,7 +35,9 @@ class BannerModel {
         this.subTitle,
         this.buttonText,
         this.backgroundColor,
-        this.photoFullUrl
+        this.photoFullUrl,
+        this.resourceName,
+        this.resourceSlug,
       });
 
   BannerModel.fromJson(Map<String, dynamic> json) {
@@ -51,8 +55,13 @@ class BannerModel {
     buttonText = json['button_text'];
     backgroundColor = json['background_color'];
     product = json['product'] != null ? Product.fromJson(json['product']) : null;
-    photoFullUrl = json['photo_full_url'] != null
-      ? ImageFullUrl.fromJson(json['photo_full_url']) : null;
+    photoFullUrl = json['photo_full_url'] != null ? ImageFullUrl.fromJson(json['photo_full_url']) : null;
+    final dynamic resource = json['resource'];
+    if (resource is Map) {
+      resourceName = resource['name'];
+      resourceSlug = resource['slug'];
+    }
   }
 
 }
+

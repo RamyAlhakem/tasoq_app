@@ -24,6 +24,9 @@ class AuctionOfflinePaymentScreen extends StatefulWidget {
   final String auctionStatus;
   final bool isCommissionPayment;
   final VoidCallback? onSuccess;
+  final String? initialMethodName;
+  final Map<String, dynamic>? initialMethodInformations;
+  final String? initialPaymentNote;
 
   const AuctionOfflinePaymentScreen({
     super.key,
@@ -32,6 +35,9 @@ class AuctionOfflinePaymentScreen extends StatefulWidget {
     this.auctionStatus = '',
     this.isCommissionPayment = false,
     this.onSuccess,
+    this.initialMethodName,
+    this.initialMethodInformations,
+    this.initialPaymentNote,
   });
 
   @override
@@ -42,6 +48,35 @@ class _AuctionOfflinePaymentScreenState
     extends State<AuctionOfflinePaymentScreen> {
   final TextEditingController _noteController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _noteController.text = widget.initialPaymentNote ?? '';
+    if (widget.initialMethodName != null || widget.initialMethodInformations != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _prefillSubmittedInfo());
+    }
+  }
+
+  Future<void> _prefillSubmittedInfo() async {
+    final AuctionCheckoutController checkoutController = Provider.of<AuctionCheckoutController>(context, listen: false);
+    if (checkoutController.offlinePaymentModel?.offlineMethods == null) {
+      await checkoutController.getOfflinePaymentList();
+    }
+    if (!mounted) return;
+
+    final offlineMethods = checkoutController.offlinePaymentModel?.offlineMethods ?? [];
+    final int methodIndex = offlineMethods.indexWhere((method) => method.methodName == widget.initialMethodName);
+    checkoutController.setOfflinePaymentMethodSelectedIndex(methodIndex == -1 ? 0 : methodIndex);
+
+    final Map<String, dynamic> initialValues = widget.initialMethodInformations ?? {};
+    for (int i = 0; i < checkoutController.keyList.length; i++) {
+      final dynamic value = initialValues[checkoutController.keyList[i]];
+      if (value != null && i < checkoutController.inputFieldControllerList.length) {
+        checkoutController.inputFieldControllerList[i].text = value.toString();
+      }
+    }
+  }
 
   @override
   void dispose() {

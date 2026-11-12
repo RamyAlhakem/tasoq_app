@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/response_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/controllers/order_details_controller.dart';
@@ -119,10 +120,12 @@ class ReviewController extends ChangeNotifier {
       notifyListeners();
     }
     ApiResponseModel reviewResponse = await reviewServiceInterface.getOrderWiseReview(productId, orderId);
-    if (reviewResponse.response != null && reviewResponse.response!.statusCode == 200 && reviewResponse.response?.data is !List) {
+    if (reviewResponse.response != null && reviewResponse.response!.statusCode == 200) {
       orderWiseReview = null;
-      orderWiseReview = ReviewModel.fromJson(reviewResponse.response?.data);
-    } else if (reviewResponse.response?.data is List){
+      orderWiseReview = ReviewModel.fromJson(ApiEnvelope.content(reviewResponse.response!.data)['data']);
+    } else if (reviewResponse.response?.statusCode == 404){
+      // v6 signals "no review yet" with a 404, not an empty-list 200 — this is the
+      // normal state before a customer has reviewed the order item, not an error.
       orderWiseReview = null;
     }else {
       ApiChecker.checkApi( reviewResponse);
@@ -149,7 +152,11 @@ class ReviewController extends ChangeNotifier {
     ApiResponseModel reviewResponse = await reviewServiceInterface.getDeliveryManReview(orderId);
     if (reviewResponse.response != null && reviewResponse.response!.statusCode == 200) {
       _deliveryManReview = null;
-      _deliveryManReview = ReviewModel.fromJson(reviewResponse.response?.data);
+      // v6 returns content.data: null (still a 200) when no review has been left yet.
+      final dynamic reviewData = ApiEnvelope.content(reviewResponse.response!.data)['data'];
+      if (reviewData is Map<String, dynamic>) {
+        _deliveryManReview = ReviewModel.fromJson(reviewData);
+      }
     } else {
       ApiChecker.checkApi( reviewResponse);
     }

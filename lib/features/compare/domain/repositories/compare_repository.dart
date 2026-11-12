@@ -31,7 +31,9 @@ class CompareRepository implements CompareRepositoryInterface {
   @override
   Future<ApiResponseModel> removeAllCompareProductList() async {
     try {
-      final response = await dioClient!.post(AppConstants.removeAllFromCompareList, data: {'_method':'delete'});
+      // v6 exposes this as a real DELETE on the collection — no `_method` spoofing
+      // and no body; the authenticated customer is the only scope.
+      final response = await dioClient!.delete(AppConstants.removeAllFromCompareList);
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -42,7 +44,9 @@ class CompareRepository implements CompareRepositoryInterface {
   @override
   Future<ApiResponseModel> replaceCompareProductList(int compareId, int productId) async {
     try {
-      final response = await dioClient!.get('${AppConstants.replaceFromCompareList}?compare_id=$compareId&product_id=$productId');
+      // v6 makes this a real PUT on the compare row's own id, with the new
+      // product in the body — v1 performed this mutation over a GET query string.
+      final response = await dioClient!.put('${AppConstants.replaceFromCompareList}$compareId', data: {'product_id': productId});
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -50,9 +54,9 @@ class CompareRepository implements CompareRepositoryInterface {
   }
 
   @override
-  Future<ApiResponseModel> getAttributeList() async {
+  Future<ApiResponseModel> getAttributeList({int offset = 1, int limit = 25}) async {
     try {
-      final response = await dioClient!.get(AppConstants.attributeUri);
+      final response = await dioClient!.get('${AppConstants.attributeUri}?limit=$limit&offset=$offset');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));

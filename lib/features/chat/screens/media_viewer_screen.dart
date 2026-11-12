@@ -113,6 +113,7 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
   void dispose() {
     chewController?.dispose();
     controller?.dispose();
+    pageController.dispose();
     super.dispose();
   }
 

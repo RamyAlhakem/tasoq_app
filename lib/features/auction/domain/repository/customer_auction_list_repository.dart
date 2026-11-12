@@ -33,9 +33,11 @@ class CustomerAuctionListRepository implements CustomerAuctionListRepositoryInte
         'limit': limit,
         'offset': offset,
         'include_counts': true,
-        if (auctionStatus != null) 'auction_status': auctionStatus,
+        // v6 filters the tabs by `status` and ignores `auction_status`.
+        if ((auctionStatus ?? status) != null) 'status': auctionStatus ?? status,
       };
 
+      print("--->>${queryParams}");
       final response = await dioClient!.get(
         AppConstants.customerMyBidList,
         queryParameters: queryParams,
@@ -57,7 +59,7 @@ class CustomerAuctionListRepository implements CustomerAuctionListRepositoryInte
 
     try {
       final response = await dioClient!.get(
-        '${AppConstants.baseUrl}${AppConstants.auctionSaveListUri}',
+        AppConstants.auctionSaveListUri,
         queryParameters: {
           'limit': limit,
           'offset': offset,

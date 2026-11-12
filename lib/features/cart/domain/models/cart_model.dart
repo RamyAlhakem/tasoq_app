@@ -100,7 +100,9 @@ class CartModel {
     name = json['name'];
     seller = json['seller'];
     thumbnail = json['thumbnail'];
-    sellerId = int.parse(json['seller_id'].toString());
+    // Unconfirmed on the add-to-cart response (v6) — guarded to avoid crashing
+    // the buy-now flow if the key is absent there.
+    sellerId = json['seller_id'] != null ? int.tryParse(json['seller_id'].toString()) : null;
     sellerIs = json['seller_is'];
     image = json['image'];
     price = json['price'].toDouble();
@@ -270,7 +272,7 @@ class FreeDeliveryOrderAmount {
   FreeDeliveryOrderAmount.fromJson(Map<String, dynamic> json) {
     status = int.parse(json['status'].toString());
     if(json['amount'] != null){
-      amount = json['amount'].toDouble();
+      amount = double.tryParse(json['amount'].toString());
     }
 
     if(json['percentage'] != null){
@@ -278,11 +280,11 @@ class FreeDeliveryOrderAmount {
     }
 
     if(json['shipping_cost_saved'] != null){
-      shippingCostSaved = json['shipping_cost_saved'].toDouble();
+      shippingCostSaved = double.tryParse(json['shipping_cost_saved'].toString());
     }
 
     if(json['amount_need'] != null){
-      amountNeed = json['amount_need'].toDouble();
+      amountNeed = double.tryParse(json['amount_need'].toString());
     }
   }
 

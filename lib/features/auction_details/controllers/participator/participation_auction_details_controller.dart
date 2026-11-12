@@ -19,13 +19,10 @@ class ParticipationAuctionDetailsController extends ChangeNotifier {
   ParticipationAuctionDetailsModel? _auctionDetails;
   ParticipationAuctionDetailsModel? get auctionDetails => _auctionDetails;
 
-  // Resolved integer auction-product id from the detail response, used for
-  // secondary calls (bid list etc.) whose endpoints still take an int id.
   int? _auctionProductId;
   int? get auctionProductId => _auctionProductId;
 
-  // Slug of the currently loaded auction, used to refresh the overview after
-  // actions (entry fee, bid, save) that only know the integer product id.
+
   String? _slug;
 
   AuctionBidListModel? _bidListModel;
@@ -41,6 +38,8 @@ class ParticipationAuctionDetailsController extends ChangeNotifier {
 
   int? _bidTotalSize;
   int? get bidTotalSize => _bidTotalSize;
+
+  int? _bidLastPage;
 
   bool _isBidPaginating = false;
   bool get isBidPaginating => _isBidPaginating;
@@ -99,8 +98,13 @@ class ParticipationAuctionDetailsController extends ChangeNotifier {
 
   }
 
-  /// Refreshes the currently loaded auction overview using the stored slug.
-  /// Used by actions (entry fee, bid, save) that only hold the integer id.
+  void setAuctionSaved(bool isSaved) {
+    final AuctionProductDetails? product = _auctionDetails?.product;
+    if (product == null) return;
+    product.isAuctionSave = isSaved;
+    notifyListeners();
+  }
+
   Future<void> refreshOverview(BuildContext context, {String? auctionStatus, bool silent = false}) async {
     if (_slug == null) return;
     await getAuctionProductOverview(context, slug: _slug!, auctionStatus: auctionStatus, silent: silent);
@@ -116,6 +120,7 @@ class ParticipationAuctionDetailsController extends ChangeNotifier {
       _allBids = [];
       _bidOffset = 1;
       _bidTotalSize = null;
+      _bidLastPage = null;
       _isCollapsed = true;
       notifyListeners();
     }
@@ -123,14 +128,13 @@ class ParticipationAuctionDetailsController extends ChangeNotifier {
     try {
       final response = await participationAuctionDetailsServiceInterface
           .getAuctionBidList(auctionProductId: productId, isMyBid: isMyBid, offset: 1, limit: _bidLimit);
-      if (response?.response?.statusCode == 200) {
+      final int? statusCode = response?.response?.statusCode;
+      if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
         final data = response?.response?.data;
-        print("--->> bid list response: $data");
-        if (data != null) {
-          print("--->> bid list response 1: $data");
-          final model = AuctionBidListModel.fromJson(data);
-          print("--->> bid list response 2: $data");
+        if (data is Map) {
+          final model = AuctionBidListModel.fromJson(Map<String, dynamic>.from(data));
           _bidTotalSize = model.totalSize;
+          _bidLastPage = model.lastPage;
           _allBids = model.bids ?? [];
           _bidListModel = model;
         }
@@ -152,11 +156,13 @@ class ParticipationAuctionDetailsController extends ChangeNotifier {
     try {
       final response = await participationAuctionDetailsServiceInterface
           .getAuctionBidList(auctionProductId: productId, isMyBid: isMyBid, offset: nextOffset, limit: _bidLimit);
-      if (response?.response?.statusCode == 200) {
+      final int? statusCode = response?.response?.statusCode;
+      if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
         final data = response?.response?.data;
-        if (data != null) {
-          final model = AuctionBidListModel.fromJson(data);
+        if (data is Map) {
+          final model = AuctionBidListModel.fromJson(Map<String, dynamic>.from(data));
           _bidTotalSize = model.totalSize;
+          _bidLastPage = model.lastPage;
           _allBids.addAll(model.bids ?? []);
           _bidOffset = nextOffset;
           _isCollapsed = false;
@@ -169,6 +175,7 @@ class ParticipationAuctionDetailsController extends ChangeNotifier {
   }
 
   bool get hasMoreBids {
+    if (_bidLastPage != null) return _bidOffset < _bidLastPage!;
     if (_bidTotalSize == null) return false;
     return _allBids.length < _bidTotalSize!;
   }

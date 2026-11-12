@@ -7,6 +7,11 @@ class VatTaxService implements VatTaxServiceInterface {
   VatTaxService({required this.repositoryInterface});
 
   @override
+  Future getVatTaxSetup() async {
+    return await repositoryInterface.getVatTaxSetup();
+  }
+
+  @override
   Future getVatTaxList() async {
     return await repositoryInterface.getVatTaxList();
   }

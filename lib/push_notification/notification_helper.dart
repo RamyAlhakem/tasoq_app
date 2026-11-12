@@ -51,6 +51,13 @@ const sellerAuctionTypes = {
   'auction_withdrawal_rejected',
 };
 
+const wholesaleRefundMessageKeys = {
+  'refund_request_message',
+  'refund_request_approved_message',
+  'order_refunded_message',
+  'refund_request_canceled_message',
+};
+
 class NotificationHelper {
 
 
@@ -72,11 +79,27 @@ class NotificationHelper {
           log("-----------tyyuuyypee88==>${payload.type}");
           log("=============Payload==>${load.payload}");
           if(payload.type == 'order') {
-            RouterHelper.getOrderDetailsScreenRoute(
-              action: RouteAction.pushReplacement,
-              orderId: payload.orderId!,
-              isNotification: true
-            );
+            if (payload.businessModule == 'wholesale') {
+              if (wholesaleRefundMessageKeys.contains(payload.messageKey)) {
+                RouterHelper.getWholesaleRefundDetailsScreenRoute(
+                  action: RouteAction.pushReplacement,
+                  orderId: payload.orderId!,
+                  orderDetailsId: payload.orderDetailsId!,
+                );
+              } else {
+                RouterHelper.getWholesaleOrderDetailsScreenRoute(
+                  action: RouteAction.pushReplacement,
+                  orderId: payload.orderId!,
+                  isNotification: true,
+                );
+              }
+            } else {
+              RouterHelper.getOrderDetailsScreenRoute(
+                action: RouteAction.pushReplacement,
+                orderId: payload.orderId!,
+                isNotification: true
+              );
+            }
           } else if(payload.type == 'wallet') {
             RouterHelper.getWalletRoute(action: RouteAction.pushReplacement, isBackButtonExist: true);
           } else if(payload.type == 'chatting') {
@@ -103,7 +126,7 @@ class NotificationHelper {
               RouterHelper.getNotificationRoute(action: RouteAction.pushReplacement, fromNotification: true);
             }
           } else{
-            RouterHelper.getNotificationRoute(action: RouteAction.pushReplacement, fromNotification: true);
+            RouterHelper.getNotificationRoute(action: RouteAction.pushReplacement, fromNotification: true, businessModule: payload.businessModule);
           }
         }
       }catch (_) {}
@@ -203,16 +226,32 @@ class NotificationHelper {
         if(message.data.isNotEmpty) {
           NotificationBody notificationBody = convertNotification(message.data);
           if(notificationBody.type == 'order') {
-            RouterHelper.getOrderDetailsScreenRoute(
-              action: RouteAction.pushReplacement,
-              orderId: notificationBody.orderId!,
-              isNotification: true
-            );
+            if (notificationBody.businessModule == 'wholesale') {
+              if (wholesaleRefundMessageKeys.contains(notificationBody.messageKey)) {
+                RouterHelper.getWholesaleRefundDetailsScreenRoute(
+                  action: RouteAction.pushReplacement,
+                  orderId: notificationBody.orderId!,
+                  orderDetailsId: notificationBody.orderDetailsId!,
+                );
+              } else {
+                RouterHelper.getWholesaleOrderDetailsScreenRoute(
+                  action: RouteAction.pushReplacement,
+                  orderId: notificationBody.orderId!,
+                  isNotification: true,
+                );
+              }
+            } else {
+              RouterHelper.getOrderDetailsScreenRoute(
+                action: RouteAction.pushReplacement,
+                orderId: notificationBody.orderId!,
+                isNotification: true
+              );
+            }
 
           } else if(notificationBody.type == 'wallet') {
             RouterHelper.getWalletRoute(action: RouteAction.pushReplacement, isBackButtonExist: true);
           } else if(notificationBody.type == 'notification') {
-            RouterHelper.getNotificationRoute(action: RouteAction.pushReplacement, fromNotification: true);
+            RouterHelper.getNotificationRoute(action: RouteAction.pushReplacement, fromNotification: true, businessModule: notificationBody.businessModule);
           } else if(notificationBody.type == 'chatting') {
             RouterHelper.getInboxScreenRoute(
               action: RouteAction.pushReplacement,
@@ -368,7 +407,13 @@ class NotificationHelper {
     if(data['type'] == 'notification') {
       return NotificationBody(type: 'notification');
     }else if(data['type'] == 'order') {
-      return NotificationBody(type: 'order', orderId: int.parse(data['order_id']));
+      return NotificationBody(
+        type: 'order',
+        orderId: int.parse(data['order_id']),
+        orderDetailsId: data['order_details_id'] != null ? int.tryParse(data['order_details_id'].toString()) : null,
+        businessModule: data['business_module'],
+        messageKey: data['message_key'],
+      );
     }else if(data['type'] == 'wallet') {
       return NotificationBody(type: 'wallet');
     }else if(data['type'] == 'block') {

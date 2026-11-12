@@ -102,7 +102,8 @@ class RefundRequest {
     orderId = json['order_id'];
     refundReason = json['refund_reason'];
     if(json['images'] != null){
-      images = List<String>.from(json['images'].map((image) => image['image_name'] ?? ''));
+      // v6 sends a plain list of storage paths, not objects with an image_name key.
+      images = List<String>.from(json['images'].map((image) => image.toString()));
     }
 
     createdAt = json['created_at'];

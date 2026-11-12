@@ -69,6 +69,13 @@ class CheckoutScreenState extends State<CheckoutScreen> {
   DebounceHelper debounceHelper = DebounceHelper(milliseconds: 500);
   SplashController  splashController= Provider.of<SplashController>(Get.context!, listen: false);
 
+  @override
+  void dispose() {
+    _controller.dispose();
+    _orderNoteNode.dispose();
+    super.dispose();
+  }
+
 
   @override
   void initState() {

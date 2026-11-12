@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/controllers/cart_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/domain/models/cart_model.dart';
@@ -58,7 +59,8 @@ class ShippingController extends ChangeNotifier {
 
       if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
         List<ShippingMethodModel> shippingMethodList =[];
-        apiResponse.response!.data.forEach((shipping) => shippingMethodList.add(ShippingMethodModel.fromJson(shipping)));
+        final List shippingData = ApiEnvelope.content(apiResponse.response!.data)['data'] ?? [];
+        shippingData.forEach((shipping) => shippingMethodList.add(ShippingMethodModel.fromJson(shipping)));
 
         _shippingList![i].shippingMethodList =[];
         _shippingList![i].shippingMethodList!.addAll(shippingMethodList);
@@ -101,7 +103,8 @@ class ShippingController extends ChangeNotifier {
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       _shippingList!.add(ShippingModel(-1, '', []));
       List<ShippingMethodModel> shippingMethodList =[];
-      apiResponse.response!.data.forEach((shipping) => shippingMethodList.add(ShippingMethodModel.fromJson(shipping)));
+      final List shippingData = ApiEnvelope.content(apiResponse.response!.data)['data'] ?? [];
+      shippingData.forEach((shipping) => shippingMethodList.add(ShippingMethodModel.fromJson(shipping)));
 
       _shippingList![0].shippingMethodList =[];
       _shippingList![0].shippingMethodList!.addAll(shippingMethodList);
@@ -131,7 +134,12 @@ class ShippingController extends ChangeNotifier {
     ApiResponseModel apiResponse = await shippingServiceInterface.getChosenShippingMethod();
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       _chosenShippingList = [];
-      apiResponse.response!.data.forEach((shipping) => _chosenShippingList.add(ChosenShippingMethodModel.fromJson(shipping)));
+      // ApiEnvelope.content() falls back to the whole body when there's no
+      // `content` key, so this also covers this endpoint's flat `{status_code, data}` shape.
+      final dynamic chosenData = ApiEnvelope.content(apiResponse.response!.data)['data'];
+      if (chosenData is List) {
+        chosenData.forEach((shipping) => _chosenShippingList.add(ChosenShippingMethodModel.fromJson(shipping)));
+      }
       notifyListeners();
     } else {
       ApiChecker.checkApi( apiResponse);

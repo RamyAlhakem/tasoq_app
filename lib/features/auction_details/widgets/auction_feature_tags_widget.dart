@@ -4,6 +4,7 @@ import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_c
 import 'package:flutter_sixvalley_ecommerce/features/splash/domain/models/config_model.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
+import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
 import 'package:provider/provider.dart';
 
 class AuctionFeatureTagsWidget extends StatelessWidget {
@@ -11,7 +12,7 @@ class AuctionFeatureTagsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final commitments = Provider.of<SplashController>(context, listen: false).configModel?.auctionCommitments?.where((c) => c.isEnabled).toList() ?? [];
+    final commitments = Provider.of<SplashController>(context, listen: false).configModel?.auctionConfig?.commitments?.where((c) => c.isEnabled).toList() ?? [];
 
     if (commitments.isEmpty) return const SizedBox.shrink();
 
@@ -32,9 +33,7 @@ class AuctionFeatureTagsWidget extends StatelessWidget {
               ),
               child: Row(mainAxisSize: MainAxisSize.min,
                 children: [
-                  CustomImageWidget(
-                    image: commitment.imageFullUrl?.path ?? '',
-                    width: 20, height: 20, fit: BoxFit.contain),
+                  _CommitmentIconWidget(commitment: commitment),
                   const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
                   Text(commitment.title ?? '',
@@ -50,5 +49,29 @@ class AuctionFeatureTagsWidget extends StatelessWidget {
         }),
       ),
     );
+  }
+}
+
+class _CommitmentIconWidget extends StatelessWidget {
+  final AuctionCommitment commitment;
+  const _CommitmentIconWidget({required this.commitment});
+
+  static const Map<String, String> _fallbackImages = {
+    'verified_listings': Images.verifiedListings,
+    'secure_bidding': Images.secureBidding,
+    'fair_winner_selection': Images.fairWinnerSelection,
+    'buyer_protection': Images.buyerProtection,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final String? imagePath = commitment.imageFullUrl?.path;
+    final String? fallbackImage = _fallbackImages[commitment.item];
+
+    if ((imagePath == null || imagePath.isEmpty) && fallbackImage != null) {
+      return Image.asset(fallbackImage, width: 20, height: 20, fit: BoxFit.contain);
+    }
+
+    return CustomImageWidget(image: imagePath ?? '', width: 20, height: 20, fit: BoxFit.contain);
   }
 }

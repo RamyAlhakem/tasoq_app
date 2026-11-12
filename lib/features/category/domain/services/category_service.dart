@@ -8,8 +8,18 @@ class CategoryService implements CategoryServiceInterface{
   CategoryService({required this.categoryRepoInterface});
 
   @override
-  Future<ApiResponseModel<T>> getList<T>({required DataSourceEnum source}) async{
-    return await categoryRepoInterface.getCategoryList(source: source);
+  Future<ApiResponseModel<T>> getList<T>({required DataSourceEnum source, int offset = 1, int limit = 25}) async{
+    return await categoryRepoInterface.getCategoryList(source: source, offset: offset, limit: limit);
+  }
+
+  @override
+  Future<ApiResponseModel> getSubCategoryList({required int categoryId, required int offset, int limit = 25}) async{
+    return await categoryRepoInterface.getSubCategoryList(categoryId: categoryId, offset: offset, limit: limit);
+  }
+
+  @override
+  Future<ApiResponseModel> getSubSubCategoryList({required int subCategoryId, required int offset, int limit = 25}) async{
+    return await categoryRepoInterface.getSubSubCategoryList(subCategoryId: subCategoryId, offset: offset, limit: limit);
   }
 
   @override

@@ -188,7 +188,9 @@ Future<void> route(
     String? email,
     String? name,
     String? fromPage,
-    VoidCallback? onLoginSuccess
+    VoidCallback? onLoginSuccess,
+    [String? socialToken,
+    String? socialUniqueId]
     ) async {
   final AuthController authProvider = Provider.of<AuthController>(Get.context!, listen: false);
 
@@ -206,6 +208,9 @@ Future<void> route(
         tempToken: temporaryToken,
         userInput: email ?? '',
         userName: name ?? '',
+        socialToken: socialToken,
+        socialUniqueId: socialUniqueId,
+        socialMedium: loginMedium,
         action: RouteAction.pushNamedAndRemoveUntil,
         toNavigateScreen: fromPage,
         onLoginSuccess: onLoginSuccess
@@ -219,6 +224,8 @@ Future<void> route(
         builder: (con) => ExistingAccountBottomSheet(
           profileModel: profileModel,
           socialLoginMedium: loginMedium!,
+          socialToken: socialToken,
+          socialUniqueId: socialUniqueId,
           con: con,
         ));
     } else {

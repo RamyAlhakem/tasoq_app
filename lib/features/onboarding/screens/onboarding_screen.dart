@@ -9,11 +9,37 @@ import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'package:provider/provider.dart';
 import '../../../../helper/route_healper.dart';
 
-class OnBoardingScreen extends StatelessWidget {
+class OnBoardingScreen extends StatefulWidget {
   final Color indicatorColor;
   final Color selectedIndicatorColor;
-  OnBoardingScreen({super.key, this.indicatorColor = Colors.grey, this.selectedIndicatorColor = Colors.black});
+  const OnBoardingScreen({super.key, this.indicatorColor = Colors.grey, this.selectedIndicatorColor = Colors.black});
+
+  @override
+  State<OnBoardingScreen> createState() => _OnBoardingScreenState();
+}
+
+class _OnBoardingScreenState extends State<OnBoardingScreen> {
   final PageController _pageController = PageController();
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _finishOnboarding() {
+    final SplashController splashController = Provider.of<SplashController>(context, listen: false);
+    splashController.disableIntro();
+    Provider.of<AuthController>(context, listen: false).getGuestIdUrl();
+
+    // On first install, let the user pick the module before landing on the
+    // dashboard when wholesale or auction is available.
+    if (splashController.isWholesaleEnabled || splashController.isAuctionEnabled) {
+      RouterHelper.getShoppingModeSelectionRoute(action: RouteAction.pushNamedAndRemoveUntil);
+    } else {
+      RouterHelper.getDashboardRoute(action: RouteAction.pushNamedAndRemoveUntil);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,9 +79,7 @@ class OnBoardingScreen extends StatelessWidget {
                           if(index != onBoardingList.onBoardingList.length){
                             onBoardingList.changeSelectIndex(index);
                           }else{
-                            Provider.of<SplashController>(context, listen: false).disableIntro();
-                            Provider.of<AuthController>(context, listen: false).getGuestIdUrl();
-                            RouterHelper.getDashboardRoute(action: RouteAction.pushNamedAndRemoveUntil);
+                            _finishOnboarding();
                           }
                         })),
 
@@ -67,9 +91,7 @@ class OnBoardingScreen extends StatelessWidget {
                         radius: 5,backgroundColor: Theme.of(context).primaryColor.withValues(alpha:.1),
                         buttonText: getTranslated("explore", context),
                     onTap: (){
-                      Provider.of<SplashController>(context, listen: false).disableIntro();
-                      Provider.of<AuthController>(context, listen: false).getGuestIdUrl();
-                      RouterHelper.getDashboardRoute(action: RouteAction.pushNamedAndRemoveUntil);
+                      _finishOnboarding();
                     },))))
                       :
                     Padding(padding: const EdgeInsets.all(Dimensions.paddingSizeExtraLarge),
@@ -85,9 +107,7 @@ class OnBoardingScreen extends StatelessWidget {
                       child: GestureDetector(
                         onTap: () {
                           if (onBoardingList.selectedIndex == onBoardingList.onBoardingList.length - 1) {
-                            Provider.of<SplashController>(context, listen: false).disableIntro();
-                            Provider.of<AuthController>(context, listen: false).getGuestIdUrl();
-                            RouterHelper.getDashboardRoute(action: RouteAction.pushNamedAndRemoveUntil);
+                            _finishOnboarding();
                           } else {
                             _pageController.nextPage(duration: const Duration(milliseconds: 500), curve: Curves.easeIn);
                           }
@@ -106,9 +126,7 @@ class OnBoardingScreen extends StatelessWidget {
               if(onBoardingList.selectedIndex != onBoardingList.onBoardingList.length - 1)
               Positioned(child: Align(alignment: Alignment.topRight, child: InkWell(
                 onTap: (){
-                  Provider.of<SplashController>(context, listen: false).disableIntro();
-                  Provider.of<AuthController>(context, listen: false).getGuestIdUrl();
-                  RouterHelper.getDashboardRoute(action: RouteAction.pushNamedAndRemoveUntil);
+                  _finishOnboarding();
                 },
                 child: Padding(padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 20),
                   child: Text('${getTranslated('skip', context)}',

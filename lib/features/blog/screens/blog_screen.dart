@@ -89,7 +89,6 @@ class _BlogScreenState extends State<BlogScreen> {
 
   @override
   Widget build(BuildContext context) {
-    /// WebView background color
     _controller.setBackgroundColor(Theme.of(context).highlightColor);
 
     return PopScope(

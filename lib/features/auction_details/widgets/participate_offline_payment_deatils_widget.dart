@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/withdraw_request_bottom_sheet_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/auction_details/widgets/auction_offline_payment_screen.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/price_converter.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
-import 'package:provider/provider.dart';
 
 enum ParticipateOfflinePaymentStatus { pending, approved, denied }
 
 class ParticipateOfflinePaymentDetailsWidget extends StatefulWidget {
+  final int auctionId;
   final ParticipateOfflinePaymentStatus status;
   final double participateFee;
   final String? deniedNote;
@@ -22,9 +21,11 @@ class ParticipateOfflinePaymentDetailsWidget extends StatefulWidget {
   final double? amount;
   final String? reference;
   final String? paymentNote;
+  final Map<String, dynamic>? methodInformations;
 
   const ParticipateOfflinePaymentDetailsWidget({
     super.key,
+    required this.auctionId,
     required this.status,
     required this.participateFee,
     this.deniedNote,
@@ -37,6 +38,7 @@ class ParticipateOfflinePaymentDetailsWidget extends StatefulWidget {
     this.amount,
     this.reference,
     this.paymentNote,
+    this.methodInformations,
   });
 
   @override
@@ -58,9 +60,18 @@ class _ParticipateOfflinePaymentDetailsWidgetState extends State<ParticipateOffl
     ParticipateOfflinePaymentStatus.denied => getTranslated('denied', context)!,
   };
 
+  static const Set<String> _nonInputKeys = {'method_name', 'payment_note', 'amount'};
+
   @override
   Widget build(BuildContext context) {
-    final double entryFee = Provider.of<SplashController>(context, listen: false).configModel?.auctionEntryFeeAmount ?? 0.0;
+    final List<_InfoRow> submittedInputRows = widget.methodInformations != null
+        ? widget.methodInformations!.entries.where((entry) => !_nonInputKeys.contains(entry.key) && (entry.value?.toString().trim().isNotEmpty ?? false))
+            .map((entry) => _InfoRow(label: _inputLabel(context, entry.key), value: entry.value.toString())).toList()
+        : [
+            _InfoRow(label: getTranslated('account_number', context)!, value: widget.accountNumber ?? ''),
+            _InfoRow(label: getTranslated('reference', context)!, value: widget.reference ?? ''),
+          ];
+
     return Container(
       padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
       width: double.infinity,
@@ -93,25 +104,6 @@ class _ParticipateOfflinePaymentDetailsWidgetState extends State<ParticipateOffl
           ),
 
           if (_isExpanded) ...[
-            const SizedBox(height: Dimensions.paddingSizeDefault),
-
-            Row(
-              children: [
-                Text(getTranslated('auction_payment_participate_fee', context)!,
-                  style: titilliumRegular.copyWith(
-                    fontSize: Dimensions.fontSizeDefault,
-                    color: Theme.of(context).textTheme.bodySmall?.color,
-                  ),
-                ),
-                const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-                Text(PriceConverter.convertPrice(context, entryFee),
-                  style: titilliumBold.copyWith(
-                    fontSize: Dimensions.fontSizeDefault,
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
-                  ),
-                ),
-              ],
-            ),
             const SizedBox(height: Dimensions.paddingSizeDefault),
 
             if (widget.status == ParticipateOfflinePaymentStatus.denied && widget.deniedNote != null) ...[
@@ -148,57 +140,31 @@ class _ParticipateOfflinePaymentDetailsWidgetState extends State<ParticipateOffl
               title: getTranslated('my_submitted_info', context)!,
               trailing: (widget.status == ParticipateOfflinePaymentStatus.pending || widget.status == ParticipateOfflinePaymentStatus.denied)
                   ? GestureDetector(
-                onTap: () => WithdrawRequestBottomSheetWidget.show(context, amount: widget.participateFee),
+                onTap: () => Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => AuctionOfflinePaymentScreen(
+                    amount: widget.participateFee,
+                    auctionId: widget.auctionId,
+                    initialMethodName: widget.methodName,
+                    initialMethodInformations: widget.methodInformations,
+                    initialPaymentNote: widget.paymentNote,
+                  ),
+                )),
                 child: Container(
                   padding: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
                   decoration: BoxDecoration(
                     border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: .3), width: 1.5),
                     borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
                   ),
-                  child: Icon(
-                    Icons.edit,
-                    size: Dimensions.iconSizeSmall,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              )
-                  : null,
-              rows: [
-                _InfoRow(
-                    label: getTranslated('method_name', context)!,
-                    value: widget.methodName ?? ''),
-                _InfoRow(
-                    label: getTranslated('account_number', context)!,
-                    value: widget.accountNumber ?? ''),
-                _InfoRow(
-                    label: getTranslated('amount', context)!,
-                    value: PriceConverter.convertPrice(context, widget.amount ?? 0)),
-                _InfoRow(
-                    label: getTranslated('reference', context)!,
-                    value: widget.reference ?? ''),
-              ],
-              footer: widget.paymentNote != null
-                  ? RichText(
-                text: TextSpan(
-                  children: [
-                    TextSpan(
-                      text:
-                      '${getTranslated('payment_note', context)!} :  ',
-                      style: titilliumRegular.copyWith(
-                        fontSize: Dimensions.fontSizeDefault,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                    TextSpan(
-                      text: widget.paymentNote!,
-                      style: titilliumRegular.copyWith(
-                        fontSize: Dimensions.fontSizeDefault,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                  ],
+                  child: Icon(Icons.edit, size: Dimensions.iconSizeSmall, color: Theme.of(context).colorScheme.primary),
                 ),
               ) : null,
+              rows: [
+                _InfoRow(label: getTranslated('method_name', context)!, value: widget.methodName ?? ''),
+                ...submittedInputRows,
+                _InfoRow(label: getTranslated('amount', context)!, value: PriceConverter.convertPrice(context, widget.amount ?? 0)),
+                if (widget.paymentNote?.trim().isNotEmpty ?? false)
+                  _InfoRow(label: getTranslated('payment_note', context)!, value: widget.paymentNote!),
+              ],
             ),
           ],
           const SizedBox(height: Dimensions.paddingSizeSmall),
@@ -225,14 +191,8 @@ class _InfoCard extends StatelessWidget {
   final String title;
   final List<_InfoRow> rows;
   final Widget? trailing;
-  final Widget? footer;
 
-  const _InfoCard({
-    required this.title,
-    required this.rows,
-    this.trailing,
-    this.footer,
-  });
+  const _InfoCard({required this.title, required this.rows, this.trailing});
 
   @override
   Widget build(BuildContext context) {
@@ -260,10 +220,6 @@ class _InfoCard extends StatelessWidget {
           ),
           const SizedBox(height: Dimensions.paddingSizeSmall),
           ...rows,
-          if (footer != null) ...[
-            const SizedBox(height: Dimensions.paddingSizeSmall),
-            footer!,
-          ],
         ],
       ),
     );
@@ -312,4 +268,11 @@ class _InfoRow extends StatelessWidget {
       ),
     );
   }
+}
+
+String _inputLabel(BuildContext context, String key) {
+  final String? translated = getTranslated(key, context);
+  if (translated != null && translated != key) return translated;
+  final String readable = key.replaceAll('_', ' ').trim();
+  return readable.isEmpty ? key : '${readable[0].toUpperCase()}${readable.substring(1)}';
 }

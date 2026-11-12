@@ -35,6 +35,7 @@ class Dimensions {
   static const double marginSizeAuthSmall = 30.0;
   static const double marginSizeAuth = 50.0;
 
+  static const double iconSizeExtraExtraSmall = 10.0;
   static const double iconSizeExtraSmall = 12.0;
   static const double iconSizeSmall = 18.0;
   static const double iconSizeDefault = 24.0;
@@ -46,6 +47,7 @@ class Dimensions {
 
 
   static const double topSpace = 30.0;
+  static const double bottomSpace = 70.0;
   static const double splashLogoWidth = 150.0;
 
 
@@ -60,6 +62,8 @@ class Dimensions {
   static const double radiusDefault = 10.0;
   static const double radiusLarge = 15.0;
   static const double radiusExtraLarge = 20.0;
+  static const double radiusThirty = 30.0;
+  static const double radiusSeventy = 70.0;
   static const double radiusHundred = 100.0;
   static const double menuIconSize = 25.0;
   static const double featuredProductCard = 370.0;

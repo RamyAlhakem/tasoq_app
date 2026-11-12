@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/error_response.dart';
+import 'package:flutter_sixvalley_ecommerce/helper/feature_disabled_handler.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
@@ -14,6 +15,9 @@ class ApiChecker {
 
     final String errorStr = apiResponse.error?.toString() ?? '';
     if (errorStr.isEmpty) return;
+
+    // Toast is shown by FeatureDisabledHandler after redirecting to retail home (wholesale/auction disabled).
+    if (FeatureDisabledHandler.shouldSuppressError(apiResponse.response?.data, errorStr)) return;
 
     void showError(String? message) {
       if (useOverlay && overlayContext != null) {

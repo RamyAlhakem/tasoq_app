@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/image_full_url.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shop/domain/enums/vacation_duration_type.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
@@ -14,12 +15,19 @@ class SellerModel {
   SellerModel({this.totalSize, this.limit, this.offset, this.sellers});
 
   SellerModel.fromJson(Map<String, dynamic> json) {
-    totalSize = json['total_size'];
-    limit = json['limit'];
-    offset = json['offset'];
-    if (json['sellers'] != null) {
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json);
+    totalSize = envelope.totalSize;
+    limit = envelope.limit;
+    offset = envelope.offset;
+    final dynamic sellerJson = envelope.read('sellers');
+    if (envelope.data != null) {
       sellers = <Seller>[];
-      json['sellers'].forEach((v) {
+      envelope.data!.forEach((v) {
+        sellers!.add(Seller.fromShopJson(v));
+      });
+    } else if (sellerJson != null) {
+      sellers = <Seller>[];
+      sellerJson.forEach((v) {
         sellers!.add(Seller.fromJson(v));
       });
     }
@@ -84,7 +92,7 @@ class Seller {
 
   Seller.fromJson(Map<String, dynamic> json) {
     id = json['id'];
-    fName = json['f_name'];
+    fName = json['f_name'] ?? json['name'];
     lName = json['l_name'];
     phone = json['phone'];
     email = json['email'];
@@ -96,10 +104,10 @@ class Seller {
     authToken = json['auth_token'];
     gst = json['gst'];
     cmFirebaseToken = json['cm_firebase_token'];
-    posStatus = int.parse(json['pos_status'].toString());
-    minimumOrderAmount = double.parse(json['minimum_order_amount'].toString());
-    freeDeliveryStatus = double.parse(json['free_delivery_status'].toString());
-    freeDeliveryOverAmount = double.parse(json['free_delivery_over_amount'].toString());
+    posStatus = int.tryParse('${json['pos_status']}');
+    minimumOrderAmount = double.tryParse('${json['minimum_order_amount']}');
+    freeDeliveryStatus = double.tryParse('${json['free_delivery_status']}');
+    freeDeliveryOverAmount = double.tryParse('${json['free_delivery_over_amount']}');
     ordersCount = json['orders_count'];
     productCount = json['product_count'];
     totalRating = json['total_rating'];
@@ -111,10 +119,26 @@ class Seller {
     }
 
     shop = json['shop'] != null ? Shop.fromJson(json['shop']) : null;
-    imageFullUrl = json['image_full_url'] != null
-        ? ImageFullUrl.fromJson(json['image_full_url'])
-        : null;
+    imageFullUrl = json['image_full_url'] != null ? ImageFullUrl.fromJson(json['image_full_url']) : null;
     reviewCount = json['review_count'];
+  }
+
+  Seller.fromShopJson(Map<String, dynamic> json) {
+    final Map<String, dynamic>? sellerJson = json['seller'] != null ? Map<String, dynamic>.from(json['seller']) : null;
+
+    id = int.tryParse('${json['seller_id']}') ?? sellerJson?['id'];
+    fName = sellerJson?['f_name'];
+    lName = sellerJson?['l_name'];
+    phone = sellerJson?['phone'];
+    email = sellerJson?['email'];
+    imageFullUrl = sellerJson?['image_full_url'] != null ? ImageFullUrl.fromJson(sellerJson!['image_full_url']) : null;
+    shop = Shop.fromJson(json);
+    createdAt = json['created_at'];
+    ordersCount = json['orders_count'];
+    productCount = json['total_product'];
+    ratingCount = json['total_review'];
+    reviewCount = json['total_review'];
+    averageRating = double.tryParse('${json['avg_rating']}') ?? 0;
   }
 
 }
@@ -168,7 +192,7 @@ class Shop {
 
   Shop.fromJson(Map<String, dynamic> json, {bool isAdminProduct = false}) {
     id = isAdminProduct ? 0 : json['id'];
-    sellerId = int.parse(json['seller_id'].toString());
+    sellerId = int.tryParse('${json['seller_id']}');
     slug = json['slug'];
     name = json['name'];
     address = json['address'];
@@ -190,7 +214,7 @@ class Shop {
       vacationStartDate = DateTime.tryParse('${json['vacation_start_date']}');
       vacationEndDate = DateTime.tryParse('${json['vacation_end_date']}');
       vacationNote = json['vacation_note'];
-      vacationStatus = '${json['vacation_status']}'.contains('1') || json['vacation_status'] == true;
+      vacationStatus = '${json['vacation_status']}'.contains('1') || json['vacation_status'] == true || json['is_vacation_mode_now'] == true;
       if(json['vacation_duration_type'] != null) {
         vacationDurationType =  VacationDurationType.fromJson(json['vacation_duration_type']);
       }

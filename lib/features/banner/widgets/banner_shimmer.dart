@@ -53,7 +53,7 @@ class BannerShimmer extends StatelessWidget {
                       child: Row(children: [
                         Expanded(child: ListView.builder(
                             itemCount: 3,
-                            shrinkWrap: true, padding: EdgeInsets.zero,
+                            padding: EdgeInsets.zero,
                             scrollDirection: Axis.horizontal,
                             itemBuilder: (context, index){
                               return Padding(padding: const EdgeInsets.only(right: 8.0),

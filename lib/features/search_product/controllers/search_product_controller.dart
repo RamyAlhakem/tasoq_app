@@ -1,11 +1,13 @@
 
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/compare/controllers/compare_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/domain/models/product_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/search_product/domain/models/author_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/search_product/domain/models/suggestion_product_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/search_product/domain/services/search_product_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/api_checker.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
@@ -156,14 +158,16 @@ class SearchProductController with ChangeNotifier {
         if(ProductModel.fromJson(apiResponse.response!.data).products != null) {
           searchedProduct = ProductModel.fromJson(apiResponse.response!.data);
 
-          if(searchedProduct?.minPrice != null){
-            minFilterValue = searchedProduct!.minPrice!;
-            _minPrice = searchedProduct!.minPrice!.toString();
-          }
-          if(searchedProduct?.maxPrice != null){
-            maxFilterValue = searchedProduct!.maxPrice!;
-            _maxPrice = searchedProduct!.maxPrice!.toString();
-          }
+          // v6's min_price/max_price only cover the current page, not the whole
+          // result set. Seeding the price filter from them would pre-fill the
+          // filter sheet with a narrower range than the user ever chose, so the
+          // next Apply silently clamps the results — and ratchets lower each time.
+          // Default to the catalog-wide range instead, same bounds the slider uses.
+          final configModel = Provider.of<SplashController>(Get.context!, listen: false).configModel;
+          minFilterValue = configModel?.productMinUnitPriceRange ?? 0;
+          maxFilterValue = configModel?.productMaxUnitPriceRange ?? 0;
+          _minPrice = minFilterValue.toString();
+          _maxPrice = maxFilterValue.toString();
 
           if(priceMax != null&& priceMax.isNotEmpty) {
             _maxPrice = priceMax;
@@ -197,6 +201,13 @@ class SearchProductController with ChangeNotifier {
   TextEditingController searchController = TextEditingController();
   FocusNode searchFocusNode = FocusNode();
 
+  @override
+  void dispose() {
+    searchController.dispose();
+    searchFocusNode.dispose();
+    super.dispose();
+  }
+
   SuggestionModel? suggestionModel;
   List<String> nameList = [];
   List<int> idList = [];
@@ -206,7 +217,7 @@ class SearchProductController with ChangeNotifier {
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       nameList = [];
       idList = [];
-      suggestionModel = SuggestionModel.fromJson(apiResponse.response?.data);
+      suggestionModel = SuggestionModel.fromJson(Map<String, dynamic>.from(ApiEnvelope.content(apiResponse.response?.data)));
       for(int i=0; i< suggestionModel!.products!.length; i++){
         nameList.add(suggestionModel!.products![i].name!);
         idList.add(suggestionModel!.products![i].id!);
@@ -264,34 +275,37 @@ class SearchProductController with ChangeNotifier {
   Future<void> getAuthorList(String? slug) async {
     ApiResponseModel apiResponse = await searchProductServiceInterface!.getAuthorList(slug);
 
-    if(slug != null && apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _sellerAuthorsList = [];
+    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+      final List<AuthorModel> authors = _parseAuthorList(apiResponse.response!.data);
 
-      apiResponse.response!.data.forEach((author) {
-        _sellerAuthorsList!.add(AuthorModel.fromJson(author));
-      });
-    } else if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _authorsList = [];
-
-      apiResponse.response!.data.forEach((author) {
-        _authorsList!.add(AuthorModel.fromJson(author));
-      });
+      if(slug != null) {
+        _sellerAuthorsList = authors;
+      } else {
+        _authorsList = authors;
+      }
     }
     notifyListeners();
   }
 
+  List<AuthorModel> _parseAuthorList(dynamic body) {
+    final dynamic data = ApiEnvelope.content(body)['data'];
+    if (data is! List) return [];
+    return data.map((item) => AuthorModel.fromJson(item)).toList();
+  }
+
   Future<void> getPublishingHouseList(String? slug) async {
     ApiResponseModel apiResponse = await searchProductServiceInterface!.getPublishingHouse(slug);
-    if(slug != null && apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _sellerPublishingHouseList = [];
-      apiResponse.response!.data.forEach((house) {
-        _sellerPublishingHouseList!.add(AuthorModel.fromJson(house));
-      });
-    } else if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _publishingHouseList = [];
-      apiResponse.response?.data.forEach((house) {
-        _publishingHouseList?.add(AuthorModel.fromJson(house));
-      });
+    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+      final dynamic houses = ApiEnvelope.content(apiResponse.response!.data)['data'];
+      final List<AuthorModel> parsed = houses is List
+          ? houses.map((house) => AuthorModel.fromJson(house)).toList()
+          : <AuthorModel>[];
+
+      if (slug != null) {
+        _sellerPublishingHouseList = parsed;
+      } else {
+        _publishingHouseList = parsed;
+      }
     }
     notifyListeners();
   }

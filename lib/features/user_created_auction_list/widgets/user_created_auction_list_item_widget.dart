@@ -69,7 +69,6 @@ class UserCreatedAuctionListItemWidget extends StatefulWidget {
 class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionListItemWidget> {
   late Timer _timer;
   late Duration _remaining;
-  final JustTheController _tooltipController = JustTheController();
 
   bool get _isLive => widget.auctionStatus == UserCreatedAuctionPurchaseEnum.live;
   bool get _isUpcoming => widget.auctionStatus == UserCreatedAuctionPurchaseEnum.upcoming;
@@ -81,8 +80,6 @@ class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionLis
           widget.auctionStatus == UserCreatedAuctionPurchaseEnum.delivered ||
           widget.auctionStatus == UserCreatedAuctionPurchaseEnum.readyToDelivery ||
           widget.auctionStatus == UserCreatedAuctionPurchaseEnum.onTheWay;
-
-  bool get _isShowActionButton => widget.auctionStatus == UserCreatedAuctionPurchaseEnum.delivered;
 
   @override
   void initState() {
@@ -99,7 +96,6 @@ class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionLis
   @override
   void dispose() {
     _timer.cancel();
-    _tooltipController.dispose();
     super.dispose();
   }
 
@@ -118,9 +114,34 @@ class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionLis
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _buildImage(context),
+                AuctionListItemImage(
+                  imageUrl: widget.imageUrl,
+                  isLive: _isLive,
+                  isUpcoming: _isUpcoming,
+                  remaining: _remaining,
+                ),
                 const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-                Expanded(child: _buildDetails(context)),
+
+                Expanded(
+                  child: AuctionListItemDetails(
+                    auctionId: widget.auctionId,
+                    slug: widget.slug,
+                    auctionStatus: widget.auctionStatus,
+                    participantCount: widget.participantCount,
+                    onRelaunch: widget.onRelaunch,
+                    onCancel: widget.onCancel,
+                    onDelete: widget.onDelete,
+                    onEdit: widget.onEdit,
+                    productName: widget.productName,
+                    isUpcoming: _isUpcoming,
+                    isLive: _isLive,
+                    isActionable: _isActionable,
+                    startingPrice: widget.startingPrice,
+                    highestBidAmount: widget.highestBidAmount,
+                    viewCount: widget.viewCount,
+                    totalBidCount: widget.totalBidCount,
+                  ),
+                ),
               ],
             ),
           ),
@@ -136,8 +157,24 @@ class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionLis
       ),
     );
   }
+}
 
-  Widget _buildImage(BuildContext context) {
+class AuctionListItemImage extends StatelessWidget {
+  final String imageUrl;
+  final bool isLive;
+  final bool isUpcoming;
+  final Duration remaining;
+
+  const AuctionListItemImage({
+    super.key,
+    required this.imageUrl,
+    required this.isLive,
+    required this.isUpcoming,
+    required this.remaining,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return SizedBox(
       width: 85,
       height: 85,
@@ -150,14 +187,14 @@ class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionLis
             child: ClipRRect(
               borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
               child: CustomImageWidget(
-                image: widget.imageUrl,
+                image: imageUrl,
                 fit: BoxFit.cover,
                 width: double.infinity,
                 height: double.infinity,
               ),
             ),
           ),
-          if (_isLive || _isUpcoming)
+          if (isLive || isUpcoming)
           Positioned(
             bottom: 0,
             left: 0,
@@ -181,7 +218,7 @@ class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionLis
                   const SizedBox(width: Dimensions.paddingSizeExtraExtraSmall),
                   Flexible(
                     child: Text(
-                      DateConverter.formatDuration(_remaining),
+                      DateConverter.formatDuration(remaining),
                       overflow: TextOverflow.ellipsis,
                       style: titilliumBold.copyWith(
                         fontSize: Dimensions.fontSizeExtraSmall,
@@ -197,27 +234,112 @@ class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionLis
       ),
     );
   }
+}
 
-  Widget _buildDetails(BuildContext context) {
+class AuctionListItemDetails extends StatelessWidget {
+  final int auctionId;
+  final String slug;
+  final UserCreatedAuctionPurchaseEnum auctionStatus;
+  final int? participantCount;
+  final VoidCallback? onRelaunch;
+  final VoidCallback? onCancel;
+  final VoidCallback? onDelete;
+  final VoidCallback? onEdit;
+  final String productName;
+  final bool isUpcoming;
+  final bool isLive;
+  final bool isActionable;
+  final double startingPrice;
+  final double highestBidAmount;
+  final int viewCount;
+  final int totalBidCount;
+
+  const AuctionListItemDetails({
+    super.key,
+    required this.auctionId,
+    required this.slug,
+    required this.auctionStatus,
+    this.participantCount,
+    this.onRelaunch,
+    this.onCancel,
+    this.onDelete,
+    this.onEdit,
+    required this.productName,
+    required this.isUpcoming,
+    required this.isLive,
+    required this.isActionable,
+    required this.startingPrice,
+    required this.highestBidAmount,
+    required this.viewCount,
+    required this.totalBidCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildAuctionIdRow(context),
-        _buildProductName(context),
+        AuctionListIdRow(
+          auctionId: auctionId,
+          slug: slug,
+          auctionStatus: auctionStatus,
+          participantCount: participantCount,
+          onRelaunch: onRelaunch,
+          onCancel: onCancel,
+          onDelete: onDelete,
+          onEdit: onEdit,
+        ),
+        AuctionListProductName(productName: productName),
         const SizedBox(height: Dimensions.paddingSizeExtraExtraSmall),
-        _buildPriceSection(context),
+        AuctionListPriceSection(
+          isUpcoming: isUpcoming,
+          isLive: isLive,
+          isActionable: isActionable,
+          startingPrice: startingPrice,
+          highestBidAmount: highestBidAmount,
+        ),
         const SizedBox(height: Dimensions.paddingSizeExtraExtraSmall),
-        _buildBottomRow(context),
+        AuctionListBottomRow(
+          viewCount: viewCount,
+          isUpcoming: isUpcoming,
+          isLive: isLive,
+          participantCount: participantCount,
+          totalBidCount: totalBidCount,
+        ),
       ],
     );
   }
+}
 
-  Widget _buildAuctionIdRow(BuildContext context) {
+class AuctionListIdRow extends StatelessWidget {
+  final int auctionId;
+  final String slug;
+  final UserCreatedAuctionPurchaseEnum auctionStatus;
+  final int? participantCount;
+  final VoidCallback? onRelaunch;
+  final VoidCallback? onCancel;
+  final VoidCallback? onDelete;
+  final VoidCallback? onEdit;
+
+  const AuctionListIdRow({
+    super.key,
+    required this.auctionId,
+    required this.slug,
+    required this.auctionStatus,
+    this.participantCount,
+    this.onRelaunch,
+    this.onCancel,
+    this.onDelete,
+    this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       children: [
         Expanded(
           child: Text(
-            '${getTranslated('auction_id', context) ?? 'Auction id'} #${widget.auctionId}',
+            '${getTranslated('auction_id', context) ?? 'Auction id'} #$auctionId',
             style: titilliumRegular.copyWith(
               fontSize: Dimensions.fontSizeSmall,
               color: Theme.of(context).textTheme.bodyLarge?.color,
@@ -241,15 +363,15 @@ class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionLis
             ),
             onSelected: (value) {
               if (value == 'view') {
-                RouterHelper.getCreatorAuctionDetailsRoute(slug: widget.slug);
+                RouterHelper.getCreatorAuctionDetailsRoute(slug: slug);
               } else if (value == 'relaunch') {
-                widget.onRelaunch?.call();
+                onRelaunch?.call();
               } else if (value == 'cancel') {
-                widget.onCancel?.call();
+                onCancel?.call();
               } else if (value == 'delete') {
-                widget.onDelete?.call();
+                onDelete?.call();
               } else if (value == 'edit') {
-                widget.onEdit?.call();
+                onEdit?.call();
               }
             },
             itemBuilder: (context) => [
@@ -262,8 +384,8 @@ class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionLis
                   icon: Icons.remove_red_eye,
                 ),
               ),
-              if (widget.auctionStatus == UserCreatedAuctionPurchaseEnum.unsold ||
-                  widget.auctionStatus == UserCreatedAuctionPurchaseEnum.recreated)
+              if (auctionStatus == UserCreatedAuctionPurchaseEnum.unsold ||
+                  auctionStatus == UserCreatedAuctionPurchaseEnum.recreated)
                 PopupMenuItem<String>(
                   value: 'relaunch',
                   height: 36,
@@ -274,7 +396,7 @@ class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionLis
                   ),
                 ),
 
-              if (widget.auctionStatus == UserCreatedAuctionPurchaseEnum.upcoming)
+              if (auctionStatus == UserCreatedAuctionPurchaseEnum.upcoming)
                 PopupMenuItem<String>(
                   value: 'delete',
                   height: 36,
@@ -285,7 +407,7 @@ class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionLis
                   ),
                 ),
 
-              if (widget.auctionStatus == UserCreatedAuctionPurchaseEnum.canceled) ...[
+              if (auctionStatus == UserCreatedAuctionPurchaseEnum.canceled) ...[
                 PopupMenuItem<String>(
                   value: 'edit',
                   height: 36,
@@ -306,9 +428,9 @@ class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionLis
                 ),
               ],
 
-              if (widget.auctionStatus == UserCreatedAuctionPurchaseEnum.unsold ||
-                  widget.auctionStatus == UserCreatedAuctionPurchaseEnum.recreated ||
-                  (widget.auctionStatus == UserCreatedAuctionPurchaseEnum.live && (widget.participantCount == 0 || widget.participantCount == null)))
+              if (auctionStatus == UserCreatedAuctionPurchaseEnum.unsold ||
+                  auctionStatus == UserCreatedAuctionPurchaseEnum.recreated ||
+                  (auctionStatus == UserCreatedAuctionPurchaseEnum.live && (participantCount == 0 || participantCount == null)))
                 PopupMenuItem<String>(
                   value: 'cancel',
                   height: 36,
@@ -324,9 +446,16 @@ class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionLis
       ],
     );
   }
+}
 
-  Widget _buildProductName(BuildContext context) {
-    return Text(widget.productName,
+class AuctionListProductName extends StatelessWidget {
+  final String productName;
+
+  const AuctionListProductName({super.key, required this.productName});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(productName,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: textBold.copyWith(
@@ -335,44 +464,62 @@ class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionLis
       ),
     );
   }
+}
 
-  Widget _buildPriceSection(BuildContext context) {
-    if (_isUpcoming) {
-      return _buildPriceRow(
-        context,
+class AuctionListPriceSection extends StatelessWidget {
+  final bool isUpcoming;
+  final bool isLive;
+  final bool isActionable;
+  final double startingPrice;
+  final double highestBidAmount;
+
+  const AuctionListPriceSection({
+    super.key,
+    required this.isUpcoming,
+    required this.isLive,
+    required this.isActionable,
+    required this.startingPrice,
+    required this.highestBidAmount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isUpcoming) {
+      return AuctionPriceRow(
         label: getTranslated('start_price', context) ?? 'Starting Price',
-        value: PriceConverter.convertPrice(context, widget.startingPrice),
+        value: PriceConverter.convertPrice(context, startingPrice),
       );
     }
 
-    if (_isLive) {
-      return _buildPriceRow(
-        context,
+    if (isLive) {
+      return AuctionPriceRow(
         label: getTranslated('highest_bid', context) ?? 'Highest Bid',
-        value: PriceConverter.convertPrice(context, widget.highestBidAmount),
+        value: PriceConverter.convertPrice(context, highestBidAmount),
       );
     }
 
-    if (_isActionable) {
-      return _buildPriceRow(
-        context,
+    if (isActionable) {
+      return AuctionPriceRow(
         label: getTranslated('final_price', context) ?? 'Final Price',
-        value: PriceConverter.convertPrice(context, widget.highestBidAmount),
+        value: PriceConverter.convertPrice(context, highestBidAmount),
       );
     }
 
-    return _buildPriceRow(
-      context,
+    return AuctionPriceRow(
       label: getTranslated('start_price', context) ?? 'Starting Price',
-      value: PriceConverter.convertPrice(context, widget.startingPrice),
+      value: PriceConverter.convertPrice(context, startingPrice),
     );
   }
+}
 
-  Widget _buildPriceRow(
-      BuildContext context, {
-        required String label,
-        required String value,
-      }) {
+class AuctionPriceRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const AuctionPriceRow({super.key, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       children: [
         Text(
@@ -393,9 +540,26 @@ class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionLis
       ],
     );
   }
+}
 
+class AuctionListBottomRow extends StatelessWidget {
+  final int viewCount;
+  final bool isUpcoming;
+  final bool isLive;
+  final int? participantCount;
+  final int totalBidCount;
 
-  Widget _buildBottomRow(BuildContext context) {
+  const AuctionListBottomRow({
+    super.key,
+    required this.viewCount,
+    required this.isUpcoming,
+    required this.isLive,
+    this.participantCount,
+    required this.totalBidCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
@@ -403,7 +567,7 @@ class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionLis
           Icon(Icons.remove_red_eye, size: Dimensions.iconSizeSmall, color: Theme.of(context).hintColor),
           const SizedBox(width: Dimensions.paddingSizeExtraExtraSmall),
 
-          Text('${widget.viewCount}',
+          Text('$viewCount',
             style: titilliumRegular.copyWith(
               fontSize: Dimensions.fontSizeSmall,
               fontWeight: FontWeight.bold,
@@ -411,9 +575,9 @@ class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionLis
             ),
           ),
         ]),
-        Spacer(),
+        const Spacer(),
 
-        if (_isUpcoming && widget.participantCount != null) ...[
+        if (isUpcoming && participantCount != null) ...[
           const SizedBox(width: Dimensions.paddingSizeSmall),
           Text.rich(
             TextSpan(
@@ -426,7 +590,7 @@ class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionLis
                   ),
                 ),
                 TextSpan(
-                  text: '${widget.participantCount}',
+                  text: '$participantCount',
                   style: titilliumRegular.copyWith(
                     fontSize: Dimensions.fontSizeSmall,
                     fontWeight: FontWeight.bold,
@@ -436,7 +600,7 @@ class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionLis
               ],
             ),
           )
-        ] else if (_isLive) ...[
+        ] else if (isLive) ...[
           const SizedBox(width: Dimensions.paddingSizeSmall),
           Text.rich(
             TextSpan(
@@ -449,7 +613,7 @@ class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionLis
                   ),
                 ),
                 TextSpan(
-                  text: '${widget.totalBidCount}',
+                  text: '$totalBidCount',
                   style: titilliumRegular.copyWith(
                     fontSize: Dimensions.fontSizeSmall,
                     fontWeight: FontWeight.bold,
@@ -461,15 +625,38 @@ class _UserCreatedAuctionListItemWidgetState extends State<UserCreatedAuctionLis
           )
         ],
         const Spacer(),
-
-        // if (_isShowActionButton && !(widget.adminCommission > 0 && widget.isAdminCommissionPaid))
-        //   _buildActionButton(context),
-
       ],
     );
   }
+}
 
-  Widget _buildActionButton(BuildContext context) {
+class AuctionListActionButton extends StatefulWidget {
+  final String slug;
+  final double adminCommission;
+  final String? claimPaymentStatus;
+
+  const AuctionListActionButton({
+    super.key,
+    required this.slug,
+    required this.adminCommission,
+    this.claimPaymentStatus,
+  });
+
+  @override
+  State<AuctionListActionButton> createState() => _AuctionListActionButtonState();
+}
+
+class _AuctionListActionButtonState extends State<AuctionListActionButton> {
+  final JustTheController _tooltipController = JustTheController();
+
+  @override
+  void dispose() {
+    _tooltipController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final bool showPayNow = widget.adminCommission > 0;
     final bool isWithdrawDisabled = !showPayNow && widget.claimPaymentStatus == 'unpaid';
 

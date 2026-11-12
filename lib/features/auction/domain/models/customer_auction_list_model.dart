@@ -1,4 +1,5 @@
 import 'package:flutter_sixvalley_ecommerce/common/enums/auction_enum.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
 
 class CustomerAuctionListModel {
   int? totalSize;
@@ -16,16 +17,18 @@ class CustomerAuctionListModel {
   });
 
   CustomerAuctionListModel.fromJson(Map<String, dynamic> json) {
-    totalSize = int.tryParse('${json['total_size']}');
-    limit = int.tryParse('${json['limit']}');
-    offset = int.tryParse('${json['offset']}');
-    if (json['products'] != null) {
-      products = <CustomerAuctionProduct>[];
-      json['products'].forEach((v) {
-        products!.add(CustomerAuctionProduct.fromJson(v));
-      });
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json, legacyKeys: ['products']);
+    totalSize = envelope.totalSize;
+    limit = envelope.limit;
+    offset = envelope.offset;
+    if (envelope.data != null) {
+      products = <CustomerAuctionProduct>[
+        for (final Map row in envelope.data!.whereType<Map>())
+          CustomerAuctionProduct.fromJson(Map<String, dynamic>.from(row)),
+      ];
     }
-    counts = json['counts'] != null ? AuctionCounts.fromJson(json['counts']) : null;
+    final dynamic countsJson = envelope.read('counts');
+    counts = countsJson is Map ? AuctionCounts.fromJson(Map<String, dynamic>.from(countsJson)) : null;
   }
 }
 
@@ -44,6 +47,7 @@ class CustomerAuctionProduct {
   String? startTime;
   String? endTime;
   MyBid? myBid;
+  bool hasMyBid = false;
   ThumbnailFullUrl? thumbnailFullUrl;
   String? trackingUrl;
   bool? isOutbid;
@@ -83,11 +87,11 @@ class CustomerAuctionProduct {
     startTime = json['start_time'];
     endTime = json['end_time'];
     myBid = json['my_bid'] != null ? MyBid.fromJson(json['my_bid']) : null;
+    hasMyBid = json['has_my_bid'] ?? false;
     thumbnailFullUrl = json['thumbnail_full_url'] != null ? ThumbnailFullUrl.fromJson(json['thumbnail_full_url']) : null;
     trackingUrl = json['tracking_url'];
     isOutbid = json['is_outbid'];
   }
-  bool get hasMyBid => myBid != null;
 }
 
 class AuctionCounts {

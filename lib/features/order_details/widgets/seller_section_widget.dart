@@ -30,13 +30,13 @@ class SellerSectionWidget extends StatelessWidget {
           endDate: order!.orderDetails![0].seller?.shop?.vacationEndDate,
           vacationDurationType: order!.orderDetails![0].seller?.shop?.vacationDurationType,
           vacationStatus: order!.orderDetails![0].seller?.shop?.vacationStatus,
-          isInHouseSeller: order!.orderDetails![0].order?.sellerIs == 'admin'
+          isInHouseSeller: order!.orders?.sellerIs == 'admin'
       );
     }
 
     return Container(
       decoration: BoxDecoration(
-        boxShadow: [BoxShadow(color: Theme.of(context).hintColor.withValues(alpha:0.2), spreadRadius:1.5, blurRadius: 3)],
+        // boxShadow: [BoxShadow(color: Theme.of(context).hintColor.withValues(alpha:0.2), spreadRadius:1.5, blurRadius: 3)],
         color: Theme.of(context).cardColor,
       ),
 
@@ -47,6 +47,7 @@ class SellerSectionWidget extends StatelessWidget {
             child: Row(children: [
               OrderSellerInfoWidget(
                 orderDetails: order?.orderDetails != null && order!.orderDetails!.isNotEmpty ? order!.orderDetails![0] : null,
+                sellerIs: order?.orders?.sellerIs,
               ),
               const Spacer(),
               InkWell(
@@ -58,11 +59,11 @@ class SellerSectionWidget extends StatelessWidget {
                       } else if(order!.orderDetails![0].seller != null) {
                         RouterHelper.getChatScreenRoute(
                           action: RouteAction.push,
-                          id: order!.orderDetails![0].order?.sellerIs == 'admin' ? 0 : order!.orderDetails![0].seller!.id,
-                          name: order!.orderDetails![0].order?.sellerIs == 'admin'
+                          id: order!.orders?.sellerIs == 'admin' ? 0 : order!.orderDetails![0].seller!.id,
+                          name: order!.orders?.sellerIs == 'admin'
                               ? "${Provider.of<SplashController>(context, listen: false).configModel?.inHouseShop?.name}"
                               : order!.orderDetails![0].seller!.shop!.name,
-                          image: order!.orderDetails![0].order?.sellerIs == 'admin'
+                          image: order!.orders?.sellerIs == 'admin'
                               ? "${Provider.of<SplashController>(context, listen: false).configModel?.inHouseShop?.imageFullUrl?.path}"
                               : order!.orderDetails![0].seller?.shop?.imageFullUrl?.path,
                           isShopOnVacation: isVacationActive,
@@ -88,11 +89,13 @@ class SellerSectionWidget extends StatelessWidget {
 
 class OrderSellerInfoWidget extends StatelessWidget {
   final OrderDetailsModel? orderDetails;
+  final String? sellerIs;
   final double widthFactor;
 
   const OrderSellerInfoWidget({
     super.key,
     required this.orderDetails,
+    this.sellerIs,
     this.widthFactor = 0.6,
   });
 
@@ -102,7 +105,7 @@ class OrderSellerInfoWidget extends StatelessWidget {
       return const SizedBox();
     }
 
-    final bool isAdmin = orderDetails?.order?.sellerIs == 'admin';
+    final bool isAdmin = sellerIs == 'admin';
 
     final String sellerName = isAdmin
         ? Provider.of<SplashController>(context, listen: false).configModel?.inHouseShop?.name ??
@@ -111,7 +114,7 @@ class OrderSellerInfoWidget extends StatelessWidget {
     return InkWell(
       onTap: () {
         final seller = orderDetails?.seller;
-        final isAdmin = orderDetails?.order?.sellerIs == 'admin';
+        final isAdmin = sellerIs == 'admin';
 
         if (seller != null && !isAdmin) {
           RouterHelper.getTopSellerRoute(

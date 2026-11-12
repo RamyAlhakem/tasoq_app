@@ -237,9 +237,9 @@ class CacheResponseCompanion extends UpdateCompanion<CacheResponseData> {
     required String header,
     required String response,
     this.isSuccess = const Value.absent(),
-  })  : endPoint = Value(endPoint),
-        header = Value(header),
-        response = Value(response);
+  }) : endPoint = Value(endPoint),
+    header = Value(header),
+    response = Value(response);
   static Insertable<CacheResponseData> custom({
     Expression<int>? id,
     Expression<String>? endPoint,

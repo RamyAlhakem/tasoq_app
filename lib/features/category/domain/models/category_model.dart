@@ -1,5 +1,72 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/image_full_url.dart';
+
+class CategoryResponseModel {
+  int? totalSize;
+  int? limit;
+  int? offset;
+  List<CategoryModel>? categories;
+
+  CategoryResponseModel({this.totalSize, this.limit, this.offset, this.categories});
+
+  CategoryResponseModel.fromJson(Map<String, dynamic> json) {
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json);
+    totalSize = envelope.totalSize;
+    limit = envelope.limit;
+    offset = envelope.offset;
+    if (envelope.data != null) {
+      categories = <CategoryModel>[];
+      envelope.data!.forEach((v) {
+        categories!.add(CategoryModel.fromJson(v));
+      });
+    }
+  }
+}
+
+class SubCategoryResponseModel {
+  int? totalSize;
+  int? limit;
+  int? offset;
+  List<SubCategory>? subCategories;
+
+  SubCategoryResponseModel({this.totalSize, this.limit, this.offset, this.subCategories});
+
+  SubCategoryResponseModel.fromJson(Map<String, dynamic> json) {
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json);
+    totalSize = envelope.totalSize;
+    limit = envelope.limit;
+    offset = envelope.offset;
+    if (envelope.data != null) {
+      subCategories = <SubCategory>[];
+      envelope.data!.forEach((v) {
+        subCategories!.add(SubCategory.fromJson(v));
+      });
+    }
+  }
+}
+
+class SubSubCategoryResponseModel {
+  int? totalSize;
+  int? limit;
+  int? offset;
+  List<SubSubCategory>? subSubCategories;
+
+  SubSubCategoryResponseModel({this.totalSize, this.limit, this.offset, this.subSubCategories});
+
+  SubSubCategoryResponseModel.fromJson(Map<String, dynamic> json) {
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json);
+    totalSize = envelope.totalSize;
+    limit = envelope.limit;
+    offset = envelope.offset;
+    if (envelope.data != null) {
+      subSubCategories = <SubSubCategory>[];
+      envelope.data!.forEach((v) {
+        subSubCategories!.add(SubSubCategory.fromJson(v));
+      });
+    }
+  }
+}
 
 class CategoryModel {
   int? _id;
@@ -14,6 +81,10 @@ class CategoryModel {
   bool? isSelected;
   ImageFullUrl? _imageFullUrl;
   int? _totalProductCount;
+
+  int? subCategoryTotalSize;
+  int? subCategoryLimit;
+  int? subCategoryOffset;
 
   CategoryModel(
       {int? id,
@@ -83,6 +154,13 @@ class CategoryModel {
     }
   }
 
+  void setSubCategories(List<SubCategory> categories, {bool append = false}) {
+    if (append && _subCategories != null) {
+      _subCategories!.addAll(categories);
+    } else {
+      _subCategories = categories;
+    }
+  }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = {};
@@ -119,6 +197,10 @@ class SubCategory {
   List<SubSubCategory>? _subSubCategories;
   bool? isSelected;
   int? _totalProductCount;
+
+  int? subSubCategoryTotalSize;
+  int? subSubCategoryLimit;
+  int? subSubCategoryOffset;
 
   SubCategory(
       {int? id,
@@ -174,9 +256,16 @@ class SubCategory {
     }
     isSelected = false;
 
-    _totalProductCount = int.tryParse(json['sub_category_product_count'].toString());
+    _totalProductCount = int.tryParse(json['product_count'].toString());
   }
 
+  void setSubSubCategories(List<SubSubCategory> categories, {bool append = false}) {
+    if (append && _subSubCategories != null) {
+      _subSubCategories!.addAll(categories);
+    } else {
+      _subSubCategories = categories;
+    }
+  }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = {};
@@ -192,7 +281,7 @@ class SubCategory {
       data['childes'] = _subSubCategories!.map((v) => v.toJson()).toList();
     }
     data['is_selected'] = isSelected;
-    data['sub_category_product_count'] = _totalProductCount;
+    data['product_count'] = _totalProductCount;
     return data;
   }
 
@@ -251,7 +340,7 @@ class SubSubCategory {
     _createdAt = json['created_at'];
     _updatedAt = json['updated_at'];
 
-    _totalProductCount = int.tryParse(json['sub_sub_category_product_count'].toString());
+    _totalProductCount = int.tryParse(json['product_count'].toString());
   }
 
 
@@ -265,7 +354,7 @@ class SubSubCategory {
     data['position'] = _position;
     data['created_at'] = _createdAt;
     data['updated_at'] = _updatedAt;
-    data['sub_sub_category_product_count'] = _totalProductCount;
+    data['product_count'] = _totalProductCount;
     return data;
   }
 

@@ -18,16 +18,19 @@ class ContactUsController extends ChangeNotifier{
     _isLoading = true;
     notifyListeners();
     ApiResponseModel apiResponse = await contactUsServiceInterface.add(contactUsBody);
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _isLoading = false;
+
+    final int? statusCode = apiResponse.response?.statusCode;
+    final bool isSuccess = statusCode != null && (statusCode == 200 || statusCode == 201);
+
+    _isLoading = false;
+    if (isSuccess) {
       showCustomSnackBarWidget(getTranslated('message_sent_successfully', Get.context!), Get.context!, snackBarType: SnackBarType.success);
     } else {
-      _isLoading = false;
       ApiChecker.checkApi( apiResponse);
     }
     notifyListeners();
 
-    return apiResponse.response?.statusCode == 200;
+    return isSuccess;
   }
 
 }

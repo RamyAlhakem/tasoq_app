@@ -48,6 +48,12 @@ class CustomerAuctionListController extends ChangeNotifier {
   int get savedOffset => _savedOffset;
   final int _savedLimit = 10;
 
+  int _savedTotalSize = 0;
+  int get savedTotalSize => _savedTotalSize;
+
+  int _currentSavedOffset = 1;
+  int get currentSavedOffset => _currentSavedOffset;
+
   Future<void> getCustomerAuctionList(
       BuildContext context, {
         String? status,
@@ -113,6 +119,8 @@ class CustomerAuctionListController extends ChangeNotifier {
       _savedOffset = 1;
       _hasSavedMore = true;
       _savedAuctionList = [];
+      _savedTotalSize = 0;
+      _currentSavedOffset = 1;
     }
 
     if (!_hasSavedMore) return;
@@ -138,8 +146,9 @@ class CustomerAuctionListController extends ChangeNotifier {
         _savedAuctionList.addAll(newProducts);
       }
 
-      final int totalSize = model.totalSize ?? 0;
-      _hasSavedMore = _savedAuctionList.length < totalSize;
+      _savedTotalSize = model.totalSize ?? 0;
+      _currentSavedOffset = model.offset ?? _savedOffset;
+      _hasSavedMore = _savedAuctionList.length < _savedTotalSize;
       if (_hasSavedMore) _savedOffset++;
     } else {
       ApiChecker.checkApi(response);

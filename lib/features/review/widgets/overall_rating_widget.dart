@@ -66,11 +66,11 @@ class OverallRatingWidget extends StatelessWidget {
               flex: 5,
               child: Column(
                 children: [
-                  _progressBar(context, title: getTranslated('5', context)!, percent: totalReviews > 0 ? fiveStar / totalReviews : 0.0),
-                  _progressBar(context, title: getTranslated('4', context)!, percent: totalReviews > 0 ? fourStar / totalReviews : 0.0),
-                  _progressBar(context, title: getTranslated('3', context)!, percent: totalReviews > 0 ? threeStar / totalReviews : 0.0),
-                  _progressBar(context, title: getTranslated('2', context)!, percent: totalReviews > 0 ? twoStar / totalReviews : 0.0),
-                  _progressBar(context, title: getTranslated('1', context)!, percent: totalReviews > 0 ? oneStar / totalReviews : 0.0),
+                  RatingProgressBar(title: getTranslated('5', context)!, percent: totalReviews > 0 ? fiveStar / totalReviews : 0.0),
+                  RatingProgressBar(title: getTranslated('4', context)!, percent: totalReviews > 0 ? fourStar / totalReviews : 0.0),
+                  RatingProgressBar(title: getTranslated('3', context)!, percent: totalReviews > 0 ? threeStar / totalReviews : 0.0),
+                  RatingProgressBar(title: getTranslated('2', context)!, percent: totalReviews > 0 ? twoStar / totalReviews : 0.0),
+                  RatingProgressBar(title: getTranslated('1', context)!, percent: totalReviews > 0 ? oneStar / totalReviews : 0.0),
                 ],
               ),
             ),
@@ -80,7 +80,17 @@ class OverallRatingWidget extends StatelessWidget {
     );
   }
 
-  Widget _progressBar(BuildContext context, {required String title, required double percent, Color? color}) {
+}
+
+class RatingProgressBar extends StatelessWidget {
+  final String title;
+  final double percent;
+  final Color? color;
+
+  const RatingProgressBar({super.key, required this.title, required this.percent, this.color});
+
+  @override
+  Widget build(BuildContext context) {
     int percentageValue = (percent * 100).round();
 
     return Padding(

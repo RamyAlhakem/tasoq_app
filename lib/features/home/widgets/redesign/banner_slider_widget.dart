@@ -19,6 +19,7 @@ class BannersSliderWidget extends StatefulWidget {
 }
 
 class _BannersSliderWidgetState extends State<BannersSliderWidget> {
+  static const double _slideGap = 10;
   int _currentIndex = 0;
 
   @override
@@ -38,8 +39,8 @@ class _BannersSliderWidgetState extends State<BannersSliderWidget> {
 
         return Padding(
           padding: const EdgeInsets.only(
-            left: Dimensions.homePagePadding,
-            right: Dimensions.homePagePadding,
+            left: Dimensions.homePagePadding - _slideGap / 2,
+            right: Dimensions.homePagePadding - _slideGap / 2,
             bottom: Dimensions.homePagePadding,
           ),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -60,14 +61,12 @@ class _BannersSliderWidgetState extends State<BannersSliderWidget> {
                     _currentIndex = index;
                     Provider.of<BannerController>(context, listen: false).setCurrentIndex(index);}),
               itemCount: activeBanners.isEmpty ? 1 : activeBanners.length,
-              itemBuilder: (context, index, _)=> InkWell(
+              itemBuilder: (context, index, _)=> Padding(
+                padding: const EdgeInsets.symmetric(horizontal: _slideGap / 2),
+                child: InkWell(
                 onTap: () {
                   if(activeBanners[index].resourceId != null){
-                    bannerProvider.clickBannerRedirect(context,
-                        activeBanners[index].resourceId,
-                        activeBanners[index].resourceType =='product'?
-                        activeBanners[index].product : null,
-                        activeBanners[index].resourceType);
+                    bannerProvider.clickBannerRedirect(context, activeBanners[index]);
                   }
                 },
                 child: ClipRRect(
@@ -80,6 +79,7 @@ class _BannersSliderWidgetState extends State<BannersSliderWidget> {
                     ),
                   ),
                 ),
+              ),
               ),
             ) : const SizedBox() : const BannerShimmer(),
             const SizedBox(height: Dimensions.paddingSizeSmall),

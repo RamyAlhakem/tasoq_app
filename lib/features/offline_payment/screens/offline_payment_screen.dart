@@ -31,6 +31,11 @@ class _OfflinePaymentScreenState extends State<OfflinePaymentScreen> {
    TextEditingController paymentController = TextEditingController();
    final GlobalKey<FormState> offlineFormKey = GlobalKey<FormState>();
 
+  @override
+  void dispose() {
+    paymentController.dispose();
+    super.dispose();
+  }
 
 
 
@@ -52,24 +57,27 @@ class _OfflinePaymentScreenState extends State<OfflinePaymentScreen> {
                 if(checkoutProvider.offlinePaymentModel != null && checkoutProvider.offlinePaymentModel!.offlineMethods != null &&
                     checkoutProvider.offlinePaymentModel!.offlineMethods!.isNotEmpty)
                   SizedBox(height: 190,
-                      child: RepaintBoundary(
-                        child: ListView.builder(
-                            padding: EdgeInsets.zero,
-                            scrollDirection: Axis.horizontal,
-                            shrinkWrap: true,
-                            itemCount: checkoutProvider.offlinePaymentModel!.offlineMethods!.length,
-                            itemBuilder: (context, index){
-                              return InkWell(
-                                splashColor: Colors.transparent,
-                                onTap: (){
-                                if(checkoutProvider.offlinePaymentModel?.offlineMethods != null &&
-                                    checkoutProvider.offlinePaymentModel!.offlineMethods!.isNotEmpty){
-                                  checkoutProvider.setOfflinePaymentMethodSelectedIndex(index);
-                                }
-                              }, child: OfflineCardWidget(
-                                  offlinePaymentModel: checkoutProvider.offlinePaymentModel!.offlineMethods![index],
-                                  index: index));}),
-                      )),
+                    child: RepaintBoundary(
+                      child: ListView.builder(
+                        padding: EdgeInsets.zero,
+                        scrollDirection: Axis.horizontal,
+                        shrinkWrap: true,
+                        itemCount: checkoutProvider.offlinePaymentModel!.offlineMethods!.length,
+                        itemBuilder: (context, index){
+                          return InkWell(
+                            splashColor: Colors.transparent,
+                            onTap: (){
+                            if(checkoutProvider.offlinePaymentModel?.offlineMethods != null &&
+                                checkoutProvider.offlinePaymentModel!.offlineMethods!.isNotEmpty){
+                              checkoutProvider.setOfflinePaymentMethodSelectedIndex(index);
+                            }
+                          },
+                          child: OfflineCardWidget(
+                          offlinePaymentModel: checkoutProvider.offlinePaymentModel!.offlineMethods![index],
+                          index: index)
+                          );
+                        }),
+                    )),
 
 
                 Center(child: Padding(padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
@@ -83,30 +91,30 @@ class _OfflinePaymentScreenState extends State<OfflinePaymentScreen> {
                   key: offlineFormKey,
                   child: RepaintBoundary(
                     child: ListView.builder(
-                        physics: const NeverScrollableScrollPhysics(),
-                        shrinkWrap: true,
-                        itemCount: checkoutProvider.offlinePaymentModel!.offlineMethods![checkoutProvider.offlineMethodSelectedIndex].methodInformations?.length,
-                        itemBuilder: (context, index){
-                          MethodInformations? methodInformation = checkoutProvider.offlinePaymentModel!.offlineMethods![checkoutProvider.offlineMethodSelectedIndex].methodInformations?[index];
+                      physics: const NeverScrollableScrollPhysics(),
+                      shrinkWrap: true,
+                      itemCount: checkoutProvider.offlinePaymentModel!.offlineMethods![checkoutProvider.offlineMethodSelectedIndex].methodInformations?.length,
+                      itemBuilder: (context, index){
+                        MethodInformations? methodInformation = checkoutProvider.offlinePaymentModel!.offlineMethods![checkoutProvider.offlineMethodSelectedIndex].methodInformations?[index];
 
-                          return Padding(
-                            padding: const EdgeInsets.only(top: Dimensions.paddingSizeDefault),
-                            child: CustomTextFieldWidget(
-                              controller: checkoutProvider.inputFieldControllerList[index],
-                              required: methodInformation?.isRequired == 1,
-                              labelText: '${methodInformation?.customerInput}'.replaceAll('_', ' ').capitalize(),
-                              hintText: '${methodInformation?.customerPlaceholder}'.replaceAll('_', ' ').capitalize(),
-                              validator: (value) {
-                                if(methodInformation?.isRequired == 1) {
-                                  return ValidateCheck.validateEmptyText(value, '${methodInformation?.customerInput}'.replaceAll('_', ' ').capitalize());
+                        return Padding(
+                          padding: const EdgeInsets.only(top: Dimensions.paddingSizeDefault),
+                          child: CustomTextFieldWidget(
+                            controller: checkoutProvider.inputFieldControllerList[index],
+                            required: methodInformation?.isRequired == 1,
+                            labelText: '${methodInformation?.customerInput}'.replaceAll('_', ' ').capitalize(),
+                            hintText: '${methodInformation?.customerPlaceholder}'.replaceAll('_', ' ').capitalize(),
+                            validator: (value) {
+                              if(methodInformation?.isRequired == 1) {
+                                return ValidateCheck.validateEmptyText(value, '${methodInformation?.customerInput}'.replaceAll('_', ' ').capitalize());
 
-                                }else{
-                                  return null;
-                                }
-                              },
-                            ),
-                          );
-                        }),
+                              }else{
+                                return null;
+                              }
+                            },
+                          ),
+                        );
+                      }),
                   ),
                 ),
 

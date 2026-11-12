@@ -20,12 +20,12 @@ class SupportTicketService implements SupportTicketServiceInterface{
 
   @override
   Future getList({int? offset = 1}) async{
-    return await supportTicketRepositoryInterface.getList();
+    return await supportTicketRepositoryInterface.getList(offset: offset);
   }
 
   @override
-  Future getSupportReplyList(String ticketID) async{
-    return await supportTicketRepositoryInterface.getSupportReplyList(ticketID);
+  Future getSupportReplyList(String ticketID, {int? offset}) async{
+    return await supportTicketRepositoryInterface.getSupportReplyList(ticketID, offset: offset);
   }
 
   @override

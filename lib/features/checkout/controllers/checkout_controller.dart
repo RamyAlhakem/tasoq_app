@@ -1,3 +1,4 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/domain/models/cart_model.dart';
@@ -60,6 +61,21 @@ class CheckoutController with ChangeNotifier {
   final TextEditingController confirmPasswordController = TextEditingController();
   List<String> inputValueList = [];
 
+  void _disposeInputFieldControllers() {
+    for (final controller in inputFieldControllerList) {
+      controller.dispose();
+    }
+  }
+
+  @override
+  void dispose() {
+    orderNoteController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    _disposeInputFieldControllers();
+    super.dispose();
+  }
+
 
 
   Future<void> placeOrder({required Function callback, String? addressID,
@@ -98,12 +114,13 @@ class CheckoutController with ChangeNotifier {
       _addressIndex = null;
       _billingAddressIndex = null;
       sameAsBilling = false;
+      final dynamic orderData = ApiEnvelope.content(apiResponse.response!.data)['data'];
       if(!Provider.of<AuthController>(Get.context!, listen: false).isLoggedIn()){
-        _newUser = apiResponse.response!.data['new_user'];
+        _newUser = orderData['new_user'];
       }
 
       String message = apiResponse.response!.data.toString();
-      callback(true, message, extractId(apiResponse.response!.data['order_ids'].toString()), _newUser);
+      callback(true, message, extractId(orderData['order_ids'].toString()), _newUser);
     } else {
       _isLoading = false;
      ApiChecker.checkApi(apiResponse);
@@ -240,6 +257,7 @@ class CheckoutController with ChangeNotifier {
 
   void setOfflinePaymentMethodSelectedIndex(int index, {bool notify = true}){
     keyList = [];
+    _disposeInputFieldControllers();
     inputFieldControllerList = [];
     offlineMethodSelectedIndex = index;
     if(offlinePaymentModel != null && offlinePaymentModel!.offlineMethods!= null && offlinePaymentModel!.offlineMethods!.isNotEmpty){
@@ -266,7 +284,7 @@ class CheckoutController with ChangeNotifier {
     _isLoading =true;
     notifyListeners();
 
-    ApiResponseModel apiResponse = await checkoutServiceInterface.digitalPaymentPlaceOrder(orderNote, customerId, addressId, billingAddressId, couponCode, couponDiscount, paymentMethod, _isCheckCreateAccount, passwordController.text.trim());
+    ApiResponseModel apiResponse = await checkoutServiceInterface.digitalPaymentPlaceOrder(orderNote, customerId, addressId, billingAddressId, couponCode, couponDiscount, paymentMethod, _isCheckCreateAccount, passwordController.text.trim(), Provider.of<SplashController>(Get.context!, listen: false).myCurrency?.code);
 
     if (apiResponse.response != null && apiResponse.response?.statusCode == 200) {
       _addressIndex = null;
@@ -274,8 +292,9 @@ class CheckoutController with ChangeNotifier {
       sameAsBilling = false;
       _isLoading = false;
 
+      final dynamic orderData = ApiEnvelope.content(apiResponse.response!.data)['data'];
       RouterHelper.getDigitalPaymentScreenRoute(
-        url: apiResponse.response?.data['redirect_link'] ?? '',
+        url: orderData is Map ? (orderData['redirect_link'] ?? '') : '',
         fromWallet: false,
         action: RouteAction.pushReplacement,
       );
@@ -331,7 +350,7 @@ class CheckoutController with ChangeNotifier {
   Future<ApiResponseModel> getReferralAmount(String? amount) async {
     ApiResponseModel apiResponse = await checkoutServiceInterface.getReferralAmount(amount);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _referralAmount = ReferralAmount.fromJson(apiResponse.response.data);
+      _referralAmount = ReferralAmount.fromJson(ApiEnvelope.content(apiResponse.response.data)['data']);
     } else {
       ApiChecker.checkApi( apiResponse);
     }

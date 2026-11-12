@@ -7,6 +7,7 @@ import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/domain/models/media_file_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/domain/models/message_body.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/domain/models/chat_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/domain/models/message_model.dart';
@@ -28,13 +29,7 @@ import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
-enum SenderType {
-  customer,
-  seller,
-  admin,
-  deliveryMan,
-  unknown
-}
+enum SenderType {customer, seller, admin, deliveryMan, unknown}
 
 class ChatController extends ChangeNotifier {
   final ChatServiceInterface? chatServiceInterface;
@@ -72,6 +67,7 @@ class ChatController extends ChangeNotifier {
   bool get singleFIleCrossMaxLimit => _singleFIleCrossMaxLimit;
 
   List<PlatformFile>? pickedFiles;
+  List<String> pickedFileSizeLabels = [];
 
   String _onImageOrFileTimeShowID = '';
   String get onImageOrFileTimeShowID => _onImageOrFileTimeShowID;
@@ -88,18 +84,18 @@ class ChatController extends ChangeNotifier {
   bool _isSending = false;
   bool get isSending => _isSending;
 
-
-
-
   Future<void> getChatList( int offset, {bool reload = true, int? userType}) async {
+    final bool isDeliveryMan = (userType ?? _userTypeIndex) == 0;
+    final bool isFirstPage = offset == 1;
+
     if(reload){
       notifyListeners();
     }
 
-    if(offset == 1){
-      if(offset == 1 && userType == 0){
+    if(isFirstPage){
+      if(isDeliveryMan){
         deliverymanChatModel = null;
-      }else if (offset == 1 && userType == 1) {
+      }else {
         chatModel = null;
       }
       if(userType == null){
@@ -107,33 +103,26 @@ class ChatController extends ChangeNotifier {
       }
     }
 
-    ApiResponseModel apiResponse = await chatServiceInterface!.getChatList(userType!= null ? userType  == 0 ? 'delivery-man' : 'seller' : _userTypeIndex == 0 ? 'delivery-man' : 'seller', offset);
+    ApiResponseModel apiResponse = await chatServiceInterface!.getChatList(isDeliveryMan ? 'delivery-man' : 'seller', offset);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      if(offset == 1){
-        if(userType == 0) {
-          deliverymanChatModel = null;
-          deliverymanChatModel = ChatModel.fromJson(apiResponse.response!.data);
+      final ChatModel page = ChatModel.fromJson(apiResponse.response!.data);
+
+      if(isFirstPage){
+        if(isDeliveryMan) {
+          deliverymanChatModel = page;
         }else {
-          chatModel = null;
-          chatModel = ChatModel.fromJson(apiResponse.response!.data);
+          chatModel = page;
         }
       }else{
-        if(userType == 0) {
-          deliverymanChatModel?.chat?.addAll(ChatModel.fromJson(apiResponse.response!.data).chat!);
-          deliverymanChatModel?.offset  = (ChatModel.fromJson(apiResponse.response!.data).offset!);
-          deliverymanChatModel?.totalSize  = (ChatModel.fromJson(apiResponse.response!.data).totalSize!);
-        } else {
-          chatModel?.chat?.addAll(ChatModel.fromJson(apiResponse.response!.data).chat!);
-          chatModel?.offset  = (ChatModel.fromJson(apiResponse.response!.data).offset!);
-          chatModel?.totalSize  = (ChatModel.fromJson(apiResponse.response!.data).totalSize!);
-        }
+        final ChatModel? loaded = isDeliveryMan ? deliverymanChatModel : chatModel;
+        loaded?.chat?.addAll(page.chat ?? []);
+        loaded?.offset = page.offset;
+        loaded?.totalSize = page.totalSize;
       }
     } else {
       ApiChecker.checkApi( apiResponse);
     }
-    // if(userType == null){
-      notifyListeners();
-    // }
+    notifyListeners();
   }
 
   Future<void> searchChat(BuildContext context, String search, int userIndex) async {
@@ -144,18 +133,14 @@ class ChatController extends ChangeNotifier {
     notifyListeners();
     ApiResponseModel apiResponse = await chatServiceInterface!.searchChat(userIndex == 0? 'seller' : 'delivery-man', search);
     if (apiResponse.response != null && apiResponse.response?.statusCode == 200 && apiResponse.response is !List) {
+      final List<Chat> matches = _parseSearchResult(apiResponse.response!.data);
+
       if(userIndex == 0) {
         searchChatModel = null;
-        searchChatModel = ChatModel(totalSize: 1, limit: '10', offset: '1', chat: []);
-
-        apiResponse.response!.data.forEach((chat) => searchChatModel!.chat!.add(Chat.fromJson(chat)));
-        searchChatModel?.chat = searchChatModel!.chat;
+        searchChatModel = ChatModel(totalSize: matches.length, limit: '10', offset: '1', chat: matches);
       } else {
         searchDeliverymanChatModel = null;
-        searchDeliverymanChatModel = ChatModel(totalSize: 1, limit: '10', offset: '1', chat: []);
-
-        apiResponse.response!.data.forEach((chat) => searchDeliverymanChatModel!.chat!.add(Chat.fromJson(chat)));
-        searchDeliverymanChatModel?.chat = searchDeliverymanChatModel!.chat;
+        searchDeliverymanChatModel = ChatModel(totalSize: matches.length, limit: '10', offset: '1', chat: matches);
       }
     } else {
       _isLoading = false;
@@ -168,6 +153,14 @@ class ChatController extends ChangeNotifier {
     notifyListeners();
   }
 
+  List<Chat> _parseSearchResult(dynamic data) {
+    final List? rows = data is Map<String, dynamic>
+        ? ApiListEnvelope.fromJson(data, legacyKeys: ['chat']).data : (data is List ? data : null);
+
+    return <Chat>[
+      ...?rows?.whereType<Map>().map((chat) => Chat.fromJson(Map<String, dynamic>.from(chat))),
+    ];
+  }
 
   MessageModel? messageModel;
 
@@ -208,7 +201,8 @@ class ChatController extends ChangeNotifier {
 
     http.StreamedResponse response = await chatServiceInterface!.sendMessage(messageBody, userType != null ? userType == 0 ? 'delivery-man' : 'seller' : _userTypeIndex == 0? 'delivery-man' : 'seller', getXFileFromMediaFileModel(pickedMediaStored ?? []) ?? [], pickedFiles ?? []);
 
-    if (response.statusCode == 200) {
+    // v6 answers a sent message with 201.
+    if (response.statusCode == 200 || response.statusCode == 201) {
       getMessageList(Get.context!, messageBody.id, 1, reload: false, userType: userType);
       getChatList(1, userType: userType);
       _pickedImageFiles = [];
@@ -274,16 +268,13 @@ class ChatController extends ChangeNotifier {
         pickedMediaStored?.add(MediaFileModel(file: pickedImage, thumbnailPath: pickedImage.path, isVideo: false));
       }
     } else {
-      FilePickerResult? filePickerResult =  await FilePicker.pickFiles(
+      _pickedImageFiles = await FilePicker.pickFiles(
         type: FileType.custom,
-        allowMultiple: true,
         allowedExtensions: [
           ...AppConstants.imageExtensions,
           ...AppConstants.videoExtensions,
         ],
       );
-
-      _pickedImageFiles = filePickerResult?.files ?? [];
       List<PlatformFile> validatedFiles = [];
       bool hasInvalidFile = false;
 
@@ -292,7 +283,7 @@ class ChatController extends ChangeNotifier {
         [
           ...AppConstants.imageExtensions,
           ...AppConstants.videoExtensions,
-        ].contains(file.extension?.toLowerCase())) {
+        ].contains(file.fileExtension?.toLowerCase())) {
           validatedFiles.add(file);
         } else {
           hasInvalidFile = true;
@@ -323,7 +314,7 @@ class ChatController extends ChangeNotifier {
               file: file.xFile,
               thumbnailPath: file.path,
               isVideo: false,
-              isSvg: file.extension == 'svg',
+              isSvg: file.fileExtension == 'svg',
             ));
           }
         }
@@ -468,30 +459,29 @@ class ChatController extends ChangeNotifier {
     if(isRemove){
       if(pickedFiles!=null){
         pickedFiles!.removeAt(index!);
+        if (index < pickedFileSizeLabels.length) {
+          pickedFileSizeLabels.removeAt(index);
+        }
       }
     } else{
-      List<PlatformFile>? platformFile = (await FilePicker.pickFiles(
+      List<PlatformFile> platformFile = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: allowedFileExtensions,
-        allowMultiple: true,
-        withReadStream: true,
-      ))?.files ;
+      );
 
       List<PlatformFile> validatedFiles = [];
       bool hasInvalidFile = false;
 
-      if(platformFile != null) {
-        for (var file in platformFile) {
-          double fileSize =  ImageValidationHelper.getFileSizeFromPlatformFileToDouble(file);
+      for (var file in platformFile) {
+        double fileSize = await ImageValidationHelper.getFileSizeFromPlatformFileToDouble(file);
 
-          if(!hasInvalidFile && fileSize > (Provider.of<SplashController>(Get.context!, listen: false).configModel?.systemGeneralFileUploadMaxSize ?? AppConstants.maxSizeOfASingleFile)) {
-            showCustomSnackBarWidget('${getTranslated('maximum_file_size', Get.context!)} ${(Provider.of<SplashController>(Get.context!, listen: false).configModel?.systemGeneralFileUploadMaxSize ?? AppConstants.maxSizeOfASingleFile)}MB', Get.context!, snackBarType: SnackBarType.warning);
-          } else if (
-          allowedFileExtensions.contains(file.extension?.toLowerCase())) {
-            validatedFiles.add(file);
-          } else {
-            hasInvalidFile = true;
-          }
+        if(!hasInvalidFile && fileSize > (Provider.of<SplashController>(Get.context!, listen: false).configModel?.systemGeneralFileUploadMaxSize ?? AppConstants.maxSizeOfASingleFile)) {
+          showCustomSnackBarWidget('${getTranslated('maximum_file_size', Get.context!)} ${(Provider.of<SplashController>(Get.context!, listen: false).configModel?.systemGeneralFileUploadMaxSize ?? AppConstants.maxSizeOfASingleFile)}MB', Get.context!, snackBarType: SnackBarType.warning);
+        } else if (
+        allowedFileExtensions.contains(file.fileExtension?.toLowerCase())) {
+          validatedFiles.add(file);
+        } else {
+          hasInvalidFile = true;
         }
       }
 
@@ -501,17 +491,21 @@ class ChatController extends ChangeNotifier {
 
       pickedFiles = [];
       pickedFiles = validatedFiles;
+      pickedFileSizeLabels = [
+        for (final file in validatedFiles)
+          await ImageValidationHelper.getFileSizeFromPlatformFileToString(file),
+      ];
     }
 
-    _pickedFIleCrossMaxLimit = _isCrossedMaxFileLimit(pickedFiles);
+    _pickedFIleCrossMaxLimit = await _isCrossedMaxFileLimit(pickedFiles);
     _pickedFIleCrossMaxLength = _isCrossedMaxFileLen(pickedFiles);
     notifyListeners();
   }
 
-  bool _isCrossedMaxFileLimit(List<PlatformFile>? platformFile) =>
+  Future<bool> _isCrossedMaxFileLimit(List<PlatformFile>? platformFile) async =>
       pickedFiles?.length == AppConstants.maxLimitOfTotalFileSent
           && platformFile != null
-          && ImageValidationHelper.getMultipleFileSizeFromPlatformFiles(platformFile) > AppConstants.maxLimitOfFileSentINConversation;
+          && await ImageValidationHelper.getMultipleFileSizeFromPlatformFiles(platformFile) > AppConstants.maxLimitOfFileSentINConversation;
 
   bool _isCrossedMaxFileLen(List<PlatformFile>? platformFile) => platformFile!.length > AppConstants.maxLimitOfTotalFileSent ;
 

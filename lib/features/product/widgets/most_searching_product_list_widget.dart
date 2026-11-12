@@ -5,7 +5,7 @@ import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dar
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_app_bar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/no_internet_screen_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_sliver_list_view_widget.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:provider/provider.dart';
 
@@ -17,6 +17,13 @@ class MostSearchingProductListWidget extends StatefulWidget {
 
 class _MostSearchingProductListWidgetState extends State<MostSearchingProductListWidget> {
   ScrollController scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,34 +33,33 @@ class _MostSearchingProductListWidgetState extends State<MostSearchingProductLis
         builder: (context, productController,_) {
           return (productController.mostSearchingProduct != null && productController.mostSearchingProduct!.products != null) ?
           productController.mostSearchingProduct!.products!.isNotEmpty ?
-          SingleChildScrollView(
+          CustomScrollView(
             controller: scrollController,
-            child: PaginatedListView(
-              scrollController: scrollController,
-              totalSize: productController.mostSearchingProduct!.totalSize,
-              offset: (productController.mostSearchingProduct != null && productController.mostSearchingProduct!.offset != null) ?
-              int.parse(productController.mostSearchingProduct!.offset.toString()) : null,
-              onPaginate: (int? offset) async {
-                await productController.getMostSearchingProduct(offset!);
-              },
+            slivers: [
+              PaginatedSliverListView(
+                scrollController: scrollController,
+                totalSize: productController.mostSearchingProduct!.totalSize,
+                offset: (productController.mostSearchingProduct != null && productController.mostSearchingProduct!.offset != null) ?
+                int.parse(productController.mostSearchingProduct!.offset.toString()) : null,
+                onPaginate: (int? offset) async {
+                  await productController.getMostSearchingProduct(offset!);
+                },
 
-              itemView: Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.homePagePadding, vertical: Dimensions.paddingSizeSmall),
-                child: RepaintBoundary(
-                  child: MasonryGridView.count(
-                    itemCount: productController.mostSearchingProduct!.products!.length,
-                    padding: const EdgeInsets.all(0),
-                    physics: const NeverScrollableScrollPhysics(),
-                    shrinkWrap: true,
+                itemView: SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: Dimensions.homePagePadding, vertical: Dimensions.paddingSizeSmall),
+                  sliver: SliverMasonryGrid.count(
                     itemBuilder: (BuildContext context, int index) {
                       return Padding(
                         padding: EdgeInsets.all(Dimensions.paddingSizeEight),
                         child: ProductCardWidget(product: productController.mostSearchingProduct!.products![index]),
                       );
-                    }, crossAxisCount: 2,
+                    },
+                    childCount: productController.mostSearchingProduct!.products!.length,
+                    crossAxisCount: 2,
                   ),
                 ),
               ),
-            ),
+            ],
           ): const Center(child: NoInternetOrDataScreenWidget(isNoInternet: false)) :
            const Center(child: CircularProgressIndicator());
         }

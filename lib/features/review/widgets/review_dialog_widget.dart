@@ -39,6 +39,13 @@ class _ReviewDialogState extends State<ReviewDialog> {
     super.initState();
   }
   final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   Future<void> loadData() async{
     await Provider.of<ReviewController>(Get.context!, listen: false).getOrderWiseReview(widget.productID, widget.orderId);
     if(Provider.of<ReviewController>(Get.context!, listen: false).orderWiseReview != null){
@@ -253,7 +260,6 @@ class _ReviewDialogState extends State<ReviewDialog> {
 
 
 
-///Order Details Widget
 
 class OrderDetails extends StatefulWidget {
   final OrderDetailsModel orderDetailsModel;
@@ -273,7 +279,8 @@ class _OrderDetailsState extends State<OrderDetails> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
             color: Theme.of(context).cardColor,
-            boxShadow: Provider.of<ThemeController>(context, listen: false).darkTheme ? null : [BoxShadow(color: Colors.grey.withValues(alpha:.2), spreadRadius: 1, blurRadius: 7, offset: const Offset(0, 1))],),
+            boxShadow: Provider.of<ThemeController>(context, listen: false).darkTheme ? null : [BoxShadow(color: Colors.grey.withValues(alpha:.2), spreadRadius: 1, blurRadius: 7, offset: const Offset(0, 1))],
+          ),
 
           child: Row(mainAxisAlignment: MainAxisAlignment.start, crossAxisAlignment: CrossAxisAlignment.start, children: [
             Container(decoration: BoxDecoration(

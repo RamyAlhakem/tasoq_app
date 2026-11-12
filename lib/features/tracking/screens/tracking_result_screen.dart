@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/order/controllers/order_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/controllers/order_details_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/domain/models/track_order_details_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/widgets/courier_shipment_info_card.dart';
@@ -31,7 +30,6 @@ class _TrackingResultScreenState extends State<TrackingResultScreen> {
 
   @override
   void initState() {
-    Provider.of<OrderController>(context, listen: false).initTrackingInfo(widget.orderID);
     super.initState();
   }
   @override
@@ -169,7 +167,7 @@ class _TrackingResultScreenState extends State<TrackingResultScreen> {
                         print('----OrderDetails------>>${tracking.orderDetails![0].courierShipment}');
 
 
-                        final String phone = widget.phone ?? Provider.of<OrderController>(context, listen: false).trackingModel?.shippingAddressData?.phone ?? '';
+                        final String phone = widget.phone ?? (tracking.orderDetails != null && tracking.orderDetails!.isNotEmpty ? tracking.orderDetails![0].order?.shippingAddressData?.phone : null) ?? '';
                         RouterHelper.getOrderDetailsScreenRoute(
                           action: RouteAction.push,
                           orderId: int.parse(widget.orderID),

@@ -11,6 +11,7 @@ import 'package:flutter_sixvalley_ecommerce/features/product_details/widgets/ima
 import 'package:flutter_sixvalley_ecommerce/features/product_details/widgets/pdf_preview_flutter.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/widgets/video_preview.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/helper/debounce_helper.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/controllers/localization_controller.dart';
@@ -31,6 +32,7 @@ class ProductImageWidget extends StatelessWidget {
   ProductImageWidget({super.key, required this.productModel, required this.fromFlashDeals});
 
   final PageController _controller = PageController();
+  static final DebounceHelper _shareDebounce = DebounceHelper(milliseconds: 1000);
   @override
   Widget build(BuildContext context) {
     final splashController = Provider.of<SplashController>(context,listen: false);
@@ -172,11 +174,13 @@ class ProductImageWidget extends StatelessWidget {
                             InkWell(
                               onTap: () {
                                 if(productController.sharableLink != null) {
-                                  SharePlus.instance.share(
-                                    ShareParams(
-                                      text: productController.sharableLink!,
-                                    ),
-                                  );
+                                  _shareDebounce.runOnce(() {
+                                    SharePlus.instance.share(
+                                      ShareParams(
+                                        text: productController.sharableLink!,
+                                      ),
+                                    );
+                                  });
                                 }
                               },
                               child: Container(width: 40, height: 40,

@@ -10,7 +10,7 @@ import 'package:flutter_sixvalley_ecommerce/theme/controllers/theme_controller.d
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_sliver_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/product_filter_dialog_widget.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:provider/provider.dart';
@@ -25,6 +25,13 @@ class SearchProductWidget extends StatefulWidget {
 
 class _SearchProductWidgetState extends State<SearchProductWidget> {
   ScrollController scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -89,28 +96,26 @@ class _SearchProductWidgetState extends State<SearchProductWidget> {
 
 
             Expanded(child: searchProductController.searchedProduct!.products!.isNotEmpty ?
-              SingleChildScrollView(
+              CustomScrollView(
                 controller: scrollController,
-                child: PaginatedListView(scrollController: scrollController,
-                    onPaginate: (offset) async{
-                  await searchProductController.searchProduct(query: searchProductController.searchController.text, offset: offset!);
-                    },
-                    totalSize: searchProductController.searchedProduct?.totalSize,
-                    offset: searchProductController.searchedProduct?.offset,
-                    itemView: RepaintBoundary(
-                      child: MasonryGridView.count(
-                        physics: const NeverScrollableScrollPhysics(),
-                        padding: const EdgeInsets.all(0),
+                slivers: [
+                  PaginatedSliverListView(scrollController: scrollController,
+                      onPaginate: (offset) async{
+                    await searchProductController.searchProduct(query: searchProductController.searchController.text, offset: offset!);
+                      },
+                      totalSize: searchProductController.searchedProduct?.totalSize,
+                      offset: searchProductController.searchedProduct?.offset,
+                      itemView: SliverMasonryGrid.count(
                         crossAxisCount: ResponsiveHelper.isTab(context)? 3: 2,
-                        shrinkWrap: true,
-                        itemCount: searchProductController.searchedProduct!.products!.length,
                         itemBuilder: (BuildContext context, int index) {
                           return Padding(
                             padding: EdgeInsets.all(Dimensions.paddingSizeEight),
                             child: ProductCardWidget(product: searchProductController.searchedProduct!.products![index]),
                           );},
+                        childCount: searchProductController.searchedProduct!.products!.length,
                       ),
-                    )),
+                  ),
+                ],
               ) : const NoInternetOrDataScreenWidget(isNoInternet: false)),
 
 

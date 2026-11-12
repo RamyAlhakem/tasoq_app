@@ -75,7 +75,7 @@ class NotificationItemWidget extends StatelessWidget {
                       ),
                     ),
 
-                    if(notificationItem.seen == null)
+                    if(!notificationItem.isSeen)
                       CircleAvatar(backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha:.75), radius: 3),
                   ]),
                   const SizedBox(width: Dimensions.paddingSizeSmall),

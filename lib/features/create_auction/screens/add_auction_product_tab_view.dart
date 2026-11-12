@@ -280,10 +280,10 @@ class _AddAuctionProductTabViewState extends State<AddAuctionProductTabView> wit
       );
     }
 
-    if (response != null && response.response?.statusCode == 200) {
+    if (response != null && (response.response?.statusCode == 200 || response.response?.statusCode == 201)) {
       // Check if the response contains errors even with 200 status
       dynamic responseData = response.response?.data;
-      if (responseData is Map && responseData.containsKey('errors') && responseData['errors'] != null) {
+      if (responseData is Map && responseData['errors'] is List) {
         List errors = responseData['errors'];
         if (errors.isNotEmpty) {
           String errorMessage = '';
@@ -298,7 +298,7 @@ class _AddAuctionProductTabViewState extends State<AddAuctionProductTabView> wit
       }
 
       // No errors, show success
-      RouterHelper.getAuctionQueueListRoute(action: RouteAction.push);
+      RouterHelper.getAuctionQueueListRoute(action: RouteAction.push, fromAuctionCreate: true);
     }
   }
 

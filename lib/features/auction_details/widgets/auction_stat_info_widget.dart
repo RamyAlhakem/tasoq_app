@@ -46,7 +46,6 @@ class _AuctionStatInfoWidgetState extends State<AuctionStatInfoWidget> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _LabelText(getTranslated('starting_price', context) ?? 'Starting Price', context),
-                const SizedBox(width: Dimensions.paddingSizeExtraSmall),
                 JustTheTooltip(
                   backgroundColor: Colors.black87,
                   controller: _startingPriceTooltipController,
@@ -61,12 +60,8 @@ class _AuctionStatInfoWidgetState extends State<AuctionStatInfoWidget> {
                       style: textRegular.copyWith(color: Colors.white, fontSize: Dimensions.fontSizeDefault),
                     ),
                   ),
-                  child: InkWell(
-                    onTap: () => _startingPriceTooltipController.showTooltip(),
-                    child: _InfoIcon(context),
-                  ),
+                  child: _InfoIcon(context, onTap: () => _startingPriceTooltipController.showTooltip()),
                 ),
-                const SizedBox(width: Dimensions.paddingSizeExtraSmall),
                 Flexible(child: _BoldValueText(PriceConverter.convertPrice(context, product.startingPrice ?? 0.0), fontSize: Dimensions.fontSizeSmall, context)),
               ],
             ),
@@ -122,7 +117,6 @@ class _AuctionStatInfoWidgetState extends State<AuctionStatInfoWidget> {
                   _StatRow(
                     children: [
                       _LabelText(getTranslated('starting_price', context) ?? 'Starting Price', context),
-                      const SizedBox(width: Dimensions.paddingSizeExtraSmall),
                       JustTheTooltip(
                         backgroundColor: Colors.black87,
                         controller: _startingPriceTooltipController,
@@ -137,12 +131,8 @@ class _AuctionStatInfoWidgetState extends State<AuctionStatInfoWidget> {
                             style: textRegular.copyWith(color: Colors.white, fontSize: Dimensions.fontSizeDefault),
                           ),
                         ),
-                        child: InkWell(
-                          onTap: () => _startingPriceTooltipController.showTooltip(),
-                          child: _InfoIcon(context),
-                        ),
+                        child: _InfoIcon(context, onTap: () => _startingPriceTooltipController.showTooltip()),
                       ),
-                      const SizedBox(width: Dimensions.paddingSizeExtraSmall),
                       Flexible(child: _BoldValueText( PriceConverter.convertPrice(context, product.startingPrice ?? 0.0), fontSize: Dimensions.fontSizeSmall, context)),
                     ],
                   ),
@@ -152,7 +142,6 @@ class _AuctionStatInfoWidgetState extends State<AuctionStatInfoWidget> {
                     _StatRow(
                       children: [
                         _LabelText(myBidLabel, context),
-                        const SizedBox(width: Dimensions.paddingSizeExtraSmall),
                         JustTheTooltip(
                           backgroundColor: Colors.black87,
                           controller: _myBidTooltipController,
@@ -167,12 +156,8 @@ class _AuctionStatInfoWidgetState extends State<AuctionStatInfoWidget> {
                               style: textRegular.copyWith(color: Colors.white, fontSize: Dimensions.fontSizeDefault),
                             ),
                           ),
-                          child: InkWell(
-                            onTap: () => _myBidTooltipController.showTooltip(),
-                            child: _InfoIcon(context),
-                          ),
+                          child: _InfoIcon(context, onTap: () => _myBidTooltipController.showTooltip()),
                         ),
-                        const SizedBox(width: Dimensions.paddingSizeExtraSmall),
                         Flexible(child: _BoldValueText(PriceConverter.convertPrice(context, myBidAmount ?? 0.0), context)),
                       ],
                     ),
@@ -224,7 +209,6 @@ class _AuctionStatInfoWidgetState extends State<AuctionStatInfoWidget> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           _LabelText(rightCardLabel, context),
-                          const SizedBox(width: Dimensions.paddingSizeExtraSmall),
                           if (!isWon)
                             JustTheTooltip(
                               backgroundColor: Colors.black87,
@@ -240,13 +224,12 @@ class _AuctionStatInfoWidgetState extends State<AuctionStatInfoWidget> {
                                   style: textRegular.copyWith(color: Colors.white, fontSize: Dimensions.fontSizeDefault),
                                 ),
                               ),
-                              child: InkWell(
-                                onTap: () => _highestBidTooltipController.showTooltip(),
-                                child: _InfoIcon(context),
-                              ),
+                              child: _InfoIcon(context, onTap: () => _highestBidTooltipController.showTooltip()),
                             )
-                          else
+                          else ...[
+                            const SizedBox(width: Dimensions.paddingSizeExtraSmall),
                             _InfoIcon(context),
+                          ],
                         ],
                       ),
                     ),
@@ -334,12 +317,26 @@ class _CountText extends StatelessWidget {
 
 class _InfoIcon extends StatelessWidget {
   final BuildContext ctx;
-  const _InfoIcon(this.ctx);
+  final VoidCallback? onTap;
+  const _InfoIcon(this.ctx, {this.onTap});
 
   @override
-  Widget build(BuildContext context) => Icon(
-    Icons.info,
-    size: Dimensions.iconSizeExtraSmall,
-    color: Theme.of(ctx).hintColor,
-  );
+  Widget build(BuildContext context) {
+    final Widget icon = Icon(
+      Icons.info,
+      size: Dimensions.iconSizeExtraSmall,
+      color: Theme.of(ctx).hintColor,
+    );
+
+    if (onTap == null) return icon;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
+        child: icon,
+      ),
+    );
+  }
 }

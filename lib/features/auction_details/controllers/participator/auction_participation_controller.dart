@@ -5,6 +5,7 @@ import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakba
 import 'package:open_file/open_file.dart';
 import 'package:path/path.dart' as path;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_details/controllers/participator/participation_auction_details_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_details/domain/models/participator/auction_bid_model.dart';
@@ -212,29 +213,35 @@ class AuctionParticipationController extends ChangeNotifier {
     try {
       response = await auctionParticipationServiceInterface.payAuctionEntryFee(entryFeeRequest: entryFeeRequest);
 
-      if (response?.response?.statusCode == 200) {
+      final int? statusCode = response?.response?.statusCode;
+      final dynamic data = response?.response?.data;
 
-        final data = response?.response?.data;
-        if (data != null) {
-          _lastEntryFeeResponse = AuctionEntryFeeResponseModel.fromJson(data);
+      if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
+
+        if (data is Map) {
+          _lastEntryFeeResponse = AuctionEntryFeeResponseModel.fromJson(Map<String, dynamic>.from(data));
         }
         _isEntryFeeLoading = false;
         _isEntryFeePaid = true;
 
         notifyListeners();
-        if(data['redirect_link'] == null && data['redirect_link'].toString().isEmpty) {
-          showCustomSnackBarWidget(getTranslated('auction_entry_fee_paid_successfully', Get.context!), Get.context!, snackBarType: SnackBarType.success);
+
+        final dynamic rawRedirect = ApiEnvelope.content(data)['redirect_link'];
+        final String redirectLink = rawRedirect is String ? rawRedirect : '';
+        final bool hasRedirect = redirectLink.isNotEmpty;
+
+        if (!hasRedirect) {
+          showCustomSnackBarWidget(
+            ApiEnvelope.message(data) ?? getTranslated('auction_entry_fee_paid_successfully', Get.context!),
+            Get.context!, snackBarType: SnackBarType.success);
         }
         Provider.of<ParticipationAuctionDetailsController>(Get.context!, listen: false).refreshOverview(Get.context!, auctionStatus: auctionStatus);
 
-        final bool hasRedirect = data['redirect_link'] != null && data['redirect_link'].toString().isNotEmpty;
         if (!hasRedirect) {
           unawaited(NotificationHelper.subscribeToAuctionTopics(auctionProductId));
         }
 
         if (hasRedirect) {
-          final String redirectLink = data['redirect_link'];
-
           RouterHelper.getAuctionDigitalPaymentScreenRoute(
             url: redirectLink,
             action: RouteAction.push,
@@ -279,25 +286,28 @@ class AuctionParticipationController extends ChangeNotifier {
     try {
       response = await auctionParticipationServiceInterface.placeAuctionBid(bidRequest: bidRequest);
 
-      if (response?.response?.statusCode == 200) {
+      final int? statusCode = response?.response?.statusCode;
+      final dynamic data = response?.response?.data;
+
+      if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
         _isBidLoading = false;
         notifyListeners();
         if (!context.mounted) return response;
-        showCustomSnackBarWidget(getTranslated('auction_bid_placed_successfully', context), context, snackBarType: SnackBarType.success);
+        showCustomSnackBarWidget(
+          ApiEnvelope.message(data) ?? getTranslated('auction_bid_placed_successfully', context),
+          context, snackBarType: SnackBarType.success);
         Provider.of<ParticipationAuctionDetailsController>(context, listen: false).refreshOverview(context);
-      } else if (response?.response?.statusCode == 403) {
+
+      } else if (statusCode == 422 || statusCode == 403) {
         _isBidLoading = false;
-        final data = response?.response?.data;
-        final hasMinimumBidKey = data is Map && data.containsKey('minimum_bid_required');
-        if (!hasMinimumBidKey) {
-          notifyListeners();
-          if (!context.mounted) return response;
+        final dynamic rawMinimum = ApiEnvelope.content(data)['minimum_bid_required'];
+        _minimumBidRequired = rawMinimum != null ? double.tryParse('$rawMinimum') : null;
+        notifyListeners();
+
+        if (!context.mounted) return response;
+        if (_minimumBidRequired == null) {
           ApiChecker.checkApi(response!, useOverlay: true, overlayContext: context);
         } else {
-          _minimumBidRequired = data['minimum_bid_required'] != null ? double.tryParse(data['minimum_bid_required'].toString()) : null;
-          notifyListeners();
-
-          if (!context.mounted) return response;
           final convertedAmount = PriceConverter.convertPrice(context, _minimumBidRequired);
           final msg = '${getTranslated('bid_amount_must_be_at_least', context)} $convertedAmount';
           showOverlaySnackBar(context, msg, snackBarType: SnackBarType.error);
@@ -333,10 +343,13 @@ class AuctionParticipationController extends ChangeNotifier {
         auctionProductId: auctionProductId,
       );
 
-      if (response?.response?.statusCode == 200) {
+      final int? statusCode = response?.response?.statusCode;
+      if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
         _isWithdrawBidLoading = false;
         notifyListeners();
-        showCustomSnackBarWidget(getTranslated('bid_withdrawn_successfully', Get.context!), Get.context!, snackBarType: SnackBarType.success);
+        showCustomSnackBarWidget(
+          ApiEnvelope.message(response?.response?.data) ?? getTranslated('bid_withdrawn_successfully', Get.context!),
+          Get.context!, snackBarType: SnackBarType.success);
         Provider.of<ParticipationAuctionDetailsController>(Get.context!, listen: false).refreshOverview(Get.context!);
       } else {
         _isWithdrawBidLoading = false;
@@ -370,29 +383,27 @@ class AuctionParticipationController extends ChangeNotifier {
         currencyCode: Provider.of<SplashController>(Get.context!, listen: false).myCurrency?.code ?? '',
       );
 
-      if (response?.response?.statusCode == 200) {
+      final int? statusCode = response?.response?.statusCode;
+      final dynamic data = response?.response?.data;
+
+      if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
         _isRollbackBidLoading = false;
         notifyListeners();
         if (!context.mounted) return response;
-        showCustomSnackBarWidget(getTranslated('bid_rolled_back_successfully', context), context, snackBarType: SnackBarType.success);
+        showCustomSnackBarWidget(
+          ApiEnvelope.message(data) ?? getTranslated('bid_rolled_back_successfully', context),
+          context, snackBarType: SnackBarType.success);
         Provider.of<ParticipationAuctionDetailsController>(context, listen: false).refreshOverview(context);
         if (context.mounted) Navigator.pop(context);
-      } else if (response?.response?.statusCode == 422) {
+      } else if (statusCode == 422 || statusCode == 403) {
         _isRollbackBidLoading = false;
         notifyListeners();
-        final data = response?.response?.data;
-        final msg = (data is Map ? data['message']?.toString() : null) ?? '';
-        if (msg.isNotEmpty && context.mounted) {
-          showOverlaySnackBar(context, msg, snackBarType: SnackBarType.error);
-        }
-      } else if (response?.response?.statusCode == 403) {
-        _isRollbackBidLoading = false;
-        notifyListeners();
-        final data = response?.response?.data;
-        final msg = (data is Map ? data['message']?.toString() : null) ?? '';
-        if (context.mounted) {
-          showOverlaySnackBar(context, msg.isNotEmpty ? msg : getTranslated('rollback_bid_failed', context), snackBarType: SnackBarType.error);
-        }
+        if (!context.mounted) return response;
+        final String? msg = ApiEnvelope.errorMessage(data);
+        showOverlaySnackBar(
+          context,
+          (msg != null && msg.isNotEmpty) ? msg : getTranslated('rollback_bid_failed', context),
+          snackBarType: SnackBarType.error);
       } else {
         _isRollbackBidLoading = false;
         notifyListeners();
@@ -436,15 +447,16 @@ class AuctionParticipationController extends ChangeNotifier {
         saveProductRequest: saveProductRequest,
       );
 
-      if (response?.response?.statusCode == 200) {
+      final int? statusCode = response?.response?.statusCode;
+      if (statusCode == 200 || statusCode == 201) {
         final data = response?.response?.data;
-        if (data != null) {
-          _lastSaveResponse = AuctionSaveResponseModel.fromJson(data);
-          _isSaved = _lastSaveResponse!.isSaved;
+        if (data is Map) {
+          _lastSaveResponse = AuctionSaveResponseModel.fromJson(Map<String, dynamic>.from(data));
+          _isSaved = _lastSaveResponse!.content?.isSaved;
         }
 
         Provider.of<ParticipationAuctionDetailsController>(Get.context!, listen: false)
-            .refreshOverview(Get.context!);
+            .setAuctionSaved(_isSaved ?? false);
 
         _isSaveLoading = false;
         notifyListeners();
@@ -468,10 +480,13 @@ class AuctionParticipationController extends ChangeNotifier {
     _isInvoiceLoading = true;
     notifyListeners();
     ApiResponseModel apiResponse = await auctionParticipationServiceInterface.getAuctionInvoice(auctionId);
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    final dynamic body = apiResponse.response?.data;
+    final dynamic invoiceBytes = body is List ? body : ApiEnvelope.content(body)['data'];
+
+    if (apiResponse.response?.statusCode == 200 && invoiceBytes is List) {
       await requestPermissions();
       final downloadsDirectory = Directory('/storage/emulated/0/Download');
-      List<int> intList = List<int>.from(apiResponse.response!.data);
+      List<int> intList = List<int>.from(invoiceBytes);
       String fileName = 'auction_$auctionId.pdf';
       var filePath = path.join(downloadsDirectory.path, fileName);
       int fileCounter = 1;
@@ -508,14 +523,15 @@ class AuctionParticipationController extends ChangeNotifier {
     ApiResponseModel? response;
     try{
       response = await auctionParticipationServiceInterface.getAuctionSocialShareLink(productId: productId);
-      if(response?.response?.statusCode == 200) {
+      final int? statusCode = response?.response?.statusCode;
+      if(statusCode != null && (statusCode == 200 || statusCode == 201)) {
         final data = response?.response?.data;
         if (data != null) {
           _socialShareLink = AuctionSocialShareModel.fromJson(data);
           _isSocialShareLoading = false;
           notifyListeners();
         }
-      } else if (response?.response?.statusCode == 404) {
+      } else if (statusCode == 404) {
         _isSocialShareLoading = false;
         notifyListeners();
         showCustomSnackBarWidget(getTranslated('auction_product_not_found', Get.context!), Get.context!, snackBarType: SnackBarType.error);

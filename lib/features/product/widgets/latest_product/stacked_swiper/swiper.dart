@@ -18,10 +18,8 @@ typedef SwiperDataBuilder<T> = Widget Function(
   int index,
 );
 
-/// default auto play delay
 const int kDefaultAutoplayDelayMs = 3000;
 
-///  Default auto play transition duration (in millisecond)
 const int kDefaultAutoplayTransactionDuration = 300;
 
 const int kMaxValue = 2000000000;
@@ -39,7 +37,6 @@ class Swiper extends StatefulWidget {
     this.itemBuilder,
     this.indicatorLayout = PageIndicatorLayout.NONE,
 
-    ///
     this.transformer,
     required this.itemCount,
     this.autoplay = false,
@@ -62,7 +59,6 @@ class Swiper extends StatefulWidget {
     this.controller,
     this.customLayoutOption,
 
-    /// since v1.0.0
     this.containerHeight,
     this.containerWidth,
     this.viewportFraction = 1.0,
@@ -153,13 +149,10 @@ class Swiper extends StatefulWidget {
   //       itemCount: children.length,
   //     );
 
-  /// If set true , the pagination will display 'outer' of the 'content' container.
   final bool outer;
 
-  /// Inner item height, this property is valid if layout=STACK or layout=TINDER or LAYOUT=CUSTOM,
   final double? itemHeight;
 
-  /// Inner item width, this property is valid if layout=STACK or layout=TINDER or LAYOUT=CUSTOM,
   final double? itemWidth;
 
   // height of the inside container,this property is valid when outer=true,otherwise the inside container size is controlled by parent widget
@@ -168,71 +161,48 @@ class Swiper extends StatefulWidget {
   // width of the inside container,this property is valid when outer=true,otherwise the inside container size is controlled by parent widget
   final double? containerWidth;
 
-  /// Build item on index
   final IndexedWidgetBuilder? itemBuilder;
 
-  /// Support transform like Android PageView did
-  /// `itemBuilder` and `transformItemBuilder` must have one not null
   final PageTransformer? transformer;
 
-  /// count of the display items
   final int itemCount;
 
   final ValueChanged<int>? onIndexChanged;
 
-  ///auto play config
   final bool autoplay;
 
-  ///Duration of the animation between transactions (in millisecond).
   final int autoplayDelay;
 
-  ///disable auto play when interaction
   final bool autoplayDisableOnInteraction;
 
-  ///auto play transition duration (in millisecond)
   final int duration;
 
-  ///horizontal/vertical
   final Axis scrollDirection;
 
-  ///left/right for Stack Layout
   final AxisDirection axisDirection;
 
-  ///transition curve
   final Curve curve;
 
-  /// Set to false to disable continuous loop mode.
   final bool loop;
 
-  ///Index number of initial slide.
-  ///If not set , the `Swiper` is 'uncontrolled', which means manage index by itself
-  ///If set , the `Swiper` is 'controlled', which means the index is fully managed by parent widget.
   final int? index;
 
-  ///Called when tap
   final SwiperOnTap? onTap;
 
-  ///The swiper pagination plugin
   final SwiperPlugin? pagination;
 
-  ///the swiper control button plugin
   final SwiperPlugin? control;
 
-  ///other plugins, you can custom your own plugin
   final List<SwiperPlugin>? plugins;
 
-  ///
   final SwiperController? controller;
 
   final ScrollPhysics? physics;
 
-  ///
   final double viewportFraction;
 
-  /// Build in layouts
   final SwiperLayout layout;
 
-  /// this value is valid when layout == SwiperLayout.CUSTOM
   final CustomLayoutOption? customLayoutOption;
 
   // This value is valid when viewportFraction is set and < 1.0

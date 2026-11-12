@@ -96,12 +96,28 @@ class SplashScreenState extends State<SplashScreen> {
               final effectiveBody = widget.body ?? initialBody;
               if(effectiveBody != null){
                 if (effectiveBody.type == 'order') {
-                  RouterHelper.getOrderDetailsScreenRoute(
-                    action: RouteAction.pushReplacement,
-                    orderId: effectiveBody.orderId!,
-                  );
+                  if (effectiveBody.businessModule == 'wholesale') {
+                    if (wholesaleRefundMessageKeys.contains(effectiveBody.messageKey)) {
+                      RouterHelper.getWholesaleRefundDetailsScreenRoute(
+                        action: RouteAction.pushReplacement,
+                        orderId: effectiveBody.orderId!,
+                        orderDetailsId: effectiveBody.orderDetailsId!,
+                      );
+                    } else {
+                      RouterHelper.getWholesaleOrderDetailsScreenRoute(
+                        action: RouteAction.pushReplacement,
+                        orderId: effectiveBody.orderId!,
+                        isNotification: true,
+                      );
+                    }
+                  } else {
+                    RouterHelper.getOrderDetailsScreenRoute(
+                      action: RouteAction.pushReplacement,
+                      orderId: effectiveBody.orderId!,
+                    );
+                  }
                 } else if(effectiveBody.type == 'notification') {
-                  RouterHelper.getNotificationRoute(action: RouteAction.pushReplacement);
+                  RouterHelper.getNotificationRoute(action: RouteAction.pushReplacement, businessModule: effectiveBody.businessModule);
                 } else if(effectiveBody.type == 'wallet') {
                   RouterHelper.getWalletRoute(action: RouteAction.pushReplacement, isBackButtonExist: true);
                 } else if(effectiveBody.type == 'chatting') {
@@ -208,12 +224,28 @@ class SplashScreenState extends State<SplashScreen> {
             final effectiveBody = widget.body ?? initialBody;
             if(effectiveBody != null) {
               if (effectiveBody.type == 'order') {
-                RouterHelper.getOrderDetailsScreenRoute(
-                  action: RouteAction.pushReplacement,
-                  orderId: effectiveBody.orderId!,
-                );
+                if (effectiveBody.businessModule == 'wholesale') {
+                  if (wholesaleRefundMessageKeys.contains(effectiveBody.messageKey)) {
+                    RouterHelper.getWholesaleRefundDetailsScreenRoute(
+                      action: RouteAction.pushReplacement,
+                      orderId: effectiveBody.orderId!,
+                      orderDetailsId: effectiveBody.orderDetailsId!,
+                    );
+                  } else {
+                    RouterHelper.getWholesaleOrderDetailsScreenRoute(
+                      action: RouteAction.pushReplacement,
+                      orderId: effectiveBody.orderId!,
+                      isNotification: true,
+                    );
+                  }
+                } else {
+                  RouterHelper.getOrderDetailsScreenRoute(
+                    action: RouteAction.pushReplacement,
+                    orderId: effectiveBody.orderId!,
+                  );
+                }
               } else if(effectiveBody.type == 'notification') {
-                RouterHelper.getNotificationRoute(action: RouteAction.pushReplacement);
+                RouterHelper.getNotificationRoute(action: RouteAction.pushReplacement, businessModule: effectiveBody.businessModule);
               } else if(effectiveBody.type == 'wallet') {
                 RouterHelper.getWalletRoute(action: RouteAction.pushReplacement, isBackButtonExist: true);
               } else if(effectiveBody.type == 'chatting') {

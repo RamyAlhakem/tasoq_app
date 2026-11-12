@@ -1,7 +1,5 @@
 import 'dart:convert';
-
 import 'package:dio/dio.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/dio/dio_client.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/exception/api_error_handler.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
@@ -19,13 +17,11 @@ class LoyaltyPointRepository implements LoyaltyPointRepositoryInterface{
     final Map<String, dynamic> queryParams = {
       'offset': offset,
       'limit': 10,
-      if (filterBy != null && filterBy.isNotEmpty) 'filter_by': filterBy,
+      if (filterBy != null && filterBy.isNotEmpty) 'entry_type': filterBy,
       if (startDate != null) 'start_date': DateConverter.durationDateTime(startDate),
       if (endDate != null) 'end_date': DateConverter.durationDateTime(endDate),
       if (transactionTypes != null && transactionTypes.isNotEmpty) 'transaction_types': jsonEncode(transactionTypes),
     };
-
-    debugPrint('--------(loyalty_query)----$queryParams');
 
     try {
       Response response = await dioClient!.get(AppConstants.loyaltyPointUri, queryParameters: queryParams);

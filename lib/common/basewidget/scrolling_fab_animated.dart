@@ -5,48 +5,33 @@ import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'dart:math' as math;
 
-/// Widget to animate the button when scroll down
 class ScrollingFabAnimated extends StatefulWidget {
-  /// Function to use when press the button
   final GestureTapCallback onPress;
 
-  /// Double value to set the button elevation
   final double elevation;
 
-  /// Double value to set the button width
   final double width;
 
-  /// Double value to set the button height
   final double height;
 
-  /// Value to set the duration for animation
   final Duration duration;
 
-  /// Widget to use as button icon
   final Widget icon;
 
-  /// Widget to use as button text when button is expanded
   final Widget text;
 
-  /// Value to set the curve for animation
   final Curve? curve;
 
-  /// ScrollController to use to determine when user is on top or not
   final ScrollController scrollController;
 
-  /// Double value to set the boundary value when scroll animation is triggered
   final double limitIndicator;
 
-  /// Color to set the button background color
   final Color? color;
 
-  /// Value to indicate if animate or not the icon
   final bool animateIcon;
 
-  /// Value to inverte the behavior of the animation
   final bool inverted;
 
-  /// Double value to set the button radius
   final double? radius;
 
   const ScrollingFabAnimated(
@@ -71,7 +56,6 @@ class ScrollingFabAnimated extends StatefulWidget {
 }
 
 class ScrollingFabAnimatedState extends State<ScrollingFabAnimated> {
-  /// Double value for tween ending
   double _endTween = 100;
 
   @override
@@ -96,7 +80,6 @@ class ScrollingFabAnimatedState extends State<ScrollingFabAnimated> {
     super.dispose();
   }
 
-  /// Function to add listener for scroll
   void _handleScroll() {
     ScrollController scrollController = widget.scrollController;
     scrollController.addListener(() {

@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/data/local/cache_response.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/domain/models/business_pages_model.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
@@ -13,9 +14,100 @@ import 'package:flutter_sixvalley_ecommerce/helper/api_checker.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
 
+enum AppMode { main, wholesale, auction }
+
 class SplashController extends ChangeNotifier {
   final SplashServiceInterface? splashServiceInterface;
   SplashController({required this.splashServiceInterface});
+
+  AppMode _currentMode = AppMode.main;
+  AppMode get currentMode => _currentMode;
+
+  int _selectedIndex = 0;
+  int get selectedIndex => _selectedIndex;
+
+  bool get isAuctionEnabled => _configModel?.isAuctionActive ?? false;
+  bool get canCustomerCreateAuction => (_configModel?.isAuctionActive == true) && (_configModel?.auctionConfig?.activeForCustomer == true);
+
+  bool get isWholesaleEnabled => _configModel?.isWholesaleActive ?? false;
+
+  bool get isWholesaleOrdersOnlyMode => !isWholesaleEnabled && (_configModel?.isWholesaleModuleInstalled ?? false);
+
+  static const Duration _auctionBannerCooldown = Duration(minutes: 2);
+  Timer? _auctionBannerCooldownTimer;
+  bool _auctionBannerOnCooldown = false;
+
+  static const Duration _wholesaleBannerCooldown = Duration(minutes: 2);
+  Timer? _wholesaleBannerCooldownTimer;
+  bool _wholesaleBannerOnCooldown = false;
+
+  Timer? _maintenanceCheckTimer;
+
+  void initDashboardTab(int? pageIndex, {required int mainTabCount, isUpdate = true}) {
+    if (pageIndex == 5) {
+      _currentMode = AppMode.auction;
+      _selectedIndex = 0;
+    } else if (pageIndex == 6) {
+      _currentMode = AppMode.auction;
+      _selectedIndex = 2;
+    } else if (pageIndex != null && pageIndex < mainTabCount) {
+      _selectedIndex = pageIndex;
+    }
+    if(isUpdate) {
+      notifyListeners();
+    }
+
+  }
+
+  void selectMainTab(int index) {
+    _currentMode = AppMode.main;
+    _selectedIndex = index;
+    notifyListeners();
+  }
+
+  void enterAuctionTab() {
+    _currentMode = AppMode.auction;
+    _selectedIndex = 0;
+    notifyListeners();
+  }
+
+  void selectAuctionTab(int index) {
+    _currentMode = AppMode.auction;
+    _selectedIndex = index;
+    notifyListeners();
+  }
+
+  void enterWholesaleTab() {
+    _currentMode = AppMode.wholesale;
+    _selectedIndex = 0;
+    notifyListeners();
+  }
+
+  void selectWholesaleTab(int index) {
+    _currentMode = AppMode.wholesale;
+    _selectedIndex = index;
+    notifyListeners();
+  }
+
+  bool consumeAuctionBannerEligibility() {
+    if (!AppConstants.demo || _auctionBannerOnCooldown) return false;
+    _auctionBannerOnCooldown = true;
+    _auctionBannerCooldownTimer?.cancel();
+    _auctionBannerCooldownTimer = Timer(_auctionBannerCooldown, () {
+      _auctionBannerOnCooldown = false;
+    });
+    return true;
+  }
+
+  bool consumeWholesaleBannerEligibility() {
+    if (!AppConstants.demo || _wholesaleBannerOnCooldown) return false;
+    _wholesaleBannerOnCooldown = true;
+    _wholesaleBannerCooldownTimer?.cancel();
+    _wholesaleBannerCooldownTimer = Timer(_wholesaleBannerCooldown, () {
+      _wholesaleBannerOnCooldown = false;
+    });
+    return true;
+  }
 
   ConfigModel? _configModel;
   BaseUrls? _baseUrls;
@@ -47,6 +139,24 @@ class SplashController extends ChangeNotifier {
   List<BusinessPageModel>? _businessPages;
   List<BusinessPageModel>? get businessPages => _businessPages;
 
+  List<Faq>? _faqList;
+
+  Future<void> getFaqList() async {
+    final ApiResponseModel apiResponse = await splashServiceInterface!.getFaqList();
+    if (apiResponse.response?.statusCode != 200) return;
+
+    final dynamic data = apiResponse.response!.data;
+    final List? rows = data is Map<String, dynamic> ? ApiListEnvelope.fromJson(data).data : null;
+    if (rows == null) return;
+
+    _faqList = <Faq>[
+      for (final dynamic row in rows)
+        if (row is Map) Faq.fromJson(Map<String, dynamic>.from(row)),
+    ];
+    _configModel?.faq = _faqList;
+    notifyListeners();
+  }
+
   Future<bool> initConfig(
     BuildContext context,
       Function(ConfigModel? configModel)? onLocalDataReceived,
@@ -62,6 +172,7 @@ class SplashController extends ChangeNotifier {
 
    if(configLocalData != null) {
      _configModel = ConfigModel.fromJson(jsonDecode(configLocalData.response));
+     _configModel?.faq ??= _faqList;
 
      localMaintainanceMode = (_configModel?.maintenanceModeData?.maintenanceStatus == 1 && _configModel?.maintenanceModeData?.selectedMaintenanceSystem?.customerApp == 1);
 
@@ -169,6 +280,13 @@ class SplashController extends ChangeNotifier {
       }
       _configModel = ConfigModel.fromJson(apiResponse.response!.data);
 
+      // v6 no longer embeds the FAQ in config. Every refresh above rebuilds the
+      // model, so the list is carried over and fetched only the first time.
+      _configModel?.faq ??= _faqList;
+      if (_faqList == null) {
+        getFaqList();
+      }
+
       isSuccess = true;
     } else {
       isSuccess = false;
@@ -202,12 +320,12 @@ class SplashController extends ChangeNotifier {
     ApiResponseModel apiResponse = await splashServiceInterface!.getBusinessPages(type);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
 
+      final List<BusinessPageModel> pages = _parseBusinessPages(apiResponse.response?.data);
+
       if(type == 'default') {
-        _defaultBusinessPages = [];
-        apiResponse.response?.data.forEach((data) { _defaultBusinessPages?.add(BusinessPageModel.fromJson(data));});
+        _defaultBusinessPages = pages;
       } else {
-        _businessPages = [];
-        apiResponse.response?.data.forEach((data) { _businessPages?.add(BusinessPageModel.fromJson(data));});
+        _businessPages = pages;
       }
 
     } else {
@@ -216,8 +334,14 @@ class SplashController extends ChangeNotifier {
 
     notifyListeners();
   }
+  List<BusinessPageModel> _parseBusinessPages(dynamic data) {
+    final List? rawPages = data is Map<String, dynamic>
+        ? ApiListEnvelope.fromJson(data).data : (data is List ? data : null);
 
-
+    return <BusinessPageModel>[
+      ...?rawPages?.whereType<Map>().map((page) => BusinessPageModel.fromJson(Map<String, dynamic>.from(page))),
+    ];
+  }
 
   void setCurrency(int index) {
     splashServiceInterface!.setCurrency(_configModel!.currencyList![index].code!);
@@ -248,7 +372,8 @@ class SplashController extends ChangeNotifier {
 
 
   void _startTimer (DateTime startTime) {
-    Timer.periodic(const Duration(seconds: 30), (Timer timer) {
+    _maintenanceCheckTimer?.cancel();
+    _maintenanceCheckTimer = Timer.periodic(const Duration(seconds: 30), (Timer timer) {
 
       DateTime now = DateTime.now();
 
@@ -275,5 +400,12 @@ class SplashController extends ChangeNotifier {
     return ModalRoute.of(_buildContext!)?.settings.name == 'MaintenanceScreen';
   }
 
+  @override
+  void dispose() {
+    _auctionBannerCooldownTimer?.cancel();
+    _wholesaleBannerCooldownTimer?.cancel();
+    _maintenanceCheckTimer?.cancel();
+    super.dispose();
+  }
 
 }

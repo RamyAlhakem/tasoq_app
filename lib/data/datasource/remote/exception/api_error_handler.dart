@@ -1,12 +1,16 @@
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_sixvalley_ecommerce/data/model/error_response.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/helper/feature_disabled_handler.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'package:provider/provider.dart';
 
 class ApiErrorHandler {
+
+  static Response? getResponse(dynamic error) => error is DioException ? error.response : null;
+
   static dynamic getMessage(dynamic error) {
     dynamic errorDescription = "";
     if (error is Exception) {
@@ -29,11 +33,10 @@ class ApiErrorHandler {
               switch (error.response!.statusCode) {
 
                 case 403:
-                  if(error.response!.data['errors'] != null){
-                    ErrorResponse errorResponse = ErrorResponse.fromJson(error.response?.data);
-                    errorDescription = errorResponse.errors?[0].message;
-                  }else{
-                    errorDescription = error.response!.data['message'];
+                  errorDescription = ApiEnvelope.errorMessage(error.response?.data) ?? '';
+
+                  if (FeatureDisabledHandler.isFeatureDisabled(error.response?.data)) {
+                    FeatureDisabledHandler.handle(errorDescription);
                   }
 
                   if (kDebugMode) {
@@ -44,50 +47,30 @@ class ApiErrorHandler {
                   break;
                 case 401:
                   Provider.of<AuthController>(Get.context!,listen: false).clearSharedData();
-                  if(error.response!.data['errors'] != null) {
-                    ErrorResponse errorResponse = ErrorResponse.fromJson(error.response?.data);
-                    errorDescription = errorResponse.errors?[0].message;
-                  } else{
-                    errorDescription = error.response!.data['message'];
-                  }
+                  errorDescription = ApiEnvelope.errorMessage(error.response?.data) ?? '';
                   break;
                 case 404:
+                  errorDescription = ApiEnvelope.errorMessage(error.response?.data) ?? '';
                   break;
                 case 400:
-                  if(error.response!.data['errors'] != null){
-                    ErrorResponse errorResponse = ErrorResponse.fromJson(error.response?.data);
-                    errorDescription = errorResponse.errors?[0].message;
-                  } else{
-                    errorDescription = error.response?.data['message'] ?? '';
-                  }
-                  break;
                 case 422:
-                  if(error.response!.data['errors'] != null){
-                    ErrorResponse errorResponse = ErrorResponse.fromJson(error.response?.data);
-                    errorDescription = errorResponse.errors?[0].message;
-                  } else{
-                    errorDescription = error.response?.data['message'] ?? '';
-                  }
+                  errorDescription = ApiEnvelope.errorMessage(error.response?.data) ?? '';
+                  break;
+                case 503:
+                  errorDescription = ApiEnvelope.errorMessage(error.response?.data) ?? error.response!.statusMessage ?? '';
                   break;
                 case 500:
                   if (kDebugMode) {
                     print("-----------500------------->>${error.response!.data}");
                   }
                   errorDescription = 'Internal server error';
-                case 503:
-                  if(error.response!.data['message'] != null){
-                    errorDescription = error.response!.data['message'];
-                  }
+                  break;
                 case 429:
                   print("-----------429------------->>${error.response!.data}");
                   errorDescription = error.response!.statusMessage;
                   break;
                 default:
-                  ErrorResponse errorResponse = ErrorResponse.fromJson(error.response!.data);
-                  if (errorResponse.errors != null && errorResponse.errors!.isNotEmpty) {
-                    errorDescription = errorResponse;
-                  } else {errorDescription = "Failed to load data - status code: ${error.response!.statusCode}";
-                  }
+                  errorDescription = ApiEnvelope.errorMessage(error.response?.data) ?? "Failed to load data - status code: ${error.response!.statusCode}";
               }
               break;
             case DioExceptionType.badCertificate:

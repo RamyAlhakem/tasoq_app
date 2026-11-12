@@ -49,6 +49,14 @@ class _ProductDetailsState extends State<ProductDetails> {
 
   Size widgetSize = const Size(100, 400);
 
+  final ScrollController scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadData( BuildContext context) async {
     Provider.of<ProductDetailsController>(context, listen: false).getProductDetails(context, widget.slug.toString(), widget.slug.toString());
     Provider.of<ReviewController>(context, listen: false).removePrevReview();
@@ -71,7 +79,6 @@ class _ProductDetailsState extends State<ProductDetails> {
 
   @override
   Widget build(BuildContext context) {
-    ScrollController scrollController = ScrollController();
     return PopScope(
       canPop: Navigator.canPop(context),
       onPopInvokedWithResult: (didPop, result) async{

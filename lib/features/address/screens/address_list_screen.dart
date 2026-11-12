@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_asset_image_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/controllers/address_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/widgets/address_shimmer.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
@@ -42,6 +43,13 @@ class _AddressListScreenState extends State<AddressListScreen> {
   }
 
   @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(title: getTranslated('addresses', context)),
@@ -58,12 +66,22 @@ class _AddressListScreenState extends State<AddressListScreen> {
           return  locationProvider.addressList != null? locationProvider.addressList!.isNotEmpty ?
           RefreshIndicator(onRefresh: () async => await locationProvider.getAddressList(),
             backgroundColor: Theme.of(context).secondaryHeaderColor,
-            child: ListView.builder(padding: const EdgeInsets.all(0),
-              controller: _scrollController,
-              itemCount: locationProvider.addressList?.length,
-              itemBuilder: (context, index){
-                return AddressItemWidget(locationProvider: locationProvider, index: index);
-              },
+            child: PaginatedListView(
+              scrollController: _scrollController,
+              totalSize: locationProvider.addressTotalSize,
+              offset: locationProvider.currentAddressOffset,
+              limit: AddressController.addressPageLimit,
+              onPaginate: (int? offset) async => await locationProvider.getAddressList(offset: offset ?? 1),
+              itemView: Expanded(
+                child: ListView.builder(padding: const EdgeInsets.all(0),
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  controller: _scrollController,
+                  itemCount: locationProvider.addressList?.length,
+                  itemBuilder: (context, index){
+                    return AddressItemWidget(locationProvider: locationProvider, index: index);
+                  },
+                ),
+              ),
             ),
           ) :
           const NoInternetOrDataScreenWidget(isNoInternet: false,

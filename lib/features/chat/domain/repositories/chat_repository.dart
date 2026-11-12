@@ -23,7 +23,7 @@ class ChatRepository implements ChatRepositoryInterface {
   @override
   Future<ApiResponseModel> getChatList(String type, int offset) async {
     try {
-      final response = await dioClient!.get('${AppConstants.chatInfoUri}$type?limit=10&offset=$offset');
+      final response = await dioClient!.get('${AppConstants.chatInfoUri}?type=$type&limit=10&offset=$offset');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -34,7 +34,7 @@ class ChatRepository implements ChatRepositoryInterface {
   @override
   Future<ApiResponseModel> searchChat(String type, String search) async {
     try {
-      final response = await dioClient!.get('${AppConstants.searchChat}$type?search=$search');
+      final response = await dioClient!.get('${AppConstants.searchChat}?type=$type&search=$search');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -44,7 +44,7 @@ class ChatRepository implements ChatRepositoryInterface {
   @override
   Future<ApiResponseModel> getMessageList(String type, int? id,int offset) async {
     try {
-      final response = await dioClient!.get('${AppConstants.messageUri}$type/$id?limit=30&offset=$offset');
+      final response = await dioClient!.get('${AppConstants.messageUri}$type/$id/messages?limit=30&offset=$offset');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -56,8 +56,7 @@ class ChatRepository implements ChatRepositoryInterface {
   @override
   Future<ApiResponseModel> seenMessage(int id, String type) async {
     try {
-      final response = await dioClient!.post('${AppConstants.seenMessageUri}$type',
-          data: {'id':id});
+      final response = await dioClient!.put('${AppConstants.seenMessageUri}$type/$id/seen');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -67,7 +66,8 @@ class ChatRepository implements ChatRepositoryInterface {
 
   @override
   Future<http.StreamedResponse> sendMessage(MessageBody messageBody, String type, List<XFile?> file, List<PlatformFile>? platformFile) async {
-    http.MultipartRequest request = http.MultipartRequest('POST', Uri.parse('${AppConstants.baseUrl}${AppConstants.sendMessageUri}$type'));
+    http.MultipartRequest request = http.MultipartRequest('POST',
+        Uri.parse('${AppConstants.baseUrl}${AppConstants.sendMessageUri}$type/${messageBody.id}/messages'));
 
     request.headers.addAll(<String,String>{'Authorization': 'Bearer ${Provider.of<AuthController>(Get.context!, listen: false).getUserToken()}'});
     for(int i=0; i<file.length;i++){
@@ -79,13 +79,13 @@ class ChatRepository implements ChatRepositoryInterface {
     if(platformFile != null ) {
       if(platformFile.isNotEmpty) {
         for(PlatformFile pfile in platformFile) {
-          request.files.add(http.MultipartFile('file[]', pfile.readStream!, pfile.size, filename: basename(pfile.name)));
+          request.files.add(http.MultipartFile('file[]', pfile.readAsByteStream(), await pfile.length(), filename: basename(pfile.name)));
         }
       }
     }
 
     Map<String, String> fields = {};
-    request.fields.addAll(<String, String>{'id': messageBody.id.toString(), 'message': messageBody.message??''});
+    request.fields.addAll(<String, String>{'message': messageBody.message??''});
     request.fields.addAll(fields);
     http.StreamedResponse response = await request.send();
     return response;

@@ -33,12 +33,20 @@ class _AuctionOfflinePaymentScreenState extends State<AuctionOfflinePaymentScree
   final GlobalKey<FormState> offlineFormKey = GlobalKey<FormState>();
 
   @override
+  void dispose() {
+    paymentController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(title: getTranslated('offline_payment', context)),
       body: Consumer<AuctionCheckoutController>(
         builder: (context, auctionCheckoutController, _) {
-          return CustomScrollView(slivers: [
+          return Form(
+            key: offlineFormKey,
+            child: CustomScrollView(slivers: [
             SliverToBoxAdapter(child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: Dimensions.homePagePadding),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
@@ -48,7 +56,7 @@ class _AuctionOfflinePaymentScreenState extends State<AuctionOfflinePaymentScree
                       style: textRegular.copyWith(color: Theme.of(context).hintColor, fontSize: Dimensions.fontSizeDefault)),),
 
                 if(auctionCheckoutController.offlinePaymentModel != null && auctionCheckoutController.offlinePaymentModel!.offlineMethods != null &&
-                    auctionCheckoutController.offlinePaymentModel!.offlineMethods!.isNotEmpty)
+                  auctionCheckoutController.offlinePaymentModel!.offlineMethods!.isNotEmpty)
                   SizedBox(height: 190,
                     child: RepaintBoundary(
                       child: ListView.builder(
@@ -69,50 +77,58 @@ class _AuctionOfflinePaymentScreenState extends State<AuctionOfflinePaymentScree
                               offlinePaymentModel: auctionCheckoutController.offlinePaymentModel!.offlineMethods![index],
                               index: index));
                         }),
-                    )),
+                    )
+                  ),
 
                 Center(child: Padding(padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
                   child: Text('${getTranslated('amount', context)} : ${PriceConverter.convertPrice(context, widget.payableAmount)}',
                     style: textBold.copyWith(fontSize: Dimensions.fontSizeLarge)))),
 
-                Text('${getTranslated('payment_info', context)}', style: textBold.copyWith(fontSize: Dimensions.fontSizeLarge),),
+                Text('${getTranslated('payment_info', context)}', style: textBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
+              ]),
+            )),
 
-                Form(
-                  key: offlineFormKey,
-                  child: RepaintBoundary(
-                    child: ListView.builder(
-                      physics: const NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      itemCount: auctionCheckoutController.offlinePaymentModel!.offlineMethods![auctionCheckoutController.offlineMethodSelectedIndex].methodInformations?.length,
-                      itemBuilder: (context, index){
-                        MethodInformations? methodInformation = auctionCheckoutController.offlinePaymentModel!.offlineMethods![auctionCheckoutController.offlineMethodSelectedIndex].methodInformations?[index];
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: Dimensions.homePagePadding),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    MethodInformations? methodInformation = auctionCheckoutController.offlinePaymentModel!.offlineMethods![auctionCheckoutController.offlineMethodSelectedIndex].methodInformations?[index];
 
-                        return Padding(
-                          padding: const EdgeInsets.only(top: Dimensions.paddingSizeDefault),
-                          child: CustomTextFieldWidget(
-                            controller: auctionCheckoutController.inputFieldControllerList[index],
-                            required: methodInformation?.isRequired == 1,
-                            labelText: '${methodInformation?.customerInput}'.replaceAll('_', ' ').capitalize(),
-                            hintText: '${methodInformation?.customerPlaceholder}'.replaceAll('_', ' ').capitalize(),
-                            validator: (value) {
-                              if(methodInformation?.isRequired == 1) {
-                                return ValidateCheck.validateEmptyText(value, '${methodInformation?.customerInput}'.replaceAll('_', ' ').capitalize());
-                              }else{
-                                return null;
-                              }
-                            },
-                          ),
-                        );
-                      }),
-                  ),
+                    return Padding(
+                      padding: const EdgeInsets.only(top: Dimensions.paddingSizeDefault),
+                      child: CustomTextFieldWidget(
+                        controller: auctionCheckoutController.inputFieldControllerList[index],
+                        required: methodInformation?.isRequired == 1,
+                        labelText: '${methodInformation?.customerInput}'.replaceAll('_', ' ').capitalize(),
+                        hintText: '${methodInformation?.customerPlaceholder}'.replaceAll('_', ' ').capitalize(),
+                        validator: (value) {
+                          if(methodInformation?.isRequired == 1) {
+                            return ValidateCheck.validateEmptyText(value, '${methodInformation?.customerInput}'.replaceAll('_', ' ').capitalize());
+                          }else{
+                            return null;
+                          }
+                        },
+                      ),
+                    );
+                  },
+                  childCount: auctionCheckoutController.offlinePaymentModel!.offlineMethods![auctionCheckoutController.offlineMethodSelectedIndex].methodInformations?.length,
                 ),
+              ),
+            ),
 
+            SliverToBoxAdapter(child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: Dimensions.homePagePadding),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
                 const SizedBox(height: 20,),
                 CustomTextFieldWidget(controller: paymentController,
                   labelText:  getTranslated('note', context),
                   hintText: getTranslated('note', context),),
                 const SizedBox(height: 20,),
-              ])))]);}),
+              ]),
+            )),
+          ]),
+          );}),
 
       bottomNavigationBar: Consumer<AuctionCheckoutController>(
         builder: (context, auctionCheckoutController, _) {

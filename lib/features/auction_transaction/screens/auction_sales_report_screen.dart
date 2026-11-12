@@ -45,7 +45,7 @@ class _AuctionSalesReportScreenState extends State<AuctionSalesReportScreen> {
                 children: [
                   const SizedBox(height: Dimensions.paddingSizeDefault),
                 isLoading
-                    ? _buildShimmer()
+                    ? const AuctionStatShimmer()
                     : Padding(
                         padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
                         child: GridView.count(
@@ -58,36 +58,37 @@ class _AuctionSalesReportScreenState extends State<AuctionSalesReportScreen> {
                           children: [
                             AuctionStatCard(
                               imagePath: Images.gavelIcon,
-                              count: (report?.totalAuctionsCreated ?? 0).toString(),
+                              count: (report?.summary?.totalAuctionsCreated ?? 0).toString(),
                               label: 'auctions_created',
+                              isCurrency: false,
                             ),
                             AuctionStatCard(
                               imagePath: Images.packageIcon,
-                              count: (report?.totalAuctionsSold ?? 0).toString(),
+                              count: (report?.summary?.totalAuctionsSold ?? 0).toString(),
                               label: 'total_sold',
                               color: Theme.of(context).colorScheme.onTertiaryContainer,
                             ),
                             AuctionStatCard(
                               imagePath: Images.package01Icon,
-                              count: (report?.totalProductSalesValue ?? 0).toStringAsFixed(2),
+                              count: (report?.summary?.totalProductSalesValue ?? 0).toStringAsFixed(2),
                               label: 'total_sales_value',
                               color: Theme.of(context).colorScheme.onTertiaryContainer,
                             ),
                             AuctionStatCard(
                               imagePath: Images.vatIcon,
-                              count: (report?.totalVatTax ?? 0).toStringAsFixed(2),
+                              count: (report?.summary?.totalVatTax ?? 0).toStringAsFixed(2),
                               label: 'vat_tax_collected',
                               color: Theme.of(context).colorScheme.error,
                             ),
                             AuctionStatCard(
                               imagePath: Images.shippingDeliveredIcon,
-                              count: (report?.totalShippingFee ?? 0).toStringAsFixed(2),
+                              count: (report?.summary?.totalShippingFee ?? 0).toStringAsFixed(2),
                               label: 'shipping_fee_collected',
                               color: Theme.of(context).colorScheme.tertiary,
                             ),
                             AuctionStatCard(
                               imagePath: Images.coinIcon,
-                              count: (report?.grossSalesAmount ?? 0).toStringAsFixed(2),
+                              count: (report?.summary?.grossSalesAmount ?? 0).toStringAsFixed(2),
                               label: 'total_gross_amount',
                             ),
                           ],
@@ -111,7 +112,13 @@ class _AuctionSalesReportScreenState extends State<AuctionSalesReportScreen> {
     );
   }
 
-  Widget _buildShimmer() {
+}
+
+class AuctionStatShimmer extends StatelessWidget {
+  const AuctionStatShimmer();
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
       child: GridView.count(
@@ -145,6 +152,7 @@ class AuctionStatCard extends StatelessWidget {
   final String? label;
   final double imageSize;
   final Color? color;
+  final bool isCurrency;
 
   const AuctionStatCard({
     super.key,
@@ -153,6 +161,7 @@ class AuctionStatCard extends StatelessWidget {
     this.label,
     this.imageSize = Dimensions.iconSizeDefault,
     this.color,
+    this.isCurrency = true,
   });
 
   @override
@@ -170,7 +179,7 @@ class AuctionStatCard extends StatelessWidget {
           CustomAssetImageWidget(imagePath, height: imageSize, width: imageSize, fit: BoxFit.contain),
           SizedBox(height: Dimensions.paddingSizeSmall),
 
-          Text(PriceConverter.convertPrice(context, double.tryParse(count) ?? 0),
+          Text(isCurrency ? PriceConverter.convertPrice(context, double.tryParse(count) ?? 0) : count,
             style: titilliumSemiBold.copyWith(fontSize: Dimensions.fontSizeWallet, color: color ?? theme.colorScheme.primary),
           ),
 

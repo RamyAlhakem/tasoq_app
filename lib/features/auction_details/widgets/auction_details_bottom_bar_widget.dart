@@ -40,14 +40,6 @@ class AuctionDetailsBottomBarWidget extends StatefulWidget {
 }
 
 class _AuctionDetailsBottomBarWidgetState extends State<AuctionDetailsBottomBarWidget> {
-  final JustTheController _tooltipController = JustTheController();
-
-  @override
-  void dispose() {
-    _tooltipController.dispose();
-    super.dispose();
-  }
-
   bool get _showBottomBar {
     if (widget.auctionState == UserCreatedAuctionEnum.readyToClaim) return false;
     // Live auctions only expose a cancel action while no bids have been placed.
@@ -68,63 +60,115 @@ class _AuctionDetailsBottomBarWidgetState extends State<AuctionDetailsBottomBarW
             horizontal: Dimensions.paddingSizeDefault,
             vertical: Dimensions.paddingSizeDefault,
           ),
-          child: _buildChild(context),
+          child: AuctionBottomBarChild(
+            auctionState: widget.auctionState,
+            isCashOnDelivery: widget.isCashOnDelivery,
+            hasExistingWithdraw: widget.hasExistingWithdraw,
+            isWithdrawDisabled: widget.isWithdrawDisabled,
+            onCancel: widget.onCancel,
+            onEdit: widget.onEdit,
+            onPayNow: widget.onPayNow,
+            onWithdraw: widget.onWithdraw,
+            onRelaunch: widget.onRelaunch,
+            onDeliveryStatusUpdate: widget.onDeliveryStatusUpdate,
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildChild(BuildContext context) {
-    return switch (widget.auctionState) {
+class AuctionBottomBarChild extends StatelessWidget {
+  final UserCreatedAuctionEnum auctionState;
+  final bool isCashOnDelivery;
+  final bool hasExistingWithdraw;
+  final bool isWithdrawDisabled;
+  final VoidCallback onCancel;
+  final VoidCallback onEdit;
+  final VoidCallback onPayNow;
+  final VoidCallback onWithdraw;
+  final VoidCallback? onRelaunch;
+  final Future<void> Function(AuctionDeliveryStatus status) onDeliveryStatusUpdate;
+
+  const AuctionBottomBarChild({
+    super.key,
+    required this.auctionState,
+    required this.isCashOnDelivery,
+    required this.hasExistingWithdraw,
+    required this.isWithdrawDisabled,
+    required this.onCancel,
+    required this.onEdit,
+    required this.onPayNow,
+    required this.onWithdraw,
+    this.onRelaunch,
+    required this.onDeliveryStatusUpdate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (auctionState) {
       UserCreatedAuctionEnum.pending ||
       UserCreatedAuctionEnum.upcoming ||
       UserCreatedAuctionEnum.canceled => AuctionActionButtonsWidget(
-          onCancelAuction: widget.onCancel,
-          onEditAuction: widget.onEdit,
+          onCancelAuction: onCancel,
+          onEditAuction: onEdit,
           cancelLabel: getTranslated('delete_auction', context) ?? 'Delete Auction',
         ),
 
       UserCreatedAuctionEnum.rejected ||
       UserCreatedAuctionEnum.unsold => AuctionActionButtonsWidget(
-          onCancelAuction: widget.onCancel,
-          onEditAuction: widget.onRelaunch ?? () {},
+          onCancelAuction: onCancel,
+          onEditAuction: onRelaunch ?? () {},
           editLabel: getTranslated('relaunch', context) ?? 'Relaunch',
         ),
 
-      UserCreatedAuctionEnum.live => _buildCancelButton(context),
+      UserCreatedAuctionEnum.live => AuctionCancelButton(onCancel: onCancel),
 
-      UserCreatedAuctionEnum.purchaseComplete =>
-          _buildSwipe(
-            context,
-            label: getTranslated('swipe_to_ready_to_delivery', context) ?? '',
-            nextStatus: AuctionDeliveryStatus.readyToDelivery,
-          ),
+      UserCreatedAuctionEnum.purchaseComplete => AuctionSwipeButton(
+          key: const ValueKey(AuctionDeliveryStatus.readyToDelivery),
+          label: getTranslated('swipe_to_ready_to_delivery', context) ?? '',
+          nextStatus: AuctionDeliveryStatus.readyToDelivery,
+          onDeliveryStatusUpdate: onDeliveryStatusUpdate,
+        ),
 
-      UserCreatedAuctionEnum.readyToDelivery =>
-          _buildSwipe(
-            context,
-            label: getTranslated('swipe_to_on_the_way', context) ?? '',
-            nextStatus: AuctionDeliveryStatus.onTheWay,
-          ),
+      UserCreatedAuctionEnum.readyToDelivery => AuctionSwipeButton(
+          key: const ValueKey(AuctionDeliveryStatus.onTheWay),
+          label: getTranslated('swipe_to_on_the_way', context) ?? '',
+          nextStatus: AuctionDeliveryStatus.onTheWay,
+          onDeliveryStatusUpdate: onDeliveryStatusUpdate,
+        ),
 
-      UserCreatedAuctionEnum.onTheWay =>
-          _buildSwipe(
-            context,
-            label: getTranslated('swipe_to_delivered', context) ?? '',
-            nextStatus: AuctionDeliveryStatus.delivered,
-          ),
+      UserCreatedAuctionEnum.onTheWay => AuctionSwipeButton(
+          key: const ValueKey(AuctionDeliveryStatus.delivered),
+          label: getTranslated('swipe_to_delivered', context) ?? '',
+          nextStatus: AuctionDeliveryStatus.delivered,
+          onDeliveryStatusUpdate: onDeliveryStatusUpdate,
+        ),
 
-      UserCreatedAuctionEnum.delivered => _buildDeliveredButton(context),
+      UserCreatedAuctionEnum.delivered => AuctionDeliveredButton(
+          isCashOnDelivery: isCashOnDelivery,
+          hasExistingWithdraw: hasExistingWithdraw,
+          isWithdrawDisabled: isWithdrawDisabled,
+          onPayNow: onPayNow,
+          onWithdraw: onWithdraw,
+        ),
 
       _ => const SizedBox.shrink(),
     };
   }
+}
 
-  Widget _buildCancelButton(BuildContext context) {
+class AuctionCancelButton extends StatelessWidget {
+  final VoidCallback onCancel;
+
+  const AuctionCancelButton({super.key, required this.onCancel});
+
+  @override
+  Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton(
-        onPressed: widget.onCancel,
+        onPressed: onCancel,
         style: OutlinedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: .08),
           side: BorderSide(color: Theme.of(context).colorScheme.error.withValues(alpha: .3)),
@@ -143,15 +187,24 @@ class _AuctionDetailsBottomBarWidgetState extends State<AuctionDetailsBottomBarW
       ),
     );
   }
+}
 
-  Widget _buildSwipe(
-      BuildContext context, {
-        required String label,
-        required AuctionDeliveryStatus nextStatus,
-      }) {
+class AuctionSwipeButton extends StatelessWidget {
+  final String label;
+  final AuctionDeliveryStatus nextStatus;
+  final Future<void> Function(AuctionDeliveryStatus status) onDeliveryStatusUpdate;
+
+  const AuctionSwipeButton({
+    super.key,
+    required this.label,
+    required this.nextStatus,
+    required this.onDeliveryStatusUpdate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return SwipeableButtonWidget(
-      key: ValueKey(nextStatus),
-      action: () => widget.onDeliveryStatusUpdate(nextStatus),
+      action: () => onDeliveryStatusUpdate(nextStatus),
       label: Text(label,
         style: titilliumSemiBold.copyWith(
           fontSize: Dimensions.fontSizeDefault,
@@ -165,8 +218,39 @@ class _AuctionDetailsBottomBarWidgetState extends State<AuctionDetailsBottomBarW
       highlightedColor: Theme.of(context).colorScheme.primary,
     );
   }
+}
 
-  Widget _buildDeliveredButton(BuildContext context) {
+class AuctionDeliveredButton extends StatefulWidget {
+  final bool isCashOnDelivery;
+  final bool hasExistingWithdraw;
+  final bool isWithdrawDisabled;
+  final VoidCallback onPayNow;
+  final VoidCallback onWithdraw;
+
+  const AuctionDeliveredButton({
+    super.key,
+    required this.isCashOnDelivery,
+    required this.hasExistingWithdraw,
+    required this.isWithdrawDisabled,
+    required this.onPayNow,
+    required this.onWithdraw,
+  });
+
+  @override
+  State<AuctionDeliveredButton> createState() => _AuctionDeliveredButtonState();
+}
+
+class _AuctionDeliveredButtonState extends State<AuctionDeliveredButton> {
+  final JustTheController _tooltipController = JustTheController();
+
+  @override
+  void dispose() {
+    _tooltipController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     if (!widget.isCashOnDelivery && widget.hasExistingWithdraw) return const SizedBox.shrink();
 
     final isDisabledWithdraw = !widget.isCashOnDelivery && widget.isWithdrawDisabled;

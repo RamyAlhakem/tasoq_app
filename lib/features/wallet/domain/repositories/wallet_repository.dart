@@ -1,7 +1,5 @@
 import 'dart:convert';
-
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/dio/dio_client.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/exception/api_error_handler.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
@@ -20,17 +18,14 @@ class WalletRepository implements WalletRepositoryInterface{
   @override
   Future getList({int? offset = 1, String? filterBy, DateTime? startDate, DateTime? endDate, List<String>? transactionTypes}) async{
 
-    // Build query parameters dynamically
     final Map<String, dynamic> queryParams = {
       'offset': offset,
       'limit': 10,
-      if (filterBy != null && filterBy.isNotEmpty) 'filter_by': filterBy,
+      if (filterBy != null && filterBy.isNotEmpty) 'entry_type': filterBy,
       if (startDate != null) 'start_date': DateConverter.durationDateTime(startDate),
       if (endDate != null) 'end_date': DateConverter.durationDateTime(endDate),
       if (transactionTypes != null && transactionTypes.isNotEmpty) 'transaction_types': jsonEncode(transactionTypes),
     };
-
-    debugPrint('--------(loyalty_query)----$queryParams');
 
     try {
       Response response = await dioClient!.get(AppConstants.walletTransactionUri, queryParameters: queryParams);
@@ -40,17 +35,6 @@ class WalletRepository implements WalletRepositoryInterface{
     }
   }
 
-  // @override
-  // Future<ApiResponse> getWalletTransactionList(int offset, String types, String startDate, String endDate, String filterByType) async {
-  //   try {
-  //     Response response = await dioClient!.get('${AppConstants.walletTransactionUri}$offset&transaction_types=$types&start_date=$startDate&end_date=$endDate&filter_by=$filterByType');
-  //     return ApiResponse.withSuccess(response);
-  //   } catch (e) {
-  //     return ApiResponse.withError(ApiErrorHandler.getMessage(e));
-  //   }
-  // }
-
-
   @override
   Future<ApiResponseModel> addFundToWallet(String amount, String paymentMethod) async {
     try {
@@ -59,9 +43,7 @@ class WalletRepository implements WalletRepositoryInterface{
             'payment_method' : paymentMethod,
             'payment_request_from': 'app',
             'amount': amount,
-            'current_currency_code': Provider.of<SplashController>(Get.context!, listen: false).myCurrency!.code
-
-          });
+            'current_currency_code': Provider.of<SplashController>(Get.context!, listen: false).myCurrency!.code});
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));

@@ -97,6 +97,8 @@ class OrderPaymentInfoWidget extends StatelessWidget {
                       child: Text(
                           orderProvider.orders!.orderType == 'POS' ?
                           getTranslated('pos_order_small', context) ?? '' :
+                          orderProvider.orders!.businessModule == 'retail' ?
+                          getTranslated('retail_order', context) ?? 'Retail Order' :
                           getTranslated('regular', context) ?? ' ',
                           style: textMedium.copyWith(color: Theme.of(context).primaryColor, fontSize: Dimensions.fontSizeSmall)
                       ),
@@ -109,7 +111,6 @@ class OrderPaymentInfoWidget extends StatelessWidget {
 
 
 
-                ///todo: remove payment status and method from here as per new design
                 // Row(
                 //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 //   children: [

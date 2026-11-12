@@ -16,13 +16,13 @@ class CouponService implements CouponServiceInterface{
   }
 
   @override
-  Future getList({int? offset = 1}) async{
-    return await couponRepositoryInterface.getList(offset: offset);
+  Future getList({int? offset = 1, int limit = 25}) async{
+    return await couponRepositoryInterface.getList(offset: offset, limit: limit);
   }
 
   @override
-  Future getSellerCouponList(String slug, int offset) async {
-    return await couponRepositoryInterface.getSellerCouponList(slug, offset);
+  Future getSellerCouponList(String slug, int offset, {int limit = 25}) async {
+    return await couponRepositoryInterface.getSellerCouponList(slug, offset, limit: limit);
   }
 
 }

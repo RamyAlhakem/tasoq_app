@@ -44,9 +44,7 @@ class FashionBannersWidget extends StatelessWidget {
                       String colorString = bannerController.mainBannerList![index].backgroundColor != null?
                       '0xff${ bannerController.mainBannerList![index].backgroundColor!.substring(1, 7)}'  : '0xFF424242';
 
-                      return
-
-                        ClipRRect(borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
+                      return ClipRRect(borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
                         child: Container(decoration: BoxDecoration(borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
                             color: Color(int.parse(colorString))),
                             child: Row(crossAxisAlignment: CrossAxisAlignment.center,mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -64,11 +62,7 @@ class FashionBannersWidget extends StatelessWidget {
                                     SizedBox(height: 30, width: 100,child: CustomButton(backgroundColor:  Theme.of(context).colorScheme.secondaryContainer,
                                             textColor: Colors.black45,
                                         onTap: () {
-                                          bannerController.clickBannerRedirect(context,
-                                              bannerController.mainBannerList![index].resourceId,
-                                              bannerController.mainBannerList![index].resourceType =='product'?
-                                              bannerController.mainBannerList![index].product : null,
-                                              bannerController.mainBannerList![index].resourceType);
+                                          bannerController.clickBannerRedirect(context, bannerController.mainBannerList![index]);
                                         },
                                         fontSize: Dimensions.fontSizeDefault,
                                         radius: 5,

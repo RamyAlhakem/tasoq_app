@@ -19,18 +19,19 @@ class ParticipationAuctionDetailsRepository implements ParticipationAuctionDetai
     try {
       final Map<String, dynamic> queryParams = {
        // if (auctionStatus != null) 'auction_status': auctionStatus,
+        'view': 'participation',
         'similar_products': productStatus,
         'same_author_products': productStatus,
       };
 
       final response = await dioClient!.get(
-        '${AppConstants.participationAuctionProductDetailsUri}$slug?guest_id=1',
+        '${AppConstants.participationAuctionProductDetailsUri}/$slug',
         queryParameters: queryParams,
       );
 
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
@@ -48,10 +49,10 @@ class ParticipationAuctionDetailsRepository implements ParticipationAuctionDetai
         if (isMyBid) 'is_my_bid': 1,
       };
       final response = await dioClient!.get(
-        '${AppConstants.auctionBidListUri}$auctionProductId', queryParameters: queryParams);
+        '${AppConstants.auctionBidListUri}$auctionProductId/bids', queryParameters: queryParams);
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 

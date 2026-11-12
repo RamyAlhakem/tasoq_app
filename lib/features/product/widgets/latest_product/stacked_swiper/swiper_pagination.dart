@@ -13,16 +13,12 @@ class FractionPaginationBuilder extends SwiperPlugin {
     this.activeFontSize = 35.0,
   });
 
-  ///color ,if set null , will be Theme.of(context).scaffoldBackgroundColor
   final Color? color;
 
-  ///color when active,if set null , will be Theme.of(context).primaryColor
   final Color? activeColor;
 
-  ////font size
   final double fontSize;
 
-  ///font size when active
   final double activeFontSize;
 
   final Key? key;
@@ -81,19 +77,14 @@ class RectSwiperPaginationBuilder extends SwiperPlugin {
     this.space = 3.0,
   });
 
-  ///color when current index,if set null , will be Theme.of(context).primaryColor
   final Color? activeColor;
 
-  ///,if set null , will be Theme.of(context).scaffoldBackgroundColor
   final Color? color;
 
-  ///Size of the rect when activate
   final Size activeSize;
 
-  ///Size of the rect
   final Size size;
 
-  /// Space between rects
   final double space;
 
   final Key? key;
@@ -155,19 +146,14 @@ class DotSwiperPaginationBuilder extends SwiperPlugin {
     this.space = 3.0,
   });
 
-  ///color when current index,if set null , will be Theme.of(context).primaryColor
   final Color? activeColor;
 
-  ///,if set null , will be Theme.of(context).scaffoldBackgroundColor
   final Color? color;
 
-  ///Size of the dot when activate
   final double activeSize;
 
-  ///Size of the dot
   final double size;
 
-  /// Space between dots
   final double space;
 
   final Key? key;
@@ -262,22 +248,16 @@ class SwiperPagination extends SwiperPlugin {
     this.builder = SwiperPagination.dots,
   });
 
-  /// dot style pagination
   static const SwiperPlugin dots = DotSwiperPaginationBuilder();
 
-  /// fraction style pagination
   static const SwiperPlugin fraction = FractionPaginationBuilder();
 
   static const SwiperPlugin rect = RectSwiperPaginationBuilder();
 
-  /// Alignment.bottomCenter by default when scrollDirection== Axis.horizontal
-  /// Alignment.centerRight by default when scrollDirection== Axis.vertical
   final Alignment? alignment;
 
-  /// Distance between pagination and the container
   final EdgeInsetsGeometry margin;
 
-  /// Build the widget
   final SwiperPlugin builder;
 
   final Key? key;

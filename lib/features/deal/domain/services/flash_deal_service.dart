@@ -7,12 +7,12 @@ class FlashDealService implements FlashDealServiceInterface{
   FlashDealService({required this.flashDealRepositoryInterface});
 
   @override
-  Future get(String productID, {int offset = 1, int limit = 10}) async {
-    return await flashDealRepositoryInterface.get(productID, offset: offset, limit: limit);
+  Future get(String dealId, {int offset = 1, int limit = 10}) async {
+    return await flashDealRepositoryInterface.get(dealId, offset: offset, limit: limit);
   }
 
   @override
-  Future getFlashDeal() async{
-    return await flashDealRepositoryInterface.getFlashDeal();
+  Future getFlashDeal({int offset = 1, int limit = 25}) async{
+    return await flashDealRepositoryInterface.getFlashDeal(offset: offset, limit: limit);
   }
 }

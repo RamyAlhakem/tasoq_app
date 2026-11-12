@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_ai/domain/models/auction_ai_description_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_ai/domain/models/auction_ai_general_setup_model.dart';
@@ -95,7 +96,8 @@ class AuctionAiController extends ChangeNotifier {
       keywords: keywords,
     );
 
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    final int? statusCode = apiResponse.response?.statusCode;
+    if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
       final model = AuctionTitleSuggestionsModel.fromJson(apiResponse.response?.data);
       _titleSuggestions = model.data?.data?.titles ?? [];
     } else {
@@ -124,7 +126,8 @@ class AuctionAiController extends ChangeNotifier {
       langCode: langCode,
     );
 
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    final int? statusCode = apiResponse.response?.statusCode;
+    if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
       _titleModel = AuctionTitleModel.fromJson(apiResponse.response?.data);
       if (_titleModel?.data != null && _titleModel!.data!.data!.isNotEmpty) {
         nameController.text = _titleModel?.data?.data ?? '';
@@ -154,7 +157,8 @@ class AuctionAiController extends ChangeNotifier {
       langCode: langCode,
     );
 
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    final int? statusCode = apiResponse.response?.statusCode;
+    if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
       _descriptionModel = AuctionDescriptionModel.fromJson(apiResponse.response?.data);
       String plain = ProductHelper.htmlToPlainText(_descriptionModel?.data?.data ?? '');
       if (plain.isNotEmpty) {
@@ -187,7 +191,8 @@ class AuctionAiController extends ChangeNotifier {
       langCode: langCode,
     );
 
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    final int? statusCode = apiResponse.response?.statusCode;
+    if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
       _generalSetupModel = AuctionGeneralSetupModel.fromJson(apiResponse.response?.data);
     } else {
       _generalSetupModel = null;
@@ -216,7 +221,8 @@ class AuctionAiController extends ChangeNotifier {
       description: description,
     );
 
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    final int? statusCode = apiResponse.response?.statusCode;
+    if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
       _metaSeoInfo = AuctionSEOModel.fromJson(apiResponse.response?.data);
       final seoData = _metaSeoInfo?.data?.data;
       if (seoData?.metaTitle != null && seoData!.metaTitle!.isNotEmpty) {
@@ -252,7 +258,8 @@ class AuctionAiController extends ChangeNotifier {
       langCode: langCode,
     );
 
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    final int? statusCode = apiResponse.response?.statusCode;
+    if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
       _shippingSetupModel = AuctionShippingSetupModel.fromJson(apiResponse.response?.data);
     } else {
       _shippingSetupModel = null;
@@ -278,7 +285,8 @@ class AuctionAiController extends ChangeNotifier {
       langCode: langCode,
     );
 
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    final int? statusCode = apiResponse.response?.statusCode;
+    if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
       _auctionInfoModel = AuctionInfoModel.fromJson(apiResponse.response?.data);
     } else {
       _auctionInfoModel = null;
@@ -292,8 +300,12 @@ class AuctionAiController extends ChangeNotifier {
 
   Future<ApiResponseModel> generateLimitCheck() async {
     ApiResponseModel apiResponse = await auctionAiServiceInterface.generateLimitCheck();
-    if (apiResponse.response?.statusCode == 200 && apiResponse.response?.data['message'] == 'Success') {
-      genLimit = apiResponse.response?.data['data'] ?? genLimit;
+
+    final int? statusCode = apiResponse.response?.statusCode;
+    if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
+      final dynamic data = apiResponse.response?.data;
+      final dynamic remaining = ApiEnvelope.content(data)['remaining_count'] ?? (data is Map ? data['data'] : null);
+      genLimit = remaining is int ? remaining : (int.tryParse('$remaining') ?? genLimit);
     }
     notifyListeners();
     return apiResponse;
@@ -356,7 +368,8 @@ class AuctionAiController extends ChangeNotifier {
     _imageLoading = false;
     notifyListeners();
 
-    if (apiResponse.response?.statusCode == 200) {
+    final int? statusCode = apiResponse.response?.statusCode;
+    if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
       final ImageResponseModel model = ImageResponseModel.fromJson(apiResponse.response?.data);
       if (model.data != null && model.data!.isNotEmpty) {
         nameControllerList?[tabController?.index ?? 0].text = model.data!;
@@ -367,15 +380,10 @@ class AuctionAiController extends ChangeNotifier {
     } else {
       Navigator.of(Get.context!).pop();
       Navigator.of(Get.context!).pop();
+
       await Future.delayed(const Duration(milliseconds: 500));
+
       ApiChecker.checkApi(apiResponse);
-      if (apiResponse.response?.statusCode == 403) {
-        showCustomSnackBarWidget(
-          apiResponse.response?.data['message'],
-          Get.context!,
-          snackBarType: SnackBarType.error,
-        );
-      }
       return null;
     }
   }
@@ -403,7 +411,8 @@ class AuctionAiController extends ChangeNotifier {
       langCode: langCode,
     );
 
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    final int? statusCode = apiResponse.response?.statusCode;
+    if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
       _setupAutoFillModel = AuctionSetupAutoFillModel.fromJson(apiResponse.response?.data);
       final int index = tabController?.index ?? 0;
       if (_setupAutoFillModel?.data?.name != null && _setupAutoFillModel!.data!.name!.isNotEmpty) {

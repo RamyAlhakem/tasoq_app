@@ -1,3 +1,4 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/features/brand/domain/models/brand_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/category/domain/models/category_model.dart';
 
@@ -11,18 +12,20 @@ class AuctionProductListModel {
   AuctionProductListModel({this.totalSize, this.limit, this.offset, this.products, this.counts});
 
   AuctionProductListModel.fromJson(Map<String, dynamic> json) {
-    totalSize = int.tryParse('${json['total_size']}');
-    limit = int.tryParse('${json['limit']}');
-    offset = int.tryParse('${json['offset']}');
-    if (json['products'] != null) {
-      products = <AuctionProduct>[];
-      json['products'].forEach((v) {
-        products!.add(AuctionProduct.fromJson(v));
-      });
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json, legacyKeys: ['products']);
+    totalSize = envelope.totalSize;
+    limit = envelope.limit;
+    offset = envelope.offset;
+    if (envelope.data != null) {
+      products = <AuctionProduct>[
+        for (final Map row in envelope.data!.whereType<Map>())
+          AuctionProduct.fromJson(Map<String, dynamic>.from(row)),
+      ];
     }
-    if (json['counts'] != null) {
+    final dynamic countsJson = envelope.read('counts');
+    if (countsJson is Map) {
       counts = Map<String, int>.from(
-        (json['counts'] as Map).map((k, v) => MapEntry(k as String, int.tryParse(v.toString()) ?? 0)),
+        countsJson.map((k, v) => MapEntry(k.toString(), int.tryParse(v.toString()) ?? 0)),
       );
     }
   }
@@ -181,7 +184,8 @@ class AuctionProduct {
     updatedAt = json['updated_at'];
     bidsCount = json['bids_count'];
     participantsCount = json['participants_count'];
-    auctionStatus = json['auction_status'];
+    // v6 merges the auction and delivery status into `auction_current_status`.
+    auctionStatus = json['auction_status'] ?? json['auction_current_status'];
     highestBidAmount = json['highest_bid_amount'] != null ? double.tryParse('${json['highest_bid_amount']}') : null;
     totalBidsCount = json['total_bids_count'];
     totalParticipantsCount = json['total_participants_count'];

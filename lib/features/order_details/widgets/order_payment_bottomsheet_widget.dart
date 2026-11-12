@@ -47,6 +47,12 @@ class OrderPaymentMethodBottomSheetWidgetState extends State<OrderPaymentMethodB
     super.initState();
   }
 
+  @override
+  void dispose() {
+    changeAmountTextController.dispose();
+    super.dispose();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +131,6 @@ class OrderPaymentMethodBottomSheetWidgetState extends State<OrderPaymentMethodB
                               ]),
 
 
-                              ///change amount
                               ChangeAmountWidget(changeAmountTextController: changeAmountTextController),
 
 
@@ -282,12 +287,11 @@ class OrderPaymentMethodBottomSheetWidgetState extends State<OrderPaymentMethodB
                       buttonText: '${getTranslated('proceed_text', context)}',
                       onTap: () async {
                         if(orderDetailsController.isCODChecked) {
-                          await orderDetailsController.duePaymentByCod(int.parse(widget.orderId), 'cash_on_delivery', changeAmountTextController.text);
+                          await orderDetailsController.duePaymentByCod(int.parse(widget.orderId), changeAmountTextController.text);
                         } else if (orderDetailsController.paymentMethodIndex != -1) {
                           await orderDetailsController.duePaymentByDigitalPayment(
                             int.parse(widget.orderId),
                             orderDetailsController.selectedDigitalPaymentMethodName,
-                            'cash_on_delivery',
                             ''
                           );
                         } else if (orderDetailsController.isWalletChecked && (Provider.of<ProfileController>(context, listen: false).balance ?? 0) >= widget.payableAmount) {
@@ -301,7 +305,7 @@ class OrderPaymentMethodBottomSheetWidgetState extends State<OrderPaymentMethodB
                               onTap: () async {
                                 Navigator.of(context).pop();
 
-                                await orderDetailsController.duePaymentByWallet(int.parse(widget.orderId), 'wallet');
+                                await orderDetailsController.duePaymentByWallet(int.parse(widget.orderId));
                                 Navigator.of(Get.context!).pop();
                               });
                             }
@@ -312,7 +316,7 @@ class OrderPaymentMethodBottomSheetWidgetState extends State<OrderPaymentMethodB
                           Navigator.of(context).pop();
 
                           RouterHelper.getOrderOfflinePaymentScreen(
-                            payableAmount: orderDetailsController.orderDetails![0].latestEditHistory!.orderDueAmount!,
+                            payableAmount: (orderDetailsController.orders?.latestEditHistory)!.orderDueAmount!,
                             callback: () {},
                             orderId: int.parse(orderDetailsController.orderDetails![0].orderId.toString()),
                           );

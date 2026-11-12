@@ -136,8 +136,8 @@ class AuthService implements AuthServiceInterface{
   }
 
   @override
-  Future verifyOtp(String otp, String identity) {
-    return authRepoInterface.verifyOtp(otp, identity);
+  Future verifyOtp(String identity, String otp, {String purpose = 'login'}) {
+    return authRepoInterface.verifyOtp(identity, otp, purpose: purpose);
   }
 
   @override
@@ -161,14 +161,14 @@ class AuthService implements AuthServiceInterface{
   }
 
   @override
-  Future registerWithOtp(String name, {String? email, required String phone}) {
-    return authRepoInterface.registerWithOtp(name, email: email, phone: phone);
+  Future registerWithOtp({required String fName, String? lName, String? email, required String phone, required String temporaryToken, String? referralCode}) {
+    return authRepoInterface.registerWithOtp(fName: fName, lName: lName, email: email, phone: phone, temporaryToken: temporaryToken, referralCode: referralCode);
   }
 
 
   @override
-  Future registerWithSocialMedia(String name, {required String email,String? phone})  {
-    return authRepoInterface.registerWithSocialMedia(name, email: email, phone: phone);
+  Future registerWithSocialMedia({required String token, required String uniqueId, required String medium, required String phone})  {
+    return authRepoInterface.registerWithSocialMedia(token: token, uniqueId: uniqueId, medium: medium, phone: phone);
   }
 
   @override
@@ -177,8 +177,8 @@ class AuthService implements AuthServiceInterface{
   }
 
   @override
-  Future existingAccountCheck({required String email, required int userResponse, required String medium}) {
-    return authRepoInterface.existingAccountCheck(email: email, userResponse: userResponse, medium: medium);
+  Future existingAccountCheck({required String email, required int userResponse, required String medium, required String token, required String uniqueId}) {
+    return authRepoInterface.existingAccountCheck(email: email, userResponse: userResponse, medium: medium, token: token, uniqueId: uniqueId);
   }
 
   @override

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/category_content_screen_shimmer.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/no_internet_screen_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_sliver_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/enums/auction_enum.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_category/controllers/auction_category_controller.dart';
@@ -142,7 +142,12 @@ class _CategoryContentBodyState extends State<_CategoryContentBody> with Automat
                     height: 70,
                     child: Container(
                       color: Theme.of(context).scaffoldBackgroundColor,
-                      child: _buildSearchBar(context),
+                      child: AuctionCategorySearchBar(
+                        controller: searchTextEditingController,
+                        onChanged: () => setState(() {}),
+                        onSearch: _searchProducts,
+                        onClear: _clearSearch,
+                      ),
                     ),
                   ),
                 ),
@@ -155,21 +160,18 @@ class _CategoryContentBodyState extends State<_CategoryContentBody> with Automat
                   child: NoInternetOrDataScreenWidget(isNoInternet: false, message: getTranslated('no_auction_found', context)),
                 )
               else
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
-                    child: PaginatedListView(
-                      scrollController: null,
-                      totalSize: model?.totalSize,
-                      offset: model?.offset,
-                      onPaginate: (offset) => controller.getCategoryProducts(widget.categoryId, offset ?? 1, searchProduct: _activeSearchQuery),
-                      itemView: MasonryGridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeEight)
-                            .copyWith(bottom: MediaQuery.of(context).padding.bottom),
+                SliverPadding(
+                  padding: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
+                  sliver: PaginatedSliverListView(
+                    scrollController: null,
+                    totalSize: model?.totalSize,
+                    offset: model?.offset,
+                    onPaginate: (offset) => controller.getCategoryProducts(widget.categoryId, offset ?? 1, searchProduct: _activeSearchQuery),
+                    itemView: SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeEight)
+                          .copyWith(bottom: MediaQuery.of(context).padding.bottom),
+                      sliver: SliverMasonryGrid.count(
                         crossAxisCount: ResponsiveHelper.isTab(context) ? 3 : 2,
-                        itemCount: products.length,
                         itemBuilder: (context, index) {
                           final product = products[index];
                           return Container(
@@ -186,6 +188,7 @@ class _CategoryContentBodyState extends State<_CategoryContentBody> with Automat
                             ),
                           );
                         },
+                        childCount: products.length,
                       ),
                     ),
                   ),
@@ -197,17 +200,34 @@ class _CategoryContentBodyState extends State<_CategoryContentBody> with Automat
     );
   }
 
-  Widget _buildSearchBar(BuildContext context) {
+}
+
+class AuctionCategorySearchBar extends StatelessWidget {
+  final TextEditingController controller;
+  final VoidCallback onChanged;
+  final VoidCallback onSearch;
+  final VoidCallback onClear;
+
+  const AuctionCategorySearchBar({
+    super.key,
+    required this.controller,
+    required this.onChanged,
+    required this.onSearch,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: Dimensions.homePagePadding, vertical: Dimensions.paddingSizeSmall).copyWith(right: Dimensions.paddingSizeDefault),
       child: Row(
         children: [
           Expanded(
             child: TextFormField(
-              controller: searchTextEditingController,
+              controller: controller,
               textInputAction: TextInputAction.search,
-              onChanged: (value) => setState(() {}),
-              onFieldSubmitted: (value) => _searchProducts(),
+              onChanged: (value) => onChanged(),
+              onFieldSubmitted: (value) => onSearch(),
               style: textMedium.copyWith(fontSize: Dimensions.fontSizeLarge),
               decoration: InputDecoration(
                   isDense: true,
@@ -223,16 +243,16 @@ class _CategoryContentBodyState extends State<_CategoryContentBody> with Automat
                       borderSide: BorderSide(color: Colors.grey[300]!)),
                   hintText: getTranslated('search_auction', context),
                   hintStyle: textRegular.copyWith(color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.9)),
-                  suffixIcon: SizedBox(width: searchTextEditingController.text.isNotEmpty ? 70 : 50,
+                  suffixIcon: SizedBox(width: controller.text.isNotEmpty ? 70 : 50,
                     child: Row(children: [
-                      if(searchTextEditingController.text.isNotEmpty)
+                      if(controller.text.isNotEmpty)
                         InkWell(
-                          onTap: _clearSearch,
+                          onTap: onClear,
                           child: const Icon(Icons.clear, size: 20,),
                         ),
 
                       InkWell(
-                        onTap: _searchProducts,
+                        onTap: onSearch,
                         child: Container(
                           margin: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
                           padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),

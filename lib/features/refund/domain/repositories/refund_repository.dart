@@ -45,7 +45,7 @@ class RefundRepository implements RefundRepositoryInterface{
   @override
   Future<ApiResponseModel> getRefundInfo(int? orderDetailsId) async {
     try {
-      final response = await dioClient!.get('${AppConstants.refundRequestPreReqUri}?order_details_id=$orderDetailsId');
+      final response = await dioClient!.get('${AppConstants.refundRequestPreReqUri}$orderDetailsId');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -56,7 +56,7 @@ class RefundRepository implements RefundRepositoryInterface{
   @override
   Future<ApiResponseModel> getRefundResult(int? orderDetailsId) async {
     try {
-      final response = await dioClient!.get('${AppConstants.refundResultUri}?id=$orderDetailsId');
+      final response = await dioClient!.get('${AppConstants.refundResultUri}$orderDetailsId');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_sliver_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/widgets/address_shimmer.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/domain/models/product_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/restock/controllers/restock_controller.dart';
@@ -29,6 +29,12 @@ class _RestockListScreenState extends State<RestockListScreen> {
       Provider.of<RestockController>(context, listen: false).getRestockProductList(1);
 
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -103,29 +109,32 @@ class _RestockListScreenState extends State<RestockListScreen> {
 
 
                   Expanded(
-                    child: SingleChildScrollView(
-                      child: PaginatedListView(
-                        scrollController: scrollController,
-                        onPaginate: (int? offset) async => await restockController.getRestockProductList(offset!),
-                        totalSize: restockController.restockProductModel?.totalSize,
-                        offset: int.tryParse(restockController.restockProductModel!.offset!),
-                        itemView: ListView.builder(padding: const EdgeInsets.all(0),
-                          itemCount: restockController.restockProductModel?.data?.length ?? 0,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemBuilder: (context, index) {
-                            Product? product = restockController.restockProductModel?.data![index].product;
-                            double ratting = (product?.rating?.isNotEmpty ?? false) ?  double.parse('${product?.rating?[0].average}') : 0;
-                            Data? data = restockController.restockProductModel?.data![index];
-                            return RestockListItemWidget(
-                              product: product,
-                              ratting: ratting,
-                              data: data,
-                              index: index
-                            );
-                          },
+                    child: CustomScrollView(
+                      controller: scrollController,
+                      slivers: [
+                        PaginatedSliverListView(
+                          scrollController: scrollController,
+                          onPaginate: (int? offset) async => await restockController.getRestockProductList(offset!),
+                          totalSize: restockController.restockProductModel?.totalSize,
+                          offset: restockController.restockProductModel?.offset,
+                          itemView: SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                Product? product = restockController.restockProductModel?.data![index].product;
+                                double ratting = (product?.rating?.isNotEmpty ?? false) ?  double.parse('${product?.rating?[0].average}') : 0;
+                                Data? data = restockController.restockProductModel?.data![index];
+                                return RestockListItemWidget(
+                                  product: product,
+                                  ratting: ratting,
+                                  data: data,
+                                  index: index
+                                );
+                              },
+                              childCount: restockController.restockProductModel?.data?.length ?? 0,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   )
                 ],

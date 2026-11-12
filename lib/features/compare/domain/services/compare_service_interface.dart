@@ -4,5 +4,5 @@ abstract class CompareServiceInterface{
   Future<dynamic> addCompareProductList(int id);
   Future<dynamic> removeAllCompareProductList();
   Future<dynamic> replaceCompareProductList(int compareId, int productId);
-  Future<dynamic> getAttributeList();
+  Future<dynamic> getAttributeList({int offset = 1, int limit = 25});
 }

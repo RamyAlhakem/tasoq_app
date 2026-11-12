@@ -39,8 +39,8 @@ class AuctionFilterParamModel {
     return count;
   }
 
-  static const double kPriceMax = 1000; /// TODO: SHOULD MAKE IT DYNAMIC (ASK FOR NEW FIELD IN CONFIG MODEL)
-  static const double kEntryFeeMax = 1000; /// TODO: SHOULD MAKE IT DYNAMIC (ASK FOR NEW FIELD IN CONFIG MODEL)
+  static const double kPriceMax = 1000;
+  static const double kEntryFeeMax = 1000;
 
   Map<String, dynamic> toQueryParams() {
     final Map<String, dynamic> params = {};
@@ -50,11 +50,11 @@ class AuctionFilterParamModel {
     }
 
     if (listingSelection != null && _listingTypeValues.contains(listingSelection)) {
-      params['listing_type'] = listingSelection;
+      params['listing_types[]'] = [listingSelection];
     }
 
-    if (categoryIds.isNotEmpty) params['category_ids'] = categoryIds.toList();
-    if (brandIds.isNotEmpty) params['brand_ids'] = brandIds.toList();
+    if (categoryIds.isNotEmpty) params['category_ids[]'] = categoryIds.toList();
+    if (brandIds.isNotEmpty) params['brand_ids[]'] = brandIds.toList();
 
     if (priceMin != null && priceMin! > 0) params['min_price'] = priceMin;
     if (priceMax != null && priceMax! < kPriceMax) params['max_price'] = priceMax;
@@ -62,7 +62,13 @@ class AuctionFilterParamModel {
     if (entryFeeMin != null && entryFeeMin! > 0) params['min_entry_fee'] = entryFeeMin;
     if (entryFeeMax != null && entryFeeMax! < kEntryFeeMax) params['max_entry_fee'] = entryFeeMax;
 
-    if (endingTime != null) params['ending_time'] = endingTime;
+    // The sheet offers '1h' / '6h' / '24h': auctions ending within that many hours from now.
+    final int? endingWithinHours = int.tryParse(RegExp(r'^(\d+)h$').firstMatch(endingTime ?? '')?.group(1) ?? '');
+    if (endingWithinHours != null) {
+      params['ending_time_min'] = 0;
+      params['ending_time_max'] = endingWithinHours;
+      params['duration_time_type'] = 'hour';
+    }
 
     return params;
   }

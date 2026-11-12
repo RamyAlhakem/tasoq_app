@@ -32,10 +32,12 @@ class ReviewWidget extends StatelessWidget {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text('${reviewModel.customer == null ? getTranslated('user_not_exist', context): reviewModel.customer!.fName ?? ''} ${
-                    reviewModel.customer == null ? '' : reviewModel.customer!.lName ?? ''}',
-                  style: titilliumRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color),
-                  maxLines: 1, overflow: TextOverflow.ellipsis),
+                Flexible(
+                  child: Text('${reviewModel.customer == null ? getTranslated('user_not_exist', context): reviewModel.customer!.fName ?? ''} ${
+                      reviewModel.customer == null ? '' : reviewModel.customer!.lName ?? ''}',
+                    style: titilliumRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color),
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                ),
 
                 reviewModel.createdAt != null ?
                 Text(DateConverter.compareDates(reviewModel.createdAt!),

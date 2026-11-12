@@ -78,11 +78,14 @@ class AuctionInfoScreenState extends State<AuctionInfoScreen> with TickerProvide
       final vatTaxController = Provider.of<VatTaxController>(context, listen: false);
 
       vatTaxController.clearSelectedTaxList();
-      await vatTaxController.getVatTaxList();
+      await vatTaxController.getVatTaxSetup();
+      if (vatTaxController.isTaxSelectable) {
+        await vatTaxController.getVatTaxList();
+      }
 
       if (isEditMode && mounted) {
         vatTaxController.setProductVatTax(p.taxVats);
-        vatTaxController.notifyListeners();
+
 
         setState(() {
           selectedVatTax = List.from(vatTaxController.selectedTaxList);

@@ -29,10 +29,21 @@ class _ViewAllProductScreenState extends State<ViewAllProductScreen> {
   void initState() {
     super.initState();
 
-    Provider.of<ProductController>(context, listen: false).getAllProductModelByType(
-      offset: 1, type: widget.productType, isUpdate: false,
-    );
+    final ProductController productController = Provider.of<ProductController>(context, listen: false);
 
+    // Just-for-you first page is already loaded on home; only pagination hits the endpoint here.
+    final bool isSeeded = widget.productType == ProductType.justForYou && productController.initAllProductModelFromJustForYou();
+
+    if(!isSeeded) {
+      productController.getAllProductModelByType(offset: 1, type: widget.productType, isUpdate: false);
+    }
+
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
 

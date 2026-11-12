@@ -34,10 +34,12 @@ class ExploreContent extends StatelessWidget {
           delegate: SliverChildListDelegate([
            // const SizedBox(height: Dimensions.paddingSizeDefault),
             EndingSoonSectionWidget(products: controller.endingSoonModel?.products),
-            const SizedBox(height: Dimensions.paddingSizeLarge),
+            if (controller.endingSoonModel?.products?.isEmpty != true)
+              const SizedBox(height: Dimensions.paddingSizeLarge),
 
             TrendingAuctionProductSectionWidget(products: controller.trendingModel?.products),
-            const SizedBox(height: Dimensions.paddingSizeLarge),
+            if (controller.trendingModel?.products?.isEmpty != true)
+              const SizedBox(height: Dimensions.paddingSizeLarge),
 
             if (isLoggedIn) ...[
               const RecentlyViewedSectionWidget(),
@@ -71,7 +73,7 @@ DateTime _targetTime(AuctionProduct p) {
 double _price(AuctionProduct p) {
   final isLive = _cardState(p) == AuctionCardState.live;
   if (isLive) {
-    final highest = p.auctionDetails?.highestBidAmount;
+    final highest = p.highestBidAmount ?? p.auctionDetails?.highestBidAmount;
     return (highest != null && highest != 0) ? highest.toDouble() : (p.startingPrice?.toDouble() ?? 0.0);
   }
   return p.startingPrice?.toDouble() ?? 0.0;
@@ -85,8 +87,8 @@ AuctionCardWidget _buildCard(AuctionProduct p) {
     productName: p.name ?? '',
     price: _price(p),
     targetTime: _targetTime(p),
-    viewCount: p.auctionDetails?.totalViews ?? 0,
-    bidCount: p.auctionDetails?.totalBids,
+    viewCount: p.totalViews ?? p.auctionDetails?.totalViews ?? 0,
+    bidCount: p.totalBids ?? p.auctionDetails?.totalBids,
   );
 }
 
@@ -401,7 +403,7 @@ class RecentlyViewedSectionWidget extends StatelessWidget {
                       final isLive = cardState == AuctionCardState.live;
                       final raw = isLive ? details?.endTime : details?.startTime;
                       final targetTime = raw != null ? DateTime.tryParse(raw) ?? DateTime.now() : DateTime.now();
-                      final highest = details?.highestBidAmount;
+                      final highest = product?.highestBidAmount ?? details?.highestBidAmount;
                       final price = isLive ? (highest != null && highest != 0 ? highest.toDouble() : (product?.startingPrice?.toDouble() ?? 0.0)) : (product?.startingPrice?.toDouble() ?? 0.0);
 
                       return SizedBox(
@@ -413,8 +415,8 @@ class RecentlyViewedSectionWidget extends StatelessWidget {
                           productName: product?.name ?? '',
                           price: price,
                           targetTime: targetTime,
-                          viewCount: details?.totalViews ?? 0,
-                          bidCount: details?.totalBids,
+                          viewCount: product?.totalViews ?? details?.totalViews ?? 0,
+                          bidCount:  product?.totalBids ?? details?.totalBids,
                         ),
                       );
                     },

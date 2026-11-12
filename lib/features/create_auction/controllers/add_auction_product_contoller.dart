@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/helper/date_converter.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/brand/controllers/brand_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/category/controllers/category_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/auction_category/controllers/auction_category_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/create_auction/controllers/add_auction_product_media_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/create_auction/domain/models/add_auction_product_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/create_auction/widgets/auction_product_video_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/vat_tax/controllers/vat_tax_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/vat_tax/domain/models/tax_vat_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/create_auction/domain/services/add_auction_product_service_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/api_checker.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class AddAuctionProductController extends ChangeNotifier {
@@ -182,9 +184,9 @@ class AddAuctionProductController extends ChangeNotifier {
       showCustomSnackBarWidget(getTranslated('please_enter_valid_maximum_decrement', context), context, snackBarType: SnackBarType.warning);
       return false;
     }
-    final systemTaxType = Provider.of<SplashController>(context, listen: false).configModel?.systemTaxType;
+    final isTaxSelectable = Provider.of<VatTaxController>(context, listen: false).isTaxSelectable;
 
-    if (systemTaxType == 'product_wise') {
+    if (isTaxSelectable) {
       if (selectedVatTaxRate == null || selectedVatTaxRate.isEmpty) {
         showCustomSnackBarWidget(getTranslated('please_add_your_product_tax', context), context, snackBarType: SnackBarType.warning);
         return false;
@@ -238,7 +240,7 @@ class AddAuctionProductController extends ChangeNotifier {
     notifyListeners();
 
     final mediaController = Provider.of<AddAuctionProductMediaController>(context, listen: false);
-    final categoryController = Provider.of<CategoryController>(context, listen: false);
+    final categoryController = Provider.of<AuctionCategoryController>(context, listen: false);
     final brandController = Provider.of<BrandController>(context, listen: false);
     final languages = Provider.of<SplashController>(context, listen: false).configModel?.language ?? [];
     final languageList = languages.map((l) => l.code ?? 'en').toList();
@@ -250,8 +252,8 @@ class AddAuctionProductController extends ChangeNotifier {
     }
 
     int? brandId;
-    if (selectedBrand != null && brandController.brandList.isNotEmpty) {
-      final matched = brandController.brandList.where((b) => b.name == selectedBrand).firstOrNull;
+    if (selectedBrand != null && brandController.auctionBrandList.isNotEmpty) {
+      final matched = brandController.auctionBrandList.where((b) => b.name == selectedBrand).firstOrNull;
       if (matched != null) brandId = matched.id;
     }
 
@@ -271,9 +273,8 @@ class AddAuctionProductController extends ChangeNotifier {
       videoType: resolvedVideoType,
     );
 
-    final formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
-    final startTimeStr = formatter.format(startTime!);
-    final endTimeStr = formatter.format(endTime!);
+    final startTimeStr = DateConverter.yearMonthDayTime(startTime!);
+    final endTimeStr = DateConverter.yearMonthDayTime(endTime!);
     final duration = endTime.difference(startTime).inDays;
 
     List<int>? taxIds;
@@ -352,7 +353,7 @@ class AddAuctionProductController extends ChangeNotifier {
         currentCurrencyCode: currencyCode,
       );
 
-      if (response?.response?.statusCode == 200) {
+      if (response?.response?.statusCode == 200 || response?.response?.statusCode == 201) {
         _isLoading = false;
         notifyListeners();
         mediaController.reset();
@@ -400,7 +401,7 @@ class AddAuctionProductController extends ChangeNotifier {
     notifyListeners();
 
     final mediaController = Provider.of<AddAuctionProductMediaController>(context, listen: false);
-    final categoryController = Provider.of<CategoryController>(context, listen: false);
+    final categoryController = Provider.of<AuctionCategoryController>(context, listen: false);
     final brandController = Provider.of<BrandController>(context, listen: false);
     final languages = Provider.of<SplashController>(context, listen: false).configModel?.language ?? [];
     final languageList = languages.map((l) => l.code ?? 'en').toList();
@@ -412,8 +413,8 @@ class AddAuctionProductController extends ChangeNotifier {
     }
 
     int? brandId;
-    if (selectedBrand != null && brandController.brandList.isNotEmpty) {
-      final matched = brandController.brandList.where((b) => b.name == selectedBrand).firstOrNull;
+    if (selectedBrand != null && brandController.auctionBrandList.isNotEmpty) {
+      final matched = brandController.auctionBrandList.where((b) => b.name == selectedBrand).firstOrNull;
       if (matched != null) brandId = matched.id;
     }
 
@@ -433,9 +434,8 @@ class AddAuctionProductController extends ChangeNotifier {
       videoType: resolvedVideoType,
     );
 
-    final formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
-    final startTimeStr = formatter.format(startTime!);
-    final endTimeStr = formatter.format(endTime!);
+    final startTimeStr = DateConverter.yearMonthDayTime(startTime!);
+    final endTimeStr = DateConverter.yearMonthDayTime(endTime!);
     final duration = endTime.difference(startTime).inDays;
 
     List<int>? taxIds;
@@ -450,6 +450,8 @@ class AddAuctionProductController extends ChangeNotifier {
 
     final thumbnail = mediaController.thumbnailFile;
     final images = mediaController.productImages.isNotEmpty ? mediaController.productImages : null;
+    // The stored file name of every existing image still shown in the form.
+    final existingImages = mediaController.existingImageUrls.map((url) => url.split('?').first.split('/').last).toList();
 
     final videoType = updateAuctionModel.videoType;
     XFile? customerVideo;
@@ -480,6 +482,7 @@ class AddAuctionProductController extends ChangeNotifier {
         returnPolicy: returnPolicyController.text.trim(),
         thumbnail: thumbnail,
         images: images,
+        existingImages: existingImages,
         videoType: videoType,
         youtubeVideo: videoLinkController.text.trim().isNotEmpty ? videoLinkController.text.trim() : null,
         customerVideo: customerVideo,
@@ -502,7 +505,7 @@ class AddAuctionProductController extends ChangeNotifier {
         currentCurrencyCode: currencyCode,
       );
 
-      if (response?.response?.statusCode == 200) {
+      if (response?.response?.statusCode == 200 || response?.response?.statusCode == 201) {
         _isLoading = false;
         notifyListeners();
         showCustomSnackBarWidget(getTranslated('auction_product_updated_successfully', Get.context!), Get.context!, snackBarType: SnackBarType.success);
@@ -548,7 +551,7 @@ class AddAuctionProductController extends ChangeNotifier {
     notifyListeners();
 
     final mediaController = Provider.of<AddAuctionProductMediaController>(context, listen: false);
-    final categoryController = Provider.of<CategoryController>(context, listen: false);
+    final categoryController = Provider.of<AuctionCategoryController>(context, listen: false);
     final brandController = Provider.of<BrandController>(context, listen: false);
     final languages = Provider.of<SplashController>(context, listen: false).configModel?.language ?? [];
     final languageList = languages.map((l) => l.code ?? 'en').toList();
@@ -560,8 +563,8 @@ class AddAuctionProductController extends ChangeNotifier {
     }
 
     int? brandId;
-    if (selectedBrand != null && brandController.brandList.isNotEmpty) {
-      final matched = brandController.brandList.where((b) => b.name == selectedBrand).firstOrNull;
+    if (selectedBrand != null && brandController.auctionBrandList.isNotEmpty) {
+      final matched = brandController.auctionBrandList.where((b) => b.name == selectedBrand).firstOrNull;
       if (matched != null) brandId = matched.id;
     }
 
@@ -581,9 +584,8 @@ class AddAuctionProductController extends ChangeNotifier {
       videoType: resolvedVideoType,
     );
 
-    final formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
-    final startTimeStr = formatter.format(startTime!);
-    final endTimeStr = formatter.format(endTime!);
+    final startTimeStr = DateConverter.yearMonthDayTime(startTime!);
+    final endTimeStr = DateConverter.yearMonthDayTime(endTime!);
     final duration = endTime.difference(startTime).inDays;
 
     List<int>? taxIds;
@@ -648,10 +650,14 @@ class AddAuctionProductController extends ChangeNotifier {
         currentCurrencyCode: currencyCode,
       );
 
-      if (response?.response?.statusCode == 200) {
+      final int? statusCode = response?.response?.statusCode;
+      if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
         _isLoading = false;
         notifyListeners();
-        showCustomSnackBarWidget(getTranslated('auction_relaunched_successfully', Get.context!), Get.context!, snackBarType: SnackBarType.success);
+        showCustomSnackBarWidget(
+          ApiEnvelope.message(response?.response?.data) ?? getTranslated('auction_relaunched_successfully', Get.context!),
+          Get.context!, snackBarType: SnackBarType.success,
+        );
       } else {
         _isLoading = false;
         notifyListeners();
@@ -673,12 +679,16 @@ class AddAuctionProductController extends ChangeNotifier {
     try {
       final ApiResponseModel response = await addAuctionProductServiceInterface.deleteAuctionProduct(productId: productId);
 
-      if (response.response?.statusCode == 200) {
+      final int? statusCode = response.response?.statusCode;
+      if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
         isSuccess = true;
         _isLoading = false;
         notifyListeners();
-        showCustomSnackBarWidget(getTranslated('auction_product_deleted_successfully', Get.context!), Get.context!, snackBarType: SnackBarType.success);
-      } else if (response.response?.statusCode == 404) {
+        showCustomSnackBarWidget(
+          ApiEnvelope.message(response.response?.data) ?? getTranslated('auction_product_deleted_successfully', Get.context!),
+          Get.context!, snackBarType: SnackBarType.success,
+        );
+      } else if (statusCode == 404) {
         _isLoading = false;
         notifyListeners();
         showCustomSnackBarWidget(getTranslated('auction_product_not_found', Get.context!), Get.context!, snackBarType: SnackBarType.error);
@@ -703,12 +713,16 @@ class AddAuctionProductController extends ChangeNotifier {
     try {
       final ApiResponseModel response = await addAuctionProductServiceInterface.cancelAuctionProduct(productId: productId);
 
-      if (response.response?.statusCode == 200) {
+      final int? statusCode = response.response?.statusCode;
+      if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
         isSuccess = true;
         _isLoading = false;
         notifyListeners();
-        showCustomSnackBarWidget(getTranslated('auction_cancelled_successfully', Get.context!), Get.context!, snackBarType: SnackBarType.success);
-      } else if (response.response?.statusCode == 404) {
+        showCustomSnackBarWidget(
+          ApiEnvelope.message(response.response?.data) ?? getTranslated('auction_cancelled_successfully', Get.context!),
+          Get.context!, snackBarType: SnackBarType.success,
+        );
+      } else if (statusCode == 404) {
         _isLoading = false;
         notifyListeners();
         showCustomSnackBarWidget(getTranslated('auction_product_not_found', Get.context!), Get.context!, snackBarType: SnackBarType.error);

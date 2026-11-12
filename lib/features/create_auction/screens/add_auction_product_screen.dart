@@ -5,7 +5,7 @@ import 'package:flutter_sixvalley_ecommerce/features/auction_ai/controllers/auct
 import 'package:flutter_sixvalley_ecommerce/features/auction_ai/widgets/auction_ai_generator_bottom_sheet.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_details/domain/models/creator/creator_auction_details_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/brand/controllers/brand_controller.dart';
-import 'package:flutter_sixvalley_ecommerce/features/category/controllers/category_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/auction_category/controllers/auction_category_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/create_auction/controllers/add_auction_product_media_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/create_auction/widgets/ai_button_widgets.dart';
 import 'package:flutter_sixvalley_ecommerce/features/create_auction/widgets/auction_product_video_widget.dart';
@@ -74,8 +74,11 @@ class AddAuctionProductScreenState extends State<AddAuctionProductScreen> with T
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      Provider.of<BrandController>(context, listen: false).getBrandList(offset: 1);
-      Provider.of<CategoryController>(context, listen: false).getCategoryList(false);
+      final Future<void> brands = Provider.of<BrandController>(context, listen: false).getAuctionBrandList(offset: 1);
+      final Future<void> categories = Provider.of<AuctionCategoryController>(context, listen: false).getCategoryList(false);
+      // The prefill resolves the category and brand by id against these lists.
+      if (widget.initialProduct != null) await Future.wait([brands, categories]);
+      if (!mounted) return;
       initData();
     });
   }
@@ -173,7 +176,7 @@ class AddAuctionProductScreenState extends State<AddAuctionProductScreen> with T
       }
     }
 
-    final translatedLocales = p.translations!.map((t) => t.locale).whereType<String>().toSet();
+    final translatedLocales = (p.translations ?? []).map((t) => t.locale).whereType<String>().toSet();
     final defaultLangIdx = languages.indexWhere((lan) => !translatedLocales.contains(lan.code));
 
     if (defaultLangIdx >= 0) {
@@ -205,8 +208,11 @@ class AddAuctionProductScreenState extends State<AddAuctionProductScreen> with T
       // selectedProductType = p.productType != null
       //     ? productTypeList.firstWhere((t) => t.toLowerCase() == p.productType!.toLowerCase(), orElse: () => productTypeList.first) : null;
       selectedProductType = 'Physical';
-      selectedCategory = p.category?.name;
-      selectedBrand = p.brand?.name;
+      // v6 details only carry the ids, so the names come from the loaded auction lists.
+      selectedCategory = p.category?.name ?? Provider.of<AuctionCategoryController>(context, listen: false)
+          .categoryList.where((c) => c.id != null && c.id == p.categoryId).firstOrNull?.name;
+      selectedBrand = p.brand?.name ?? Provider.of<BrandController>(context, listen: false)
+          .auctionBrandList.where((b) => b.id != null && b.id == p.brandId).firstOrNull?.name;
       if (itemConditionKey != null) {
         selectedItemCondition = itemConditionKey;
       }
@@ -275,6 +281,12 @@ class AddAuctionProductScreenState extends State<AddAuctionProductScreen> with T
     shippingFeeController.dispose();
     returnPolicyController.dispose();
     videoLinkController.dispose();
+    for (final controller in titleControllerList) {
+      controller.dispose();
+    }
+    for (final controller in descriptionControllerList) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -285,11 +297,9 @@ class AddAuctionProductScreenState extends State<AddAuctionProductScreen> with T
   Widget build(BuildContext context) {
     super.build(context);
     final imageController = Provider.of<AddAuctionProductMediaController>(context);
-    final brandController = Provider.of<BrandController>(context);
-    final categoryController = Provider.of<CategoryController>(context);
+    final categoryController = Provider.of<AuctionCategoryController>(context);
     final bool aiEnabled = Provider.of<SplashController>(context, listen: false).configModel?.isAiFeatureEnabled == true;
 
-    final List<String> brandNames = brandController.brandListSorted?.map((b) => b.name ?? '').where((name) => name.isNotEmpty).toList() ?? [];
     final List<String> categoryNames = categoryController.categoryList.map((c) => c.name ?? '').where((name) => name.isNotEmpty).toList();
 
     return Consumer<AuctionAiController>(
@@ -333,7 +343,6 @@ class AddAuctionProductScreenState extends State<AddAuctionProductScreen> with T
                     categoryList: categoryNames,
                     onCategoryChanged: (val) => setState(() => selectedCategory = val),
                     brand: selectedBrand,
-                    brandList: brandNames,
                     onBrandChanged: (val) => setState(() => selectedBrand = val),
                     itemCondition: selectedItemCondition,
 
@@ -415,7 +424,7 @@ class AddAuctionProductScreenState extends State<AddAuctionProductScreen> with T
     final data = aiController.generalSetupModel?.auctionGeneralSetupModel?.data;
     if (data == null) return;
 
-    final categoryController = Provider.of<CategoryController>(context, listen: false);
+    final categoryController = Provider.of<AuctionCategoryController>(context, listen: false);
     final brandController = Provider.of<BrandController>(context, listen: false);
 
     setState(() {
@@ -433,8 +442,8 @@ class AddAuctionProductScreenState extends State<AddAuctionProductScreen> with T
         }
       }
 
-      if (data.brandId != null && brandController.brandListSorted != null) {
-        for (final b in brandController.brandListSorted!) {
+      if (data.brandId != null) {
+        for (final b in brandController.auctionBrandList) {
           if (b.id == data.brandId) {
             selectedBrand = b.name;
             break;

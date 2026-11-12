@@ -61,12 +61,13 @@ class _AuctionSaveListScreenState extends State<AuctionSaveListScreen> {
                     onRefresh: () async => controller.getCustomerSavedAuctionList(context, isRefresh: true),
                     child: PaginatedListView(
                       scrollController: _scrollController,
-                      totalSize: controller.savedAuctionList.length + (controller.hasSavedMore ? 1 : 0),
-                      offset: controller.savedOffset,
+                      totalSize: controller.savedTotalSize,
+                      offset: controller.currentSavedOffset,
                       limit: 10,
                       onPaginate: (_) => controller.loadMoreSaved(context),
                       itemView: Expanded(
                         child: ListView.builder(
+                          controller: _scrollController,
                           physics: const AlwaysScrollableScrollPhysics(),
                           itemCount: controller.savedAuctionList.length,
                           itemBuilder: (context, index) {

@@ -14,13 +14,9 @@ import 'package:http_parser/http_parser.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 
-
-
-
 class SupportTicketRepository implements SupportTicketRepositoryInterface{
   final DioClient? dioClient;
   SupportTicketRepository({required this.dioClient});
-
 
   @override
   Future<http.StreamedResponse> createNewSupportTicket(SupportTicketBody supportTicketModel, List<XFile?> file) async {
@@ -44,11 +40,15 @@ class SupportTicketRepository implements SupportTicketRepositoryInterface{
     return response;
   }
 
-
   @override
-  Future<ApiResponseModel> getList({int? offset = 1}) async {
+  Future<ApiResponseModel> getList({int? offset = 1}) => getSupportTicketList(offset: offset);
+
+  Future<ApiResponseModel> getSupportTicketList({int? offset, int limit = 10}) async {
     try {
-      final response = await dioClient!.get(AppConstants.getSupportTicketUri);
+      final response = await dioClient!.get(AppConstants.getSupportTicketUri, queryParameters: {
+        'limit': limit,
+        'offset': offset ?? 1,
+      });
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -56,19 +56,21 @@ class SupportTicketRepository implements SupportTicketRepositoryInterface{
   }
 
   @override
-  Future<ApiResponseModel> getSupportReplyList(String ticketID) async {
+  Future<ApiResponseModel> getSupportReplyList(String ticketID, {int? offset, int limit = 10}) async {
     try {
-      final response = await dioClient!.get('${AppConstants.supportTicketConversationUri}$ticketID');
+      final response = await dioClient!.get('${AppConstants.supportTicketConversationUri}$ticketID/conversations', queryParameters: {
+        'limit': limit,
+        'offset': offset ?? 1,
+      });
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
     }
   }
-
 
   @override
   Future<http.StreamedResponse> sendReply(String ticketID, String message, List<XFile?> file) async {
-    http.MultipartRequest request = http.MultipartRequest('POST', Uri.parse('${AppConstants.baseUrl}${AppConstants.supportTicketReplyUri}$ticketID'));
+    http.MultipartRequest request = http.MultipartRequest('POST', Uri.parse('${AppConstants.baseUrl}${AppConstants.supportTicketReplyUri}$ticketID/conversations'));
     request.headers.addAll(<String,String>{'Authorization': 'Bearer ${Provider.of<AuthController>(Get.context!, listen: false).getUserToken()}'});
     for(int i=0; i<file.length;i++){
       Uint8List list = await file[i]!.readAsBytes();
@@ -85,19 +87,15 @@ class SupportTicketRepository implements SupportTicketRepositoryInterface{
     return response;
   }
 
-
-
   @override
   Future<ApiResponseModel> closeSupportTicket(String ticketID) async {
     try {
-      final response = await dioClient!.get('${AppConstants.closeSupportTicketUri}$ticketID');
+      final response = await dioClient!.put('${AppConstants.closeSupportTicketUri}$ticketID/close');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
     }
   }
-
-
 
   @override
   Future delete(int id) {
@@ -111,8 +109,6 @@ class SupportTicketRepository implements SupportTicketRepositoryInterface{
     throw UnimplementedError();
   }
 
-
-
   @override
   Future update(Map<String, dynamic> body, int id) {
     // TODO: implement update
@@ -124,5 +120,4 @@ class SupportTicketRepository implements SupportTicketRepositoryInterface{
     // TODO: implement add
     throw UnimplementedError();
   }
-
 }

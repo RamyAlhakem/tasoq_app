@@ -15,27 +15,13 @@ class ProductRepository extends DataSyncService implements ProductRepositoryInte
 
   @override
   Future<ApiResponseModel> getFilteredProductList(BuildContext context, String offset, ProductType productType) async {
-    late String endUrl;
-
-     if(productType == ProductType.bestSelling) {
-      endUrl = AppConstants.bestSellingProductUri;
-    }
-    else if(productType == ProductType.newArrival){
-      endUrl = AppConstants.newArrivalProductUri;
-    }
-    else if(productType == ProductType.topProduct){
-      endUrl = AppConstants.topProductUri;
-    }else if(productType == ProductType.discountedProduct){
-       endUrl = AppConstants.discountedProductUri;
-     }
     try {
-      final response = await dioClient.get(endUrl+offset);
+      final response = await dioClient.get(_getApiEndUrlByType(productType) + offset);
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
     }
   }
-
 
   @override
   Future<ApiResponseModel<T>> getProductModelByType<T>({
@@ -52,42 +38,45 @@ class ProductRepository extends DataSyncService implements ProductRepositoryInte
   String _getApiEndUrlByType(ProductType type) {
     switch (type) {
       case ProductType.newArrival:
-        return AppConstants.newArrivalProductUri;
+        return _pagedUrl(AppConstants.newArrivalProductUri);
 
       case ProductType.latestProduct:
-        return AppConstants.latestProductUri;
+        return _pagedUrl(AppConstants.latestProductUri);
 
       case ProductType.featuredProduct:
-        return AppConstants.featuredProductUri;
+        return _pagedUrl(AppConstants.featuredProductUri);
 
       case ProductType.topProduct:
-        return AppConstants.topProductUri;
+        return _pagedUrl(AppConstants.topProductUri);
 
       case ProductType.bestSelling:
-        return AppConstants.bestSellingProductUri;
+        return _pagedUrl(AppConstants.bestSellingProductUri);
 
       case ProductType.discountedProduct:
-        return AppConstants.discountedProductUri;
+        return _pagedUrl(AppConstants.discountedProductUri);
 
       case ProductType.justForYou:
-        return '${AppConstants.justForYou}&limit=10&offset=';
+        return _pagedUrl(AppConstants.justForYou);
 
       default:
-        return AppConstants.newArrivalProductUri;
+        return _pagedUrl(AppConstants.newArrivalProductUri);
 
     }
 
   }
 
+  static String _pagedUrl(String uri) => '$uri?limit=10&offset=';
 
   @override
   Future<ApiResponseModel> getBrandOrCategoryProductList({required bool isBrand, required int id, String searchProduct = '', required int offset, String? productType, String? brandIds, String? authorIds, String? publishingIds}) async {
     try {
       String uri;
       if(isBrand){
-        uri = '${AppConstants.brandProductUri}$id?guest_id=1&limit=10&offset=$offset&search=$searchProduct';
+        // v6 nests the id before "products" (no guest_id — this is a public
+        // endpoint, personalization is via bearer token only).
+        uri = '${AppConstants.brandProductUri}$id/products?search=$searchProduct&limit=10&offset=$offset';
       }else {
-        uri = '${AppConstants.categoryProductUri}$id?guest_id=1&search=$searchProduct&limit=10&offset=$offset';
+        uri = '${AppConstants.categoryProductUri}$id/products?search=$searchProduct&limit=10&offset=$offset';
         if (productType != null && productType != 'all') uri += '&product_type=$productType';
         if (brandIds != null && brandIds != '[]') uri += '&brand_ids=$brandIds';
         if (authorIds != null && authorIds != '[]') uri += '&product_authors=$authorIds';
@@ -104,22 +93,7 @@ class ProductRepository extends DataSyncService implements ProductRepositoryInte
   @override
   Future<ApiResponseModel> getRelatedProductList(String id) async {
     try {
-      final response = await dioClient.get('${AppConstants.relatedProductUri}$id?guest_id=1');
-      return ApiResponseModel.withSuccess(response);
-    } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
-    }
-  }
-
-
-
-
-
-  @override
-  Future<ApiResponseModel> getLatestProductList(String offset) async {
-    try {
-      final response = await dioClient.get(
-        AppConstants.latestProductUri+offset,);
+      final response = await dioClient.get('${AppConstants.relatedProductUri}$id/related');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -147,7 +121,7 @@ class ProductRepository extends DataSyncService implements ProductRepositoryInte
   @override
   Future<ApiResponseModel> getJustForYouProductList({required int offset, int? limit}) async {
     try {
-      final response = await dioClient.get('${AppConstants.justForYou}&limit${limit ?? 10}&offset=$offset');
+      final response = await dioClient.get('${AppConstants.justForYou}?limit=${limit ?? 10}&offset=$offset');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -156,8 +130,8 @@ class ProductRepository extends DataSyncService implements ProductRepositoryInte
 
   @override
   Future<ApiResponseModel<T>> getMostSearchingProductList<T>({required int offset, required DataSourceEnum source}) async {
-
-    return await fetchData<T>('${AppConstants.mostSearching}?guest_id=1&limit=10&offset=$offset', source);
+    // v6 has no guest_id param here — personalization is via bearer token only.
+    return await fetchData<T>('${AppConstants.mostSearching}?limit=10&offset=$offset', source);
 
   }
 
@@ -169,8 +143,7 @@ class ProductRepository extends DataSyncService implements ProductRepositoryInte
 
   @override
   Future<ApiResponseModel<T>> getClearanceAllProductList<T>({required int offset, required DataSourceEnum source}) async {
-    return await fetchData<T>('${AppConstants.clearanceAllProductUri}?guest_id=1&limit=10&offset=$offset', source);
-
+    return await fetchData<T>('${AppConstants.clearanceSaleProductUri}?limit=10&offset=$offset', source);
   }
 
 
@@ -190,7 +163,6 @@ class ProductRepository extends DataSyncService implements ProductRepositoryInte
             'price_max' : priceMax,
             'limit' : '20',
             'offset' : offset,
-            'guest_id' : '1',
             'product_type' : productType ?? 'all',
             'offer_type' : offerType,
           });

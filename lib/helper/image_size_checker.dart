@@ -182,7 +182,6 @@ class ImageValidationHelper{
     }
   }
 
-  /// Checks if MIME type contains any allowed image extension
   static bool _isValidMimeType(String? mimeType) {
     if (mimeType == null || mimeType.isEmpty) {
       return false;
@@ -224,7 +223,6 @@ class ImageValidationHelper{
     return null;
   }
 
-  /// Builds error message for validation failure
   static String _buildValidationFailedError(BuildContext context, Object error) {
     final failedMessage =  getTranslated('failed_to_validate_file_type', Get.context!);
     return '$failedMessage: $error';
@@ -283,30 +281,33 @@ class ImageValidationHelper{
    //   return imageSize;
    // }
 
-   static String getFileSizeFromPlatformFileToString(PlatformFile platformFile)  {
+   static Future<String> getFileSizeFromPlatformFileToString(PlatformFile platformFile) async {
 
-     int sizeOfTheFileInBytes =  platformFile.size;
-     String fileSize = "";
+     return getFileSizeFromBytesToString(await platformFile.length());
+   }
 
+   static String getFileSizeFromBytesToString(int sizeOfTheFileInBytes) {
      if((sizeOfTheFileInBytes / (1024 * 1024)) > 1){
-       fileSize = "${(sizeOfTheFileInBytes / (1024 * 1024)).toStringAsFixed(1)} MB";
-     }else{
-       fileSize = "${(sizeOfTheFileInBytes / 1024 ).toStringAsFixed(1)} KB";
+       return "${(sizeOfTheFileInBytes / (1024 * 1024)).toStringAsFixed(1)} MB";
      }
-     return fileSize;
+     return "${(sizeOfTheFileInBytes / 1024 ).toStringAsFixed(1)} KB";
    }
 
-   static double getFileSizeFromPlatformFileToDouble(PlatformFile platformFile)  {
-     return (platformFile.size / (1024 * 1024));
+   static Future<double> getFileSizeFromPlatformFileToDouble(PlatformFile platformFile) async {
+     return (await platformFile.length() / (1024 * 1024));
    }
 
 
-   static double getMultipleFileSizeFromPlatformFiles(List<PlatformFile> platformFiles)  {
+   static Future<double> getMultipleFileSizeFromPlatformFiles(List<PlatformFile> platformFiles) async {
 
      double fileSize = 0.0;
      for (var element in platformFiles) {
-       fileSize  = (element.size / (1024 * 1024)) + fileSize;
+       fileSize  = (await element.length() / (1024 * 1024)) + fileSize;
      }
      return fileSize;
    }
+}
+
+extension PlatformFileExtension on PlatformFile {
+  String? get fileExtension => name.contains('.') ? name.split('.').last : null;
 }

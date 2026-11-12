@@ -143,6 +143,12 @@ class _FashionThemeHomePageState extends State<FashionThemeHomePage> {
     singleVendor = Provider.of<SplashController>(context, listen: false).configModel?.businessMode == "single";
   }
 
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
 
   @override
   Widget build(BuildContext context) {

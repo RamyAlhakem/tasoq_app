@@ -19,11 +19,7 @@ class SingleBannersWidget extends StatelessWidget {
       Consumer<BannerController>(
         builder: (context, footerBannerProvider, child) {
           return InkWell(onTap: () {
-            footerBannerProvider.clickBannerRedirect(context,
-              bannerModel?.resourceId,
-              bannerModel?.resourceType =='product'?
-              bannerModel?.product : null,
-              bannerModel?.resourceType);
+            footerBannerProvider.clickBannerRedirect(context, bannerModel);
             },
             child: Padding(padding: const EdgeInsets.symmetric(horizontal: 2.0),
               child: Container(width: MediaQuery.of(context).size.width,

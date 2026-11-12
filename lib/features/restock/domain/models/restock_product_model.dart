@@ -1,24 +1,25 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/domain/models/product_model.dart';
-
 
 class RestockProductModel {
   List<Data>? data;
   int? totalSize;
-  String? limit;
-  String? offset;
+  int? limit;
+  int? offset;
 
   RestockProductModel({this.data, this.totalSize, this.limit, this.offset});
 
   RestockProductModel.fromJson(Map<String, dynamic> json) {
-    if (json['data'] != null) {
-      data = <Data>[];
-      json['data'].forEach((v) {
-        data!.add(Data.fromJson(v));
-      });
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json);
+    if (envelope.data != null) {
+      data = <Data>[
+        for (final Map row in envelope.data!.whereType<Map>())
+          Data.fromJson(Map<String, dynamic>.from(row)),
+      ];
     }
-    totalSize = json['total_size'];
-    limit = json['limit'];
-    offset = json['offset'];
+    totalSize = envelope.totalSize ?? data?.length;
+    limit = envelope.limit;
+    offset = envelope.offset ?? 1;
   }
 
   Map<String, dynamic> toJson() {

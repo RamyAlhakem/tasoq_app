@@ -26,48 +26,54 @@ class _ColorSelectionWidgetState extends State<ColorSelectionWidget> {
         const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
         Expanded(
-          child: GridView.builder(
-            itemCount: widget.product.colors!.length,
+          child: CustomScrollView(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(), // expand instead of scroll
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 6, // 6 colors per row
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-              childAspectRatio: 1, // square cells
-            ),
-            itemBuilder: (ctx, index) {
-              String colorString =
-                  '0xff${widget.product.colors![index].code!.substring(1, 7)}';
-              return InkWell(
-                onTap: () {
-                  widget.detailsController.setCartVariantIndex(1, index, context);
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(1), // smaller padding
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: widget.detailsController.variantIndex == index
-                        ? Border.all(
-                      width: 2, // smaller border
-                      color: Theme.of(context).primaryColor,
-                    )
-                        : Border.all(
-                      width: 2,
-                      color: Theme.of(context).hintColor.withAlpha(60),
-                    ),
-                  ),
-                  child: Container(
-                    height: 25, // smaller circle
-                    width: 25,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Color(int.parse(colorString)),
-                    ),
-                  ),
+            slivers: [
+              SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 6, // 6 colors per row
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 1, // square cells
                 ),
-              );
-            },
+                delegate: SliverChildBuilderDelegate(
+                  (ctx, index) {
+                    String colorString =
+                        '0xff${widget.product.colors![index].code!.substring(1, 7)}';
+                    return InkWell(
+                      onTap: () {
+                        widget.detailsController.setCartVariantIndex(1, index, context);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(1), // smaller padding
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: widget.detailsController.variantIndex == index
+                              ? Border.all(
+                            width: 2, // smaller border
+                            color: Theme.of(context).primaryColor,
+                          )
+                              : Border.all(
+                            width: 2,
+                            color: Theme.of(context).hintColor.withAlpha(60),
+                          ),
+                        ),
+                        child: Container(
+                          height: 25, // smaller circle
+                          width: 25,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Color(int.parse(colorString)),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  childCount: widget.product.colors!.length,
+                ),
+              ),
+            ],
           ),
         )
 

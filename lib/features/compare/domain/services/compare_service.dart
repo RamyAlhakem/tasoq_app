@@ -11,8 +11,8 @@ class CompareService implements CompareServiceInterface{
   }
 
   @override
-  Future getAttributeList() async{
-    return await compareRepositoryInterface.getAttributeList();
+  Future getAttributeList({int offset = 1, int limit = 25}) async{
+    return await compareRepositoryInterface.getAttributeList(offset: offset, limit: limit);
   }
 
   @override

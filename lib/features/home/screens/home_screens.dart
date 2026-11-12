@@ -16,6 +16,7 @@ import 'package:flutter_sixvalley_ecommerce/features/deal/controllers/featured_d
 import 'package:flutter_sixvalley_ecommerce/features/deal/controllers/flash_deal_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/deal/widgets/featured_deal_list_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/deal/widgets/flash_deals_list_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/features/home/widgets/ai_fab_visibility_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/shimmers/flash_deal_shimmer.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/announcement_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/home/widgets/aster_theme/find_what_you_need_shimmer.dart';
@@ -113,8 +114,9 @@ class HomePage extends StatefulWidget {
   }
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
+  late final AiFabVisibilityController _aiFab;
 
 
   void passData(int index, String title) {
@@ -126,8 +128,16 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    _aiFab = AiFabVisibilityController(vsync: this, scrollController: _scrollController);
 
     singleVendor = Provider.of<SplashController>(context, listen: false).configModel?.businessMode == "single";
+  }
+
+  @override
+  void dispose() {
+    _aiFab.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
 
@@ -137,15 +147,21 @@ class _HomePageState extends State<HomePage> {
 
 
     return Scaffold(resizeToAvoidBottomInset: false,
-      floatingActionButton: Provider.of<SplashController>(context, listen: false).configModel?.aiShoppingAssistantStatus == true ? FloatingActionButton(
-        onPressed: () {
-          RouterHelper.getAiShoppingRoute(action: RouteAction.push);
-        },
-        backgroundColor: Theme.of(context).primaryColor,
-        child: const Icon(Icons.auto_awesome, color: Colors.white),
+      floatingActionButton: Provider.of<SplashController>(context, listen: false).configModel?.aiShoppingAssistantStatus == true ? SlideTransition(
+        position: _aiFab.slide,
+        child: FadeTransition(
+          opacity: _aiFab.fade,
+          child: FloatingActionButton(
+            onPressed: () {
+              RouterHelper.getAiShoppingRoute(action: RouteAction.push);
+            },
+            backgroundColor: Theme.of(context).primaryColor,
+            child: const Icon(Icons.auto_awesome, color: Colors.white),
+          ),
+        ),
       ) : SizedBox(),
 
-      body: SafeArea(child: RefreshIndicator(
+      body: SafeArea(child: NotificationListener<ScrollNotification>(onNotification: _aiFab.onScrollNotification, child: RefreshIndicator(
         onRefresh: () async {
           await HomePage.loadData(true);
         },
@@ -376,6 +392,7 @@ class _HomePageState extends State<HomePage> {
 
 
           ],
+        ),
         ),
         ),
       ),

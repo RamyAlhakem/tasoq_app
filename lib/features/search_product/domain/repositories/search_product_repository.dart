@@ -27,7 +27,6 @@ class SearchProductRepository implements SearchProductRepositoryInterface{
           'price_max' : priceMax,
           'limit' : '20',
           'offset' : offset,
-          'guest_id' : '1',
           'product_type' : productType ?? 'all'
         }
       );
@@ -41,7 +40,7 @@ class SearchProductRepository implements SearchProductRepositoryInterface{
   @override
   Future<ApiResponseModel> getSearchProductName(String name) async {
     try {
-      final response = await dioClient!.get('${AppConstants.getSuggestionProductName}$name&limit=10&&offset=1');
+      final response = await dioClient!.get('${AppConstants.getSuggestionProductName}$name&limit=10&offset=1');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -106,7 +105,12 @@ class SearchProductRepository implements SearchProductRepositoryInterface{
   @override
   Future<ApiResponseModel> getAuthorList(String? slug) async {
     try {
-      final response = await dioClient!.get('${AppConstants.getDigitalAuthorList}&slug=$slug');
+      // v6 drops guest_id and treats slug as optional — omitting it counts the
+      // whole marketplace, so only send it when scoping to a shop.
+      final response = await dioClient!.get(
+        AppConstants.getDigitalAuthorList,
+        queryParameters: slug != null ? {'slug': slug} : null,
+      );
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -116,7 +120,12 @@ class SearchProductRepository implements SearchProductRepositoryInterface{
   @override
   Future<ApiResponseModel> getPublishingHouse(String? slug) async {
     try {
-      final response = await dioClient!.get('${AppConstants.getDigitalPublishingHouse}&slug=$slug');
+      // v6 drops guest_id and treats slug as optional — omitting it counts the
+      // whole marketplace, so only send it when scoping to a shop.
+      final response = await dioClient!.get(
+        AppConstants.getDigitalPublishingHouse,
+        queryParameters: slug != null ? {'slug': slug} : null,
+      );
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));

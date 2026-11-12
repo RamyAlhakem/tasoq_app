@@ -45,8 +45,8 @@ class OrderDetailsService implements OrderDetailsServiceInterface{
   }
 
   @override
-  Future getTrackOrderDetailsId(String orderId) async{
-    return await orderDetailsRepositoryInterface.getTrackOrderDetailsId(orderId);
+  Future getTrackOrderDetailsId(String orderId, String? phoneNumber) async{
+    return await orderDetailsRepositoryInterface.getTrackOrderDetailsId(orderId, phoneNumber);
   }
 
   @override
@@ -55,26 +55,26 @@ class OrderDetailsService implements OrderDetailsServiceInterface{
   }
 
   @override
-  Future duePaymentByCod(int orderId, String paymentMethod, String? bringChangeAmount) async {
-    return await orderDetailsRepositoryInterface.duePaymentByCod(orderId, paymentMethod, bringChangeAmount);
+  Future duePaymentByCod(int orderId, String? bringChangeAmount, String? currencyCode) async {
+    return await orderDetailsRepositoryInterface.duePaymentByCod(orderId, bringChangeAmount, currencyCode);
   }
 
 
   @override
-  Future duePaymentByDigitalPayment(int orderId, String paymentMethod, String? guestId, String? orderDuePaymentNote, String? currencyCode) async {
-    return await orderDetailsRepositoryInterface.duePaymentByDigitalPayment(orderId,  paymentMethod, guestId, orderDuePaymentNote, currencyCode);
+  Future duePaymentByDigitalPayment(int orderId, String paymentMethod, String? orderDuePaymentNote, String? currencyCode) async {
+    return await orderDetailsRepositoryInterface.duePaymentByDigitalPayment(orderId, paymentMethod, orderDuePaymentNote, currencyCode);
   }
 
 
   @override
-  Future duePaymentByWallet(int orderId, String paymentMethod) async {
-    return await orderDetailsRepositoryInterface.duePaymentByWallet(orderId, paymentMethod);
+  Future duePaymentByWallet(int orderId) async {
+    return await orderDetailsRepositoryInterface.duePaymentByWallet(orderId);
   }
 
 
   @override
-  Future duePaymentByOfflinePayment(int orderId, String paymentMethod, String? orderDueNote, String? methodId) async {
-    return await orderDetailsRepositoryInterface.duePaymentByOfflinePayment(orderId, paymentMethod, orderDueNote, methodId);
+  Future duePaymentByOfflinePayment(int orderId, int? methodId, List<String?> typeKey, List<String> typeValue, String? orderDueNote) async {
+    return await orderDetailsRepositoryInterface.duePaymentByOfflinePayment(orderId, methodId, typeKey, typeValue, orderDueNote);
   }
 
 

@@ -9,10 +9,16 @@ class WishListRepository implements WishListRepositoryInterface{
 
   WishListRepository({required this.dioClient});
 
+  static Map<String, dynamic> _pageQuery(int? offset, String? search) => {
+    'limit': 10,
+    'offset': offset ?? 1,
+    if (search != null && search.isNotEmpty) 'search': search,
+  };
+
   @override
   Future<ApiResponseModel> getList({int? offset = 1, String? search = ''}) async {
     try {
-      final response = await dioClient!.get('${AppConstants.getWishListUri}?search=$search');
+      final response = await dioClient!.get(AppConstants.getWishListUri, queryParameters: _pageQuery(offset, search));
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -23,7 +29,7 @@ class WishListRepository implements WishListRepositoryInterface{
   @override
   Future<ApiResponseModel> getWishList({int? offset = 1, String? search = ''}) async {
     try {
-      final response = await dioClient!.get('${AppConstants.getWishListUri}?search=$search');
+      final response = await dioClient!.get(AppConstants.getWishListUri, queryParameters: _pageQuery(offset, search));
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -36,7 +42,7 @@ class WishListRepository implements WishListRepositoryInterface{
   @override
   Future<ApiResponseModel> add(int productID) async {
     try {
-      final response = await dioClient!.post(AppConstants.addWishListUri + productID.toString());
+      final response = await dioClient!.post(AppConstants.addWishListUri, data: {'product_id': productID});
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -46,7 +52,7 @@ class WishListRepository implements WishListRepositoryInterface{
   @override
   Future<ApiResponseModel> delete(int productID) async {
     try {
-      final response = await dioClient!.delete(AppConstants.removeWishListUri + productID.toString());
+      final response = await dioClient!.delete('${AppConstants.removeWishListUri}$productID');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));

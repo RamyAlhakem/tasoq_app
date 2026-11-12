@@ -47,7 +47,8 @@ class CheckoutRepository implements CheckoutRepositoryInterface{
 
       debugPrint('----------(order_place)-----$queryParams');
 
-      final response = await dioClient!.get(AppConstants.orderPlaceUri, queryParameters: queryParams);
+      // v6 places the order through POST with a JSON body, not GET with query params.
+      final response = await dioClient!.post(AppConstants.orderPlaceUri, data: queryParams);
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -94,7 +95,18 @@ class CheckoutRepository implements CheckoutRepositoryInterface{
   Future<ApiResponseModel> walletPaymentPlaceOrder(String? addressID, String? couponCode,String? couponDiscountAmount, String? billingAddressId, String? orderNote, bool? isCheckCreateAccount, String? password) async {
     int isCheckAccount = isCheckCreateAccount! ? 1: 0;
     try {
-      final response = await dioClient!.get('${AppConstants.walletPayment}?address_id=$addressID&coupon_code=$couponCode&coupon_discount=$couponDiscountAmount&billing_address_id=$billingAddressId&order_note=$orderNote&guest_id=${Provider.of<AuthController>(Get.context!, listen: false).getGuestToken()}&is_guest=${Provider.of<AuthController>(Get.context!, listen: false).isLoggedIn()? 0 :1}&is_check_create_account=$isCheckAccount&password=$password',);
+      // v6 places the order through POST with a JSON body, not GET with query params.
+      final response = await dioClient!.post(AppConstants.walletPayment, data: {
+        'address_id': addressID,
+        'coupon_code': couponCode,
+        'coupon_discount': couponDiscountAmount,
+        'billing_address_id': billingAddressId,
+        'order_note': orderNote,
+        'guest_id': Provider.of<AuthController>(Get.context!, listen: false).getGuestToken(),
+        'is_guest': Provider.of<AuthController>(Get.context!, listen: false).isLoggedIn() ? 0 : 1,
+        'is_check_create_account': isCheckAccount,
+        'password': password,
+      });
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -105,7 +117,7 @@ class CheckoutRepository implements CheckoutRepositoryInterface{
   @override
   Future<ApiResponseModel> offlinePaymentList() async {
     try {
-      final response = await dioClient!.get('${AppConstants.offlinePaymentList}?guest_id=${Provider.of<AuthController>(Get.context!, listen: false).getGuestToken()}&is_guest=${!Provider.of<AuthController>(Get.context!, listen: false).isLoggedIn()}');
+      final response = await dioClient!.get(AppConstants.offlinePaymentList);
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -122,26 +134,27 @@ class CheckoutRepository implements CheckoutRepositoryInterface{
       String? couponDiscount,
       String? paymentMethod,
       bool? isCheckCreateAccount,
-      String? password
+      String? password,
+      String? currentCurrencyCode,
       ) async {
 
     try {
       int isCheckAccount = isCheckCreateAccount! ? 1: 0;
+      // v6 drops customer_id/callback (legacy web-form-only fields) and expects
+      // is_check_create_account as an int, matching the other migrated place-order calls.
       final response = await dioClient!.post(AppConstants.digitalPayment, data: {
         "order_note": orderNote,
-        "customer_id":  customerId,
         "address_id": addressId,
         "billing_address_id": billingAddressId,
         "coupon_code": couponCode,
         "coupon_discount": couponDiscount,
         "payment_platform" : "app",
         "payment_method" : paymentMethod,
-        "callback" : null,
-        "payment_request_from" : "app",
         'guest_id' : Provider.of<AuthController>(Get.context!, listen: false).getGuestToken(),
         'is_guest': !Provider.of<AuthController>(Get.context!, listen: false).isLoggedIn(),
-        'is_check_create_account' : isCheckAccount.toString(),
+        'is_check_create_account' : isCheckAccount,
         'password' : password,
+        'current_currency_code': currentCurrencyCode,
       });
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
@@ -153,9 +166,10 @@ class CheckoutRepository implements CheckoutRepositoryInterface{
   @override
   Future<ApiResponseModel> getReferralAmount(String? amount) async {
     try {
-      final response = await dioClient!.post(
+      // v6 reads this through GET with a query param, not a POST body.
+      final response = await dioClient!.get(
         AppConstants.referralAmountUri,
-        data : {'coupon_discount' : amount}
+        queryParameters : {'coupon_discount' : amount}
       );
       return ApiResponseModel.withSuccess(response);
     } catch (e) {

@@ -11,6 +11,17 @@ import 'package:path_provider/path_provider.dart';
 
 enum VideoUploadType { link, file }
 
+Key _fileSectionKey({
+  required bool isPickingMedia,
+  required MediaFileModel? pickedMediaFile,
+  required String? existingVideoUrl,
+}) {
+  if (isPickingMedia) return const ValueKey('file-loading');
+  if (pickedMediaFile != null) return const ValueKey('file-preview');
+  if (existingVideoUrl != null) return const ValueKey('file-existing');
+  return const ValueKey('file-empty');
+}
+
 class AuctionProductVideoWidget extends StatefulWidget {
   final TextEditingController videoLinkController;
   final void Function(VideoUploadType type)? onTypeChanged;
@@ -110,48 +121,23 @@ class _AuctionProductVideoWidgetState extends State<AuctionProductVideoWidget> {
               duration: const Duration(milliseconds: 250),
               child: _selectedType == VideoUploadType.link
                   ? VideoLinkField(key: const ValueKey('link'), controller: widget.videoLinkController)
-                  : _buildFileSection(),
+                  : VideoFileSection(
+                      key: _fileSectionKey(
+                        isPickingMedia: widget.isPickingMedia,
+                        pickedMediaFile: widget.pickedMediaFile,
+                        existingVideoUrl: widget.existingVideoUrl,
+                      ),
+                      isPickingMedia: widget.isPickingMedia,
+                      pickedMediaFile: widget.pickedMediaFile,
+                      onFileRemove: widget.onFileRemove,
+                      existingVideoUrl: widget.existingVideoUrl,
+                      onExistingVideoRemove: widget.onExistingVideoRemove,
+                      onFileTap: widget.onFileTap,
+                    ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildFileSection() {
-    if (widget.isPickingMedia) {
-      return SizedBox(
-        key: const ValueKey('file-loading'),
-        width: 160,
-        height: 130,
-        child: Center(
-          child: CircularProgressIndicator(
-            color: Theme.of(context).primaryColor,
-            strokeWidth: 2,
-          ),
-        ),
-      );
-    }
-
-    if (widget.pickedMediaFile != null) {
-      return VideoFilePreview(
-        key: const ValueKey('file-preview'),
-        mediaFile: widget.pickedMediaFile!,
-        onRemove: widget.onFileRemove,
-      );
-    }
-
-    if (widget.existingVideoUrl != null) {
-      return VideoExistingPreview(
-        key: const ValueKey('file-existing'),
-        url: widget.existingVideoUrl!,
-        onRemove: widget.onExistingVideoRemove,
-      );
-    }
-
-    return VideoFileUploadZone(
-      key: const ValueKey('file-empty'),
-      onTap: widget.onFileTap,
     );
   }
 
@@ -229,6 +215,57 @@ class VideoLinkField extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class VideoFileSection extends StatelessWidget {
+  final bool isPickingMedia;
+  final MediaFileModel? pickedMediaFile;
+  final VoidCallback? onFileRemove;
+  final String? existingVideoUrl;
+  final VoidCallback? onExistingVideoRemove;
+  final VoidCallback? onFileTap;
+
+  const VideoFileSection({
+    super.key,
+    required this.isPickingMedia,
+    this.pickedMediaFile,
+    this.onFileRemove,
+    this.existingVideoUrl,
+    this.onExistingVideoRemove,
+    this.onFileTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isPickingMedia) {
+      return SizedBox(
+        width: 160,
+        height: 130,
+        child: Center(
+          child: CircularProgressIndicator(
+            color: Theme.of(context).primaryColor,
+            strokeWidth: 2,
+          ),
+        ),
+      );
+    }
+
+    if (pickedMediaFile != null) {
+      return VideoFilePreview(
+        mediaFile: pickedMediaFile!,
+        onRemove: onFileRemove,
+      );
+    }
+
+    if (existingVideoUrl != null) {
+      return VideoExistingPreview(
+        url: existingVideoUrl!,
+        onRemove: onExistingVideoRemove,
+      );
+    }
+
+    return VideoFileUploadZone(onTap: onFileTap);
   }
 }
 

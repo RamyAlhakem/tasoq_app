@@ -1,3 +1,31 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
+
+class WithdrawMethodList {
+  final List<WithdrawMethodModel> methods;
+
+  const WithdrawMethodList({this.methods = const []});
+
+  factory WithdrawMethodList.fromJson(dynamic json) {
+    final List raw;
+    if (json is List) {
+      raw = json;
+    } else if (json is Map) {
+      raw = ApiListEnvelope.fromJson(Map<String, dynamic>.from(json),
+              legacyKeys: const ['withdraw_methods', 'methods'])
+          .data ?? const [];
+    } else {
+      raw = const [];
+    }
+
+    return WithdrawMethodList(
+      methods: raw
+          .whereType<Map>()
+          .map((e) => WithdrawMethodModel.fromJson(Map<String, dynamic>.from(e)))
+          .toList(),
+    );
+  }
+}
+
 class WithdrawMethodModel {
   final int id;
   final String methodName;
@@ -15,14 +43,16 @@ class WithdrawMethodModel {
 
   factory WithdrawMethodModel.fromJson(Map<String, dynamic> json) {
     return WithdrawMethodModel(
-      id: json['id'],
-      methodName: json['method_name'] ?? '',
-      methodFields: (json['method_fields'] as List<dynamic>?)
-          ?.map((e) => MethodField.fromJson(e))
-          .toList() ??
-          [],
-      isDefault: json['is_default'] ?? false,
-      isActive: json['is_active'] ?? false,
+      id: asInt(json['id']) ?? 0,
+      methodName: json['method_name']?.toString() ?? '',
+      methodFields: (json['method_fields'] is List ? json['method_fields'] as List : const [])
+          .whereType<Map>()
+          .map((e) => MethodField.fromJson(Map<String, dynamic>.from(e)))
+          .toList(),
+
+      isDefault: asBool(json['is_default']),
+
+      isActive: json.containsKey('is_active') ? asBool(json['is_active']) : true,
     );
   }
 }
@@ -42,10 +72,19 @@ class MethodField {
 
   factory MethodField.fromJson(Map<String, dynamic> json) {
     return MethodField(
-      inputType: json['input_type'] ?? '',
-      inputName: json['input_name'] ?? '',
-      placeholder: json['placeholder'] ?? '',
-      isRequired: (json['is_required'] ?? 0) == 1,
+      inputType: json['input_type']?.toString() ?? '',
+      inputName: json['input_name']?.toString() ?? '',
+      placeholder: json['placeholder']?.toString() ?? '',
+      isRequired: asBool(json['is_required']),
     );
   }
+}
+
+bool asBool(dynamic value) =>
+    value == true || value == 1 || value == '1' || value == 'true';
+
+int? asInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  return int.tryParse('$value');
 }

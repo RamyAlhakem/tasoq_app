@@ -30,7 +30,7 @@ class AuctionProductQueueRepository implements AuctionProductQueueRepositoryInte
       final response = await dioClient!.delete('${AppConstants.customerAuctionProductDeleteUri}$id');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 

@@ -83,8 +83,8 @@ class PromiseItem extends StatelessWidget {
       width: iconSize,
       height: iconSize,
       fit: BoxFit.contain,
-      errorBuilder: (_, __, ___) => _placeholder(),
-    ) : _placeholder();
+      errorBuilder: (_, __, ___) => const PromisePlaceholderImage(),
+    ) : const PromisePlaceholderImage();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -109,11 +109,17 @@ class PromiseItem extends StatelessWidget {
     );
   }
 
-  Widget _placeholder() {
+}
+
+class PromisePlaceholderImage extends StatelessWidget {
+  const PromisePlaceholderImage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
     return Image.asset(
       Images.placeholder,
-      width: iconSize,
-      height: iconSize,
+      width: PromiseItem.iconSize,
+      height: PromiseItem.iconSize,
       fit: BoxFit.contain,
     );
   }

@@ -17,15 +17,13 @@ class AuctionTimelineEntry {
 class AuctionTimelineWidget extends StatelessWidget {
   final List<AuctionTimelineEntry> entries;
 
-  const AuctionTimelineWidget({
-    super.key,
-    required this.entries,
-  });
+  const AuctionTimelineWidget({super.key, required this.entries});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+      width: double.infinity,
       color: Theme.of(context).cardColor,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min,
         children: [

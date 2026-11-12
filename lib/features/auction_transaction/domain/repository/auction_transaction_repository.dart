@@ -1,9 +1,9 @@
+import 'package:flutter_sixvalley_ecommerce/helper/date_converter.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/dio/dio_client.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/exception/api_error_handler.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_transaction/domain/repository/auction_transaction_repository_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
-import 'package:intl/intl.dart';
 
 class AuctionTransactionRepository implements AuctionTransactionRepositoryInterface {
   final DioClient? dioClient;
@@ -26,8 +26,8 @@ class AuctionTransactionRepository implements AuctionTransactionRepositoryInterf
         if (searchAuctionId != null) 'search_auction_id': searchAuctionId,
         if (filterBy != null && filterBy != 'all') 'transaction_type[]': filterBy,
         if (filterDurationType != null && filterDurationType != 'all') 'filter_duration_type': filterDurationType,
-        if (filterDurationType == 'custom' && startDate != null) 'start_date': DateFormat('yyyy-MM-dd').format(startDate),
-        if (filterDurationType == 'custom' && endDate != null) 'end_date': DateFormat('yyyy-MM-dd').format(endDate),
+        if (filterDurationType == 'custom' && startDate != null) 'start_date': DateConverter.yearMonthDay(startDate),
+        if (filterDurationType == 'custom' && endDate != null) 'end_date': DateConverter.yearMonthDay(endDate),
       };
       final response = await dioClient!.get(AppConstants.auctionTransactionHistoryUri, queryParameters: queryParams);
       return ApiResponseModel.withSuccess(response);

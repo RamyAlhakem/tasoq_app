@@ -13,7 +13,6 @@ import 'package:flutter_sixvalley_ecommerce/features/refund/controllers/refund_c
 import 'package:flutter_sixvalley_ecommerce/features/splash/domain/models/config_model.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/price_converter.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
-import 'package:flutter_sixvalley_ecommerce/localization/controllers/localization_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
@@ -70,7 +69,6 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isLtr = Provider.of<LocalizationController>(context, listen: false).isLtr;
 
     if(widget.orderDetailsModel.productDetails != null && widget.orderDetailsModel.variant != null && widget.orderDetailsModel.variant!.isNotEmpty && widget.orderDetailsModel.productDetails?.productType == 'digital') {
       for(DigitalVariation dv in widget.orderDetailsModel.productDetails!.digitalVariation ?? []) {
@@ -216,8 +214,6 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
               Dimensions.paddingSizeSmall : 0),
 
 
-              ///Refund
-              ///
               // Consumer<RefundController>(builder: (context,refund,_) {
               //   return _canRefundRequest(configModel) ?
               //   InkWell(
@@ -297,8 +293,6 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
               //       );
               //     }
               // ),
-              ///
-              ///
 
 
             ]),
@@ -326,19 +320,17 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
 
         ]),
 
-        if(widget.orderDetailsModel.discount! > 0 && (widget.orderDetailsModel.productDetails?.discount != null || widget.orderDetailsModel.productDetails?.clearanceSale != null)) Positioned(
+        if(widget.orderDetailsModel.discount! > 0 && (widget.orderDetailsModel.productDetails?.discount != null || widget.orderDetailsModel.productDetails?.clearanceSale != null)) PositionedDirectional(
           top: 25,
-          left: isLtr ? 0 : null,
-          right: isLtr ? null : 20,
+          start: 0,
           child: Container(
             height: 20,
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraExtraSmall),
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor,
-              borderRadius: BorderRadius.horizontal(
-                right: Radius.circular(isLtr ? Dimensions.paddingSizeExtraSmall : 0),
-                left: Radius.circular(isLtr ? 0 : Dimensions.paddingSizeExtraSmall),
+              borderRadius: const BorderRadiusDirectional.horizontal(
+                end: Radius.circular(Dimensions.paddingSizeExtraSmall),
               ),
             ),
             child: CustomDirectionalityWidget(

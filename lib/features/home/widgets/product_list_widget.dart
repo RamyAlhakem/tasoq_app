@@ -91,6 +91,7 @@ class _SliverPaginatedMasonryGridState extends State<SliverPaginatedMasonryGrid>
   late List<int?> _offsetList;
   bool _isLoading = false;
   final _debounce = DebounceHelper(milliseconds: 500);
+  static const double _paginationThreshold = 200;
 
   @override
   void initState() {
@@ -102,8 +103,26 @@ class _SliverPaginatedMasonryGridState extends State<SliverPaginatedMasonryGrid>
 
 
 
+  @override
+  void didUpdateWidget(covariant SliverPaginatedMasonryGrid oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.scrollController != widget.scrollController) {
+      oldWidget.scrollController?.removeListener(_scrollListener);
+      widget.scrollController?.addListener(_scrollListener);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.scrollController?.removeListener(_scrollListener);
+    _debounce.dispose();
+    super.dispose();
+  }
+
   void _scrollListener() {
-    if (widget.scrollController?.position.pixels == widget.scrollController?.position.maxScrollExtent &&
+    final ScrollController? controller = widget.scrollController;
+    if (controller == null || !controller.hasClients) return;
+    if (controller.position.pixels >= controller.position.maxScrollExtent - _paginationThreshold &&
         widget.totalSize != null &&
         !_isLoading &&
         widget.enabledPagination) {
@@ -112,6 +131,7 @@ class _SliverPaginatedMasonryGridState extends State<SliverPaginatedMasonryGrid>
   }
 
   Future<void> _paginate() async {
+    if (!mounted || _isLoading) return;
     final pageSize = (widget.totalSize! / widget.limit!).ceil();
     if (_offset! < pageSize && !_offsetList.contains(_offset! + 1)) {
       setState(() => _isLoading = true);
@@ -153,10 +173,7 @@ class _SliverPaginatedMasonryGridState extends State<SliverPaginatedMasonryGrid>
             childCount: widget.itemCount,
             itemBuilder: widget.itemBuilder,
           ),
-          if (_isLoading ||
-              (widget.totalSize != null &&
-                  _offset! < (widget.totalSize! / widget.limit!).ceil() &&
-                  !_offsetList.contains(_offset! + 1)))
+          if (_isLoading)
             const SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.all(Dimensions.paddingSizeSmall),

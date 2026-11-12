@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/wallet/domain/models/wallet_transaction_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/wallet/domain/models/wallet_bonus_model.dart';
@@ -94,16 +95,15 @@ class WalletController extends ChangeNotifier {
     _isConvert = true;
     notifyListeners();
     ApiResponseModel apiResponse = await walletServiceInterface.addFundToWallet(amount, paymentMethod);
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+
+    final Map payload = ApiEnvelope.content(apiResponse.response?.data);
+    final int? statusCode = apiResponse.response?.statusCode;
+
+    if (apiResponse.response != null && (statusCode == 200 || statusCode == 201)) {
       _isConvert = false;
-
-      RouterHelper.getAddFundToWalletRoute(
-        action: RouteAction.push,
-        url: apiResponse.response?.data['redirect_link']
-      );
-
-    }else if (apiResponse.response?.statusCode == 202){
-      showCustomSnackBarWidget("Minimum= ${PriceConverter.convertPrice(Get.context!, double.tryParse('${apiResponse.response?.data['minimum_amount']}') )} and Maximum=${PriceConverter.convertPrice(Get.context!, double.tryParse('${apiResponse.response?.data['maximum_amount']}'))}", Get.context!, snackBarType: SnackBarType.warning);
+      RouterHelper.getAddFundToWalletRoute(action: RouteAction.push, url: payload['redirect_link']);
+    }else if (statusCode == 202){
+      showCustomSnackBarWidget("Minimum= ${PriceConverter.convertPrice(Get.context!, double.tryParse('${payload['minimum_amount']}') )} and Maximum=${PriceConverter.convertPrice(Get.context!, double.tryParse('${payload['maximum_amount']}'))}", Get.context!, snackBarType: SnackBarType.warning);
     }else{
       _isConvert = false;
       ApiChecker.checkApi(apiResponse);

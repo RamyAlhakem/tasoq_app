@@ -12,7 +12,7 @@ class RestockRepository implements RestockRepositoryInterface{
   @override
   Future<ApiResponseModel> reorder(String orderId) async {
     try {
-      final response = await dioClient!.post(AppConstants.reorder, data: {'order_id': orderId});
+      final response = await dioClient!.post('${AppConstants.reorder}$orderId/reorder');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -23,7 +23,13 @@ class RestockRepository implements RestockRepositoryInterface{
   @override
   Future<ApiResponseModel> getRestockProductList(String offset, bool getAll) async {
     try {
-      final response = await dioClient!.get('${AppConstants.productRestockList}${getAll ? '' : 'limit=10&'}offset=$offset');
+      final response = await dioClient!.get(
+        AppConstants.productRestockList,
+        queryParameters: {
+          if (!getAll) 'limit': 10,
+          'offset': offset,
+        },
+      );
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -34,7 +40,7 @@ class RestockRepository implements RestockRepositoryInterface{
   @override
   Future<ApiResponseModel> deleteRestockProduct(String? type, String? id) async {
     try {
-      final response = await dioClient!.post(
+      final response = await dioClient!.delete(
         AppConstants.productRestockDelete,
         data: {
           "type" : type,

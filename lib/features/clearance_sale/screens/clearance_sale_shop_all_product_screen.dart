@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/no_internet_screen_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_sliver_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/product_card_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/product_shimmer_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
@@ -34,6 +34,13 @@ class _ClearanceSaleShopProductScreenState extends State<ClearanceSaleShopProduc
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   late String? shopName;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -86,36 +93,34 @@ class _ClearanceSaleShopProductScreenState extends State<ClearanceSaleShopProduc
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  child: Consumer<ShopController>(builder: (context, shopController, _){
+                child: Consumer<ShopController>(builder: (context, shopController, _){
 
-                  ProductModel? productModel = (shopController.isSearchActive || shopController.isFilterActive)
-                      ? shopController.clearanceSearchProductModel : shopController.clearanceProductModel;
+                ProductModel? productModel = (shopController.isSearchActive || shopController.isFilterActive)
+                    ? shopController.clearanceSearchProductModel : shopController.clearanceProductModel;
 
-                  return (productModel != null && !shopController.isSearchLoading)
-                      ? (productModel.products != null && productModel.products!.isNotEmpty)
-                      ? PaginatedListView(scrollController: _scrollController,
-                        onPaginate: (int? offset) async => (shopController.isSearchActive || shopController.isFilterActive)
-                            ? applyShopFilter(context: context, sellerId: widget.slug, fromPagination: true, offset: offset)
-                            : await shopController.getClearanceShopProductList('clearance_sale', offset.toString(), widget.slug),
-                          totalSize: productModel.totalSize,
-                          offset: productModel.offset,
-                          itemView: RepaintBoundary(
-                            child: MasonryGridView.count(
-                              itemCount: productModel.products?.length,
+                return (productModel != null && !shopController.isSearchLoading)
+                    ? (productModel.products != null && productModel.products!.isNotEmpty)
+                    ? CustomScrollView(
+                        controller: _scrollController,
+                        slivers: [
+                          PaginatedSliverListView(
+                            scrollController: _scrollController,
+                            onPaginate: (int? offset) async => (shopController.isSearchActive || shopController.isFilterActive)
+                                ? applyShopFilter(context: context, sellerId: widget.slug, fromPagination: true, offset: offset)
+                                : await shopController.getClearanceShopProductList('clearance_sale', offset.toString(), widget.slug),
+                            totalSize: productModel.totalSize,
+                            offset: productModel.offset,
+                            itemView: SliverMasonryGrid.count(
                               crossAxisCount: ResponsiveHelper.isTab(context)? 3: 2,
-                              padding: const EdgeInsets.all(0),
-                              physics: const NeverScrollableScrollPhysics(),
-                              shrinkWrap: true,
                               itemBuilder: (BuildContext context, int index) => Padding(
                                   padding : EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
                                   child: ProductCardWidget(product: productModel.products![index])),
+                              childCount: productModel.products?.length,
                             ),
-                          )
-                      ) : const NoInternetOrDataScreenWidget(isNoInternet: false) : ProductShimmer(isEnabled: productModel == null, isHomePage: false);
-                  }),
-                ),
+                          ),
+                        ],
+                    ) : const NoInternetOrDataScreenWidget(isNoInternet: false) : ProductShimmer(isEnabled: productModel == null, isHomePage: false);
+                }),
               ),
             ),
           ],

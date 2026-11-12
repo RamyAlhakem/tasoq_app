@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/controllers/address_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/widgets/address_shimmer.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/controllers/checkout_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_checkout/controllers/wholesale_checkout_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
@@ -11,12 +12,10 @@ import 'package:flutter_sixvalley_ecommerce/common/basewidget/no_internet_screen
 import 'package:flutter_sixvalley_ecommerce/features/address/widgets/address_type_widget.dart';
 import 'package:provider/provider.dart';
 
-
-
-
 class SavedBillingAddressListScreen extends StatefulWidget {
   final bool fromGuest;
-  const SavedBillingAddressListScreen({super.key, this.fromGuest = false});
+  final bool forWholesale;
+  const SavedBillingAddressListScreen({super.key, this.fromGuest = false, this.forWholesale = false});
   @override
   State<SavedBillingAddressListScreen> createState() => _SavedBillingAddressListScreenState();
 }
@@ -40,33 +39,41 @@ class _SavedBillingAddressListScreenState extends State<SavedBillingAddressListS
 
       body: SafeArea(child: Consumer<AddressController>(
         builder: (context, locationProvider, child) {
-          return SingleChildScrollView(
-            child: Column(children: [
+          return CustomScrollView(
+            slivers: [
               locationProvider.addressList != null? locationProvider.addressList!.isNotEmpty ?
 
-              ListView.builder(physics: const NeverScrollableScrollPhysics(),
-                itemCount: locationProvider.addressList?.length,
-                shrinkWrap: true,
-                itemBuilder: (context, index) {
-                  return InkWell(onTap: () {Provider.of<CheckoutController>(context, listen: false).setBillingAddressIndex(index);
-                    Navigator.pop(context);
-                    },
-                    child: Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-                      child: Container(margin: const EdgeInsets.only(top: Dimensions.paddingSizeSmall),
-                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(10),
-                          color: Theme.of(context).cardColor,
-                          border: index == Provider.of<CheckoutController>(context).billingAddressIndex ?
-                          Border.all(width: 2, color: Theme.of(context).primaryColor) : null,),
-                        child: AddressTypeWidget(address: locationProvider.addressList?[index]))));}) :
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    return InkWell(onTap: () {
+                      if (widget.forWholesale) {
+                        Provider.of<WholesaleCheckoutController>(context, listen: false).setBillingAddressIndex(index);
+                      } else {
+                        Provider.of<CheckoutController>(context, listen: false).setBillingAddressIndex(index);
+                      }
+                      Navigator.pop(context);
+                      },
+                      child: Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
+                        child: Container(margin: const EdgeInsets.only(top: Dimensions.paddingSizeSmall),
+                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(10),
+                            color: Theme.of(context).cardColor,
+                            border: index == (widget.forWholesale ? Provider.of<WholesaleCheckoutController>(context).billingAddressIndex : Provider.of<CheckoutController>(context).billingAddressIndex) ?
+                            Border.all(width: 2, color: Theme.of(context).primaryColor) : null,),
+                          child: AddressTypeWidget(address: locationProvider.addressList?[index]))));},
+                  childCount: locationProvider.addressList?.length,
+                ),
+              ) :
 
-              Padding(padding: EdgeInsets.only(top: MediaQuery.of(context).size.height/3),
+              SliverToBoxAdapter(
+                child: Padding(padding: EdgeInsets.only(top: MediaQuery.of(context).size.height/3),
                  child: Center(child: Container(alignment: Alignment.center,
-                     margin: const EdgeInsets.only(bottom: Dimensions.paddingSizeLarge),
-                     child: const NoInternetOrDataScreenWidget(isNoInternet: false,
-                         message: 'no_address_found', icon: Images.noAddress))),
-               ): const AddressShimmerWidget(shrinkWrap: true, physics: NeverScrollableScrollPhysics()),
-              ],
-            ),
+                   margin: const EdgeInsets.only(bottom: Dimensions.paddingSizeLarge),
+                   child: const NoInternetOrDataScreenWidget(isNoInternet: false,
+                     message: 'no_address_found', icon: Images.noAddress))),
+                 ),
+              ): const SliverToBoxAdapter(child: AddressShimmerWidget(shrinkWrap: true, physics: NeverScrollableScrollPhysics())),
+            ],
           );
         },
       )),

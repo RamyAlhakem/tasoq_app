@@ -1,0 +1,67 @@
+import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/dio/dio_client.dart';
+import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/exception/api_error_handler.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_wishlist/domain/repositories/wholesale_wishlist_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/utill/app_constants.dart';
+
+class WholesaleWishlistRepository implements WholesaleWishlistRepositoryInterface{
+  final DioClient? dioClient;
+
+  WholesaleWishlistRepository({required this.dioClient});
+
+  static Map<String, dynamic> _pageQuery(int? offset, String? search) => {
+    'limit': 10,
+    'offset': offset ?? 1,
+    if (search != null && search.isNotEmpty) 'search': search,
+  };
+
+  @override
+  Future<ApiResponseModel> getList({int? offset = 1, String? search = ''}) async {
+    try {
+      final response = await dioClient!.get(AppConstants.wholesaleGetWishListUri, queryParameters: _pageQuery(offset, search));
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponseModel> getWishList({int? offset = 1, String? search = ''}) async {
+    try {
+      final response = await dioClient!.get(AppConstants.wholesaleGetWishListUri, queryParameters: _pageQuery(offset, search));
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponseModel> add(int productID) async {
+    try {
+      final response = await dioClient!.post(AppConstants.wholesaleAddWishListUri, data: {'product_id': productID});
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future<ApiResponseModel> delete(int productID) async {
+    try {
+      final response = await dioClient!.delete('${AppConstants.wholesaleRemoveWishListUri}$productID');
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
+  Future get(String id) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future update(Map<String, dynamic> body, int id) {
+    throw UnimplementedError();
+  }
+}

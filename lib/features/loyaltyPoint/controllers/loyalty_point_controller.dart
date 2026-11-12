@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/loyaltyPoint/domain/models/loyalty_point_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/loyaltyPoint/domain/services/loyalty_point_service_interface.dart';
@@ -9,8 +10,8 @@ import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakba
 
 class LoyaltyPointController extends ChangeNotifier {
   final LoyaltyPointServiceInterface loyaltyPointServiceInterface;
-  LoyaltyPointController({required this.loyaltyPointServiceInterface});
 
+  LoyaltyPointController({required this.loyaltyPointServiceInterface});
 
   bool _isConvert = false;
   bool get isConvert => _isConvert;
@@ -30,8 +31,10 @@ class LoyaltyPointController extends ChangeNotifier {
   Set<String>? _selectedEarnByList;
   Set<String>? get selectedEarnByList => _selectedEarnByList;
 
-
-
+  String? _appliedFilterBy;
+  DateTime? _appliedStartDate;
+  DateTime? _appliedEndDate;
+  List<String>? _appliedTransactionTypes;
 
   Future<void> getLoyaltyPointList(BuildContext context, int offset, {
     bool reload = false,
@@ -40,9 +43,17 @@ class LoyaltyPointController extends ChangeNotifier {
     DateTime? startDate,
     DateTime? endDate,
     List<String>? transactionTypes,
-
   }) async {
-    if(reload || offset == 1) {
+    final bool isFirstPage = offset == 1;
+
+    if(isFirstPage) {
+      _appliedFilterBy = filterBy;
+      _appliedStartDate = startDate;
+      _appliedEndDate = endDate;
+      _appliedTransactionTypes = transactionTypes;
+    }
+
+    if(reload || isFirstPage) {
       _loyaltyPointModel = null;
 
       if(isUpdate) {
@@ -51,45 +62,49 @@ class LoyaltyPointController extends ChangeNotifier {
     }
 
     ApiResponseModel apiResponse = await loyaltyPointServiceInterface.getList(
-      offset : offset, filterBy: filterBy, startDate: startDate,
-      endDate: endDate, transactionTypes: transactionTypes,
+      offset : offset, filterBy: _appliedFilterBy, startDate: _appliedStartDate,
+      endDate: _appliedEndDate, transactionTypes: _appliedTransactionTypes,
     );
 
     if (apiResponse.response?.data != null && apiResponse.response?.statusCode == 200) {
-      if(offset == 1) {
-        _loyaltyPointModel = LoyaltyPointModel.fromJson(apiResponse.response?.data);
+      final LoyaltyPointModel page = LoyaltyPointModel.fromJson(apiResponse.response?.data);
+
+      if(isFirstPage) {
+        _loyaltyPointModel = page;
       }else {
-        _loyaltyPointModel?.offset = LoyaltyPointModel.fromJson(apiResponse.response?.data).offset;
-        _loyaltyPointModel?.totalLoyaltyPoint = LoyaltyPointModel.fromJson(apiResponse.response?.data).totalLoyaltyPoint;
-        _loyaltyPointModel?.loyaltyPointList?.addAll(LoyaltyPointModel.fromJson(apiResponse.response?.data).loyaltyPointList ?? []);
-
+        _loyaltyPointModel?.offset = page.offset;
+        _loyaltyPointModel?.totalSize = page.totalSize;
+        _loyaltyPointModel?.totalLoyaltyPoint = page.totalLoyaltyPoint;
+        _loyaltyPointModel?.loyaltyPointList?.addAll(page.loyaltyPointList ?? []);
       }
-
     } else {
-      _loyaltyPointModel?.loyaltyPointList = [];
+      if(isFirstPage) {
+        _loyaltyPointModel?.loyaltyPointList = [];
+      }
       ApiChecker.checkApi( apiResponse);
     }
     notifyListeners();
   }
 
-
   Future convertPointToCurrency(BuildContext context, int point) async {
     _isConvert = true;
     notifyListeners();
     ApiResponseModel apiResponse = await loyaltyPointServiceInterface.convertPointToCurrency(point);
-    if (apiResponse.response != null && apiResponse.response?.statusCode == 200) {
+    final int? statusCode = apiResponse.response?.statusCode;
+
+    if (apiResponse.response != null && (statusCode == 200 || statusCode == 201)) {
       _isConvert = false;
       showCustomSnackBarWidget(getTranslated('point_converted_successfully', Get.context!), Get.context!, snackBarType: SnackBarType.success);
     }else{
       _isConvert = false;
-      showCustomSnackBarWidget(getTranslated('point_converted_failed', Get.context!), Get.context!, snackBarType: SnackBarType.error);
+      showCustomSnackBarWidget(
+        ApiEnvelope.errorMessage(apiResponse.response?.data) ?? getTranslated('point_converted_failed', Get.context!),
+        Get.context!,
+        snackBarType: SnackBarType.error,
+      );
     }
     notifyListeners();
   }
-
-
-
-
 
   void setSelectedProductType({String? type, bool isUpdate = true}){
     _selectedFilterBy = type;
@@ -99,14 +114,11 @@ class LoyaltyPointController extends ChangeNotifier {
     }
   }
 
-
-
   void setSelectedDate({required DateTime? startDate, required DateTime? endDate}) async {
     _startDate = startDate;
     _endDate = endDate;
     notifyListeners();
   }
-
 
   void onUpdateEarnBy(String value, {bool isUpdate = true}) {
     _selectedEarnByList ??= <String>{};
@@ -128,10 +140,5 @@ class LoyaltyPointController extends ChangeNotifier {
 
     _startDate = _loyaltyPointModel?.startDate;
     _endDate = _loyaltyPointModel?.endDate;
-
-
   }
-
-
-
 }

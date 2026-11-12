@@ -51,7 +51,6 @@ class CustomExpandedAppBarWidget extends StatelessWidget {
             borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
           ),
 
-          ///todo: need to check
           child: isGuestCheck ? isGuestMode ? const NotLoggedInWidget(fromPage: RouterHelper.settingsScreen) : child : child,
         ),
 

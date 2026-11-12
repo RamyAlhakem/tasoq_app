@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/enums/data_source_enum.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/category/domain/models/find_what_you_need.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/domain/models/home_category_product_model.dart';
@@ -11,7 +12,9 @@ import 'package:flutter_sixvalley_ecommerce/helper/api_checker.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/enums/product_type.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/data_sync_helper.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/debounce_helper.dart';
+import 'package:flutter_sixvalley_ecommerce/features/auth/controllers/auth_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
+import 'package:provider/provider.dart';
 
 class ProductController extends ChangeNotifier {
   final ProductServiceInterface? productServiceInterface;
@@ -67,7 +70,10 @@ class ProductController extends ChangeNotifier {
   String? _categorySearchProductText;
   String? get categorySearchProductText => _categorySearchProductText;
 
-  bool get isHomeDataLoaded => _recommendedProduct != null && _justForYouProductModel != null && _clearanceProductModel != null;
+  bool get _isLoggedIn => Provider.of<AuthController>(Get.context!, listen: false).isLoggedIn();
+
+  // Just-for-you (new user exclusive) is never fetched for logged-in users, so it must not block the loaded state.
+  bool get isHomeDataLoaded => _recommendedProduct != null && (_justForYouProductModel != null || _isLoggedIn) && _clearanceProductModel != null;
 
   Future<void> loadHomeDataWithCache() async {
     if (isHomeDataLoaded) return;
@@ -131,6 +137,21 @@ class ProductController extends ChangeNotifier {
   }
 
 
+  /// Seeds the view-all list with the just-for-you page already loaded on home,
+  /// so the first page is not requested again. Returns false when there is nothing to reuse.
+  bool initAllProductModelFromJustForYou() {
+    final ProductModel? source = _justForYouProductModel;
+    if(source?.products?.isEmpty ?? true) {
+      return false;
+    }
+
+    _allProductModel = ProductModel(products: List<Product>.of(source!.products!))
+      ..totalSize = source.totalSize
+      ..limit = source.limit
+      ..offset = 1;
+    return true;
+  }
+
   Future<void> getAllProductModelByType({required int offset, required ProductType type, bool isUpdate = true}) async {
     if(offset == 1) {
       _allProductModel = null;
@@ -157,7 +178,7 @@ class ProductController extends ChangeNotifier {
         },
       );
     }else {
-      final ApiResponseModel? apiResponse = await productServiceInterface?.getProductModelByType<Response>(offset: offset , productType: ProductType.latestProduct, source: DataSourceEnum.client);
+      final ApiResponseModel? apiResponse = await productServiceInterface?.getProductModelByType<Response>(offset: offset , productType: type, source: DataSourceEnum.client);
 
       if (apiResponse?.response?.statusCode == 200) {
         final ProductModel parsedProductModel = ProductModel.fromJson(apiResponse?.response?.data);
@@ -233,6 +254,13 @@ class ProductController extends ChangeNotifier {
 
 
   TextEditingController sellerProductSearch = TextEditingController();
+
+  @override
+  void dispose() {
+    sellerProductSearch.dispose();
+    super.dispose();
+  }
+
   void clearSearchField( String id){
     sellerProductSearch.clear();
     notifyListeners();
@@ -261,9 +289,6 @@ class ProductController extends ChangeNotifier {
     _fetchingCategoryIds.clear();
   }
 
-  /// Debounced entry point for the first page of a category's products. Used on
-  /// tab switch so that swiping quickly through tabs does not fire an API call
-  /// for every intermediate tab — only the last requested category is fetched.
   void getCategoryProductsDebounced(int categoryId, {String searchProduct = ''}) {
     // Already loaded or currently loading — nothing to schedule.
     if (_categoryProductMap[categoryId] != null || _fetchingCategoryIds.contains(categoryId)) {
@@ -313,7 +338,7 @@ class ProductController extends ChangeNotifier {
 
   final Map<ProductType, ProductModel?> _productTypeMap = {};
   final Set<ProductType> _fetchingProductTypes = {};
-  final DebounceHelper _productTypeDebounce = DebounceHelper(milliseconds: 350);
+  final Map<ProductType, DebounceHelper> _productTypeDebounce = {};
 
   ProductModel? productModelForType(ProductType type) => _productTypeMap[type];
 
@@ -324,7 +349,7 @@ class ProductController extends ChangeNotifier {
 
   void getProductsForTypeDebounced(ProductType type) {
     if (_productTypeMap[type] != null || _fetchingProductTypes.contains(type)) return;
-    _productTypeDebounce.run(() {
+    (_productTypeDebounce[type] ??= DebounceHelper(milliseconds: 350)).run(() {
       getProductsForType(type, 1);
     });
   }
@@ -400,8 +425,8 @@ class ProductController extends ChangeNotifier {
   void initRelatedProductList(String id, BuildContext context) async {
     ApiResponseModel apiResponse = await productServiceInterface!.getRelatedProductList(id);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _relatedProductList = [];
-      apiResponse.response!.data.forEach((product) => _relatedProductList!.add(Product.fromJson(product)));
+      final dynamic data = apiResponse.response!.data;
+      _relatedProductList = data is Map<String, dynamic> ? (ProductModel.fromJson(data).products ?? []) : [];
     } else {
       ApiChecker.checkApi( apiResponse);
     }
@@ -413,8 +438,8 @@ class ProductController extends ChangeNotifier {
   void getMoreProductList(String id) async {
     ApiResponseModel apiResponse = await productServiceInterface!.getRelatedProductList(id);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _relatedProductList = [];
-      apiResponse.response!.data.forEach((product) => _relatedProductList!.add(Product.fromJson(product)));
+      final dynamic data = apiResponse.response!.data;
+      _relatedProductList = data is Map<String, dynamic> ? (ProductModel.fromJson(data).products ?? []) : [];
     } else {
       ApiChecker.checkApi( apiResponse);
     }
@@ -478,11 +503,7 @@ class ProductController extends ChangeNotifier {
       onResponse: (data, source) {
 
         try{
-          if(data is List) {
-            _recommendedProduct = Product(id: -1);
-          } else {
-            _recommendedProduct = Product.fromJson(data);
-          }
+          _recommendedProduct = Product.dealOfTheDayFromJson(data);
         }catch(e){
           _recommendedProduct = null;
         }
@@ -505,7 +526,10 @@ class ProductController extends ChangeNotifier {
         onResponse: (data, _) {
           _homeCategoryProductList.clear();
 
-          data.forEach((homeCategory) => _homeCategoryProductList.add(HomeCategoryProduct.fromJson(homeCategory)));
+          final dynamic categories = ApiEnvelope.content(data)['data'];
+          if (categories is List) {
+            categories.forEach((homeCategory) => _homeCategoryProductList.add(HomeCategoryProduct.fromJson(homeCategory)));
+          }
 
           notifyListeners();
 
@@ -523,7 +547,12 @@ class ProductController extends ChangeNotifier {
       fetchFromClient: ()=> productServiceInterface!.getMostDemandedProduct(source: DataSourceEnum.client),
       onResponse: (data, _) {
         try{
-          _mostDemandedProductModel = MostDemandedProductModel.fromJson(data);
+          // v6 wraps the banner under content.data, and returns an empty array
+          // there (not an object) when no banner/product qualifies.
+          final dynamic bannerData = ApiEnvelope.content(data)['data'];
+          _mostDemandedProductModel = bannerData is Map<String, dynamic>
+              ? MostDemandedProductModel.fromJson(bannerData)
+              : null;
 
         }catch(e){
           _mostDemandedProductModel = null;
@@ -691,7 +720,7 @@ class ProductController extends ChangeNotifier {
         fetchFromClient: ()=> productServiceInterface!.getClearanceAllProductList(offset: offset, source: DataSourceEnum.client),
         onResponse: (data, source){
           try{
-            _clearanceProductModel = ProductModel.fromJson(data);
+            _clearanceProductModel = ProductModel.fromClearanceSaleJson(data);
 
           }catch(_){
             _clearanceProductModel = ProductModel(products: [], offset: offset);
@@ -704,7 +733,7 @@ class ProductController extends ChangeNotifier {
       final ApiResponseModel? apiResponse = await productServiceInterface?.getClearanceAllProductList<Response>(offset: offset,source: DataSourceEnum.client);
 
       if (apiResponse?.response?.statusCode == 200) {
-        final ProductModel parsedProductModel = ProductModel.fromJson(apiResponse?.response?.data);
+        final ProductModel parsedProductModel = ProductModel.fromClearanceSaleJson(apiResponse?.response?.data);
 
         _clearanceProductModel?.totalSize = parsedProductModel.totalSize;
         _clearanceProductModel?.offset = parsedProductModel.offset;

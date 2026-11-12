@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_asset_image_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_image_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_details/controllers/participator/participation_auction_details_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/auction_details/domain/models/participator/auction_bid_list_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/profile/controllers/profile_contrroller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_details/widgets/bidding_list_shimmer_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/date_converter.dart';
@@ -68,20 +69,37 @@ class _ParticipantBiddingListWidgetState extends State<ParticipantBiddingListWid
     myBidsOnly = widget.myBidsOnly;
   }
 
+  Widget _buildBidRow(BuildContext context, AuctionBidItem bid, int index, int? myId) {
+    final userContext = bid.userContext;
+    return BidRow(
+      item: ParticipantBidListItem(
+        rank: index + 1,
+        name: '${bid.bidder?.fName ?? ''} ${bid.bidder?.lName ?? ''}',
+        timeAgo: bid.bidTime ?? '',
+        bidAmount: PriceConverter.convertPrice(context, double.parse(bid.bidAmount?.toString() ?? '0')),
+        avatarUrl: bid.bidder?.imageFullUrl?.path ?? '',
+        isLeading: bid.isLeadBid ?? false,
+        isWithdrawBid: bid.isWithdrawBid ?? false,
+        isCurrentUser: myId != null && bid.bidder?.id == myId,
+        isWinner: (userContext?.isWinner ?? false) && !(userContext?.isClaimExpired ?? false) && (bid.isLeadBid ?? false),
+        isClaimExpired: (userContext?.isWinner == false) && (userContext?.isClaimExpired ?? false),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<ParticipationAuctionDetailsController>(
       builder: (context, detailsController, _) {
-        print('myBidsOnly: ${detailsController.allBids}');
         final bids = detailsController.allBids;
         final hasMore = detailsController.hasMoreBids;
         final isCollapsed = detailsController.isCollapsed;
         final isPaginating = detailsController.isBidPaginating;
         final isLoading = detailsController.isBidListLoading;
         final profileController = Provider.of<ProfileController>(context, listen: false);
+        final int? myId = profileController.userInfoModel?.id;
         final ownerId = detailsController.auctionDetails?.product?.ownerId;
-        final bool isOwner = profileController.userInfoModel?.id != null &&
-            profileController.userInfoModel!.id == ownerId;
+        final bool isOwner = myId != null && myId == ownerId;
 
         final double bidItemHeight = ResponsiveHelper.isTab(context) ? 84 : 64;
 
@@ -149,36 +167,21 @@ class _ParticipantBiddingListWidgetState extends State<ParticipantBiddingListWid
                     ),
                   ),
                 )
-              else
+              else if (bids.length > _kMaxNaturalBids)
                 SizedBox(
-                  height: bids.length > _kMaxNaturalBids
-                      ? bidItemHeight * _kVisibleBidExtent
-                      : null,
+                  height: bidItemHeight * _kVisibleBidExtent,
                   child: ListView.builder(
-                    shrinkWrap: bids.length <= _kMaxNaturalBids,
-                    physics: bids.length > _kMaxNaturalBids
-                        ? const ClampingScrollPhysics()
-                        : const NeverScrollableScrollPhysics(),
+                    physics: const ClampingScrollPhysics(),
                     itemExtent: bidItemHeight,
                     itemCount: bids.length,
-                    itemBuilder: (_, index) {
-                    final bid = bids[index];
-                    final userContext = bid.userContext;
-                    return BidRow(
-                      item: ParticipantBidListItem(
-                        rank: index + 1,
-                        name: '${bid.customer?.fName ?? ''} ${bid.customer?.lName ?? ''}',
-                        timeAgo: bid.bidTime ?? '',
-                        bidAmount: PriceConverter.convertPrice(context, double.parse(bid.bidAmount?.toString() ?? '0')),
-                        avatarUrl: bid.customer?.imageFullUrl?.path ?? '',
-                        isLeading: bid.isLeadBid ?? false,
-                        isWithdrawBid: bid.isWithdrawBid ?? false,
-                        isCurrentUser: bid.isMyBid ?? false,
-                        isWinner: (userContext?.isWinner ?? false) && !(userContext?.isClaimExpired ?? false) && (bid.isLeadBid ?? false),
-                        isClaimExpired: (userContext?.isWinner == false) && (userContext?.isClaimExpired ?? false),
-                      ),
-                    );
-                    },
+                    itemBuilder: (_, index) => _buildBidRow(context, bids[index], index, myId),
+                  ),
+                )
+              else
+                Column(
+                  children: List.generate(
+                    bids.length,
+                    (index) => SizedBox(height: bidItemHeight, child: _buildBidRow(context, bids[index], index, myId)),
                   ),
                 ),
 

@@ -130,7 +130,6 @@ class _DeliveryManReviewDialogWidgetState extends State<DeliveryManReviewDialogW
               
                             Text('${widget.deliveryMan?.fName} ${widget.deliveryMan?.lName}', style:  textMedium.copyWith(fontSize: Dimensions.fontSizeDefault)),
               
-                            /// Delivery assign design skipped
                             Text.rich(TextSpan(children: [
                               TextSpan(text: '${getTranslated('assign', context)!} : ', style: textRegular.copyWith(
                                 fontSize: Dimensions.fontSizeSmall,
@@ -204,9 +203,6 @@ class _DeliveryManReviewDialogWidgetState extends State<DeliveryManReviewDialogW
                     const SizedBox(height: Dimensions.paddingSizeSmall),
               
               
-                    /// skipped
-                    /// todo - need to updated the logic
-                    /// add Image to review
                     // if(reviewController.orderWiseReview != null && reviewController.orderWiseReview!.attachmentFullUrl != null && reviewController.orderWiseReview!.attachmentFullUrl!.isNotEmpty)
                     //   Padding(padding: const EdgeInsets.symmetric(vertical : Dimensions.paddingSizeDefault),
                     //       child: SizedBox(height: 75,

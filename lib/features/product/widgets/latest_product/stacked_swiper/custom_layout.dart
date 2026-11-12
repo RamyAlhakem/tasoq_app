@@ -456,11 +456,4 @@ class _CustomLayoutState extends _CustomLayoutStateBase<_CustomLayoutSwiper> {
   }
 }
 
-/// Ref: https://docs.flutter.dev/development/tools/sdk/release-notes/release-notes-3.0.0#your-code
-/// This allows a value of type T or T?
-/// to be treated as a value of type T?.
-///
-/// We use this so that APIs that have become
-/// non-nullable can still be used with `!` and `?`
-/// to support older versions of the API as well.
 T? _ambiguate<T>(T? value) => value;

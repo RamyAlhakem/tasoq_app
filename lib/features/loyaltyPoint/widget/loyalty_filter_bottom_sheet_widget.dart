@@ -64,7 +64,6 @@ class _LoyaltyFilterBottomSheetWidgetState extends State<LoyaltyFilterBottomShee
           Expanded(child: SizedBox(child: SingleChildScrollView(child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ///Product Type
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall, horizontal: Dimensions.paddingSizeDefault),
                 child: Text(getTranslated('filter_by', context)!, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge, color:  Theme.of(context).textTheme.bodyLarge?.color)),
@@ -107,7 +106,6 @@ class _LoyaltyFilterBottomSheetWidgetState extends State<LoyaltyFilterBottomShee
               Divider(height: 1, color: Theme.of(context).hintColor.withValues(alpha: .15), thickness: 1),
 
 
-              ///Date Range
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall, horizontal: Dimensions.paddingSizeDefault),
                 child: Text(getTranslated('date_range', context)!, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge, color:  Theme.of(context).textTheme.bodyLarge?.color)),
@@ -158,7 +156,6 @@ class _LoyaltyFilterBottomSheetWidgetState extends State<LoyaltyFilterBottomShee
               Divider(height: 1, color: Theme.of(context).hintColor.withValues(alpha: .15), thickness: 1),
 
 
-              ///Earn by
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall, horizontal: Dimensions.paddingSizeDefault),
                 child: Text(getTranslated('earn_by', context)!, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge, color:  Theme.of(context).textTheme.bodyLarge?.color)),
@@ -182,7 +179,6 @@ class _LoyaltyFilterBottomSheetWidgetState extends State<LoyaltyFilterBottomShee
             ],
           )))),
 
-          ///Bottom button
           SafeArea(child: Container(
             padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
             decoration: BoxDecoration(

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/dio/dio_client.dart';
 import 'package:flutter_sixvalley_ecommerce/data/datasource/remote/exception/api_error_handler.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
@@ -28,11 +27,7 @@ class AuctionSearchRepository implements AuctionSearchRepoInterface {
         ...extraParams,
       };
 
-      debugPrint('===AuctionSearch Request Fields==> $queryParams');
-
-      final response = await dioClient!.post(AppConstants.auctionProductListUri, data: queryParams);
-
-      debugPrint('===AuctionSearch Response==> $response');
+      final response = await dioClient!.get(AppConstants.auctionProductListUri, queryParameters: queryParams);
 
       return ApiResponseModel.withSuccess(response);
     } catch (e) {

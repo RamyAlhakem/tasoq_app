@@ -1,14 +1,14 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
+
 class OfflinePaymentModel {
   List<OfflineMethods>? offlineMethods;
 
   OfflinePaymentModel({this.offlineMethods});
 
   OfflinePaymentModel.fromJson(Map<String, dynamic> json) {
-    if (json['offline_methods'] != null) {
-      offlineMethods = <OfflineMethods>[];
-      json['offline_methods'].forEach((v) {
-        offlineMethods!.add(OfflineMethods.fromJson(v));
-      });
+    final dynamic data = ApiEnvelope.content(json)['data'];
+    if (data is List) {
+      offlineMethods = data.map((v) => OfflineMethods.fromJson(v)).toList();
     }
   }
 

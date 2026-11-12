@@ -37,11 +37,6 @@ class ProductService implements ProductServiceInterface{
   }
 
   @override
-  Future getLatestProductList(String offset) async{
-    return await productRepositoryInterface.getLatestProductList(offset);
-  }
-
-  @override
   Future<ApiResponseModel<T>> getMostDemandedProduct<T>({required DataSourceEnum source}) async{
     return await productRepositoryInterface.getMostDemandedProduct(source: source);
   }

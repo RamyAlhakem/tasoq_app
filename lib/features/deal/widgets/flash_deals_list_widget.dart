@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_sliver_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/product_card_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/deal/controllers/flash_deal_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/responsive_helper.dart';
@@ -65,22 +65,18 @@ class _FlashDealsListWidgetState extends State<FlashDealsListWidget> {
         }) : Consumer<FlashDealController>(
       builder: (context, flashDealController, child) {
         return flashDealController.flashDealList.isNotEmpty ?
-        SingleChildScrollView(
+        CustomScrollView(
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
-          child: PaginatedListView(
-            scrollController: _scrollController,
-            totalSize: flashDealController.flashDealProductTotalSize,
-            offset: flashDealController.flashDealProductOffset,
-            onPaginate: (int? offset) async {
-              await flashDealController.getFlashDealProducts(offset!);
-            },
-            itemView: RepaintBoundary(
-              child: MasonryGridView.count(
-                itemCount: flashDealController.flashDealList.length,
-                padding: const EdgeInsets.all(0),
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
+          slivers: [
+            PaginatedSliverListView(
+              scrollController: _scrollController,
+              totalSize: flashDealController.flashDealProductTotalSize,
+              offset: flashDealController.flashDealProductOffset,
+              onPaginate: (int? offset) async {
+                await flashDealController.getFlashDealProducts(offset!);
+              },
+              itemView: SliverMasonryGrid.count(
                 crossAxisCount: 2,
                 itemBuilder: (BuildContext context, int index) {
                   return Padding(
@@ -88,9 +84,10 @@ class _FlashDealsListWidgetState extends State<FlashDealsListWidget> {
                     child: ProductCardWidget(product: flashDealController.flashDealList[index]),
                   );
                 },
+                childCount: flashDealController.flashDealList.length,
               ),
             ),
-          ),
+          ],
         ) : const Center(child: CircularProgressIndicator());
       },
     );

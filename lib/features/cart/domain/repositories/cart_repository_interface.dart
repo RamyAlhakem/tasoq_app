@@ -17,6 +17,7 @@ abstract class CartRepositoryInterface implements RepositoryInterface{
   Future<ApiResponseModel<T>> getCartData<T>({required DataSourceEnum source});
 
   Future<dynamic> mergeGuestCart();
+  Future<dynamic> mergeWholesaleGuestCart();
 
   Future<dynamic> getCartList({String? couponCode});
 

@@ -11,6 +11,7 @@ import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_app_bar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/no_internet_screen_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/not_loggedin_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/widgets/chat_item_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/widgets/inbox_shimmer_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/widgets/search_inbox_widget.dart';
@@ -32,6 +33,8 @@ class _InboxScreenState extends State<InboxScreen> with SingleTickerProviderStat
 
   TextEditingController searchController = TextEditingController();
   late TabController _tabController;
+
+  final ScrollController _scrollController = ScrollController();
 
   late bool isGuestMode;
   @override
@@ -58,6 +61,16 @@ class _InboxScreenState extends State<InboxScreen> with SingleTickerProviderStat
       }
     }
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    _scrollController.dispose();
+    if (!isGuestMode) {
+      _tabController.dispose();
+    }
+    super.dispose();
   }
 
   @override
@@ -104,51 +117,61 @@ class _InboxScreenState extends State<InboxScreen> with SingleTickerProviderStat
                 },
               child: Consumer<ChatController>(
                 builder: (context, chatProvider, child) {
-                  // ChatModel? _cahtModel = _tabController.index == 0 ?  chatProvider.isSearchComplete ?
-                  // chatProvider.searchDeliverymanChatModel : chatProvider.deliverymanChatModel :
-                  // chatProvider.isSearchComplete ? chatProvider.searchChatModel : chatProvider.chatModel;
-                  ChatModel? cahtModel;
+
+                  ChatModel? chatModel;
 
                   if(_tabController.index == 0) {
                     if(chatProvider.isSearchComplete) {
-                      cahtModel = chatProvider.searchDeliverymanChatModel;
+                      chatModel = chatProvider.searchDeliverymanChatModel;
                     } else {
-                      cahtModel = chatProvider.deliverymanChatModel;
+                      chatModel = chatProvider.deliverymanChatModel;
                     }
                   } else {
                     if(chatProvider.isSearchComplete) {
-                      cahtModel = chatProvider.searchChatModel;
+                      chatModel = chatProvider.searchChatModel;
                     } else {
-                      cahtModel = chatProvider.chatModel;
+                      chatModel = chatProvider.chatModel;
                     }
                   }
 
                   return chatProvider.isLoading ? const InboxShimmerWidget() :
-                    cahtModel != null ? (cahtModel.chat != null && cahtModel.chat!.isNotEmpty) ?
-                    ListView.builder(
-                      itemCount: cahtModel.chat?.length,
-                      padding: const EdgeInsets.all(0),
-                      itemBuilder: (context, index) {
-                        return ChatItemWidget(
-                          chat: cahtModel?.chat![index],
-                          chatProvider: chat,
-                          callBack: (){
-                            if(_tabController.index == 0){
-                              if(chatProvider.isSearchComplete){
-                                chatProvider.searchDeliverymanChatModel!.chat![index].unseenMessageCount = 0;
-                              } else {
-                                chatProvider.deliverymanChatModel!.chat![index].unseenMessageCount = 0;
-                              }
-                            } else{
-                              if(chatProvider.isSearchComplete){
-                                chatProvider.searchChatModel!.chat![index].unseenMessageCount = 0;
-                              } else {
-                                chatProvider.chatModel!.chat![index].unseenMessageCount = 0;
-                              }
-                            }
+                    chatModel != null ? (chatModel.chat != null && chatModel.chat!.isNotEmpty) ?
+                    PaginatedListView(
+                      scrollController: _scrollController,
+                      totalSize: chatModel.totalSize,
+                      offset: int.tryParse(chatModel.offset ?? '') ?? 1,
+                      limit: int.tryParse(chatModel.limit ?? '') ?? 10,
+                      enabledPagination: !chatProvider.isSearchComplete,
+                      onPaginate: (int? offset) async => await chatProvider.getChatList(offset ?? 1, reload: false, userType: _tabController.index),
+                      itemView: Expanded(
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          itemCount: chatModel.chat?.length,
+                          padding: const EdgeInsets.all(0),
+                          itemBuilder: (context, index) {
+                            return ChatItemWidget(
+                              chat: chatModel?.chat![index],
+                              chatProvider: chat,
+                              callBack: (){
+                                if(_tabController.index == 0){
+                                  if(chatProvider.isSearchComplete){
+                                    chatProvider.searchDeliverymanChatModel!.chat![index].unseenMessageCount = 0;
+                                  } else {
+                                    chatProvider.deliverymanChatModel!.chat![index].unseenMessageCount = 0;
+                                  }
+                                } else{
+                                  if(chatProvider.isSearchComplete){
+                                    chatProvider.searchChatModel!.chat![index].unseenMessageCount = 0;
+                                  } else {
+                                    chatProvider.chatModel!.chat![index].unseenMessageCount = 0;
+                                  }
+                                }
+                              },
+                            );
                           },
-                        );
-                      },
+                        ),
+                      ),
                     ) :  NoInternetOrDataScreenWidget(
                     padding: EdgeInsets.only(top: size.height * 0.15),
                     isNoInternet: false,

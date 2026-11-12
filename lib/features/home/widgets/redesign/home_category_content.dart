@@ -70,6 +70,7 @@ class _CategoryContentBodyState extends State<_CategoryContentBody> with Automat
   @override
   void dispose() {
     searchTextEditingController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -105,7 +106,12 @@ class _CategoryContentBodyState extends State<_CategoryContentBody> with Automat
                     height: 70,
                     child: Container(
                       color: Theme.of(context).scaffoldBackgroundColor,
-                      child: _buildSearchBar(context, categoryId),
+                      child: CategorySearchBar(
+                        controller: searchTextEditingController,
+                        onChanged: () => setState(() {}),
+                        onSearch: () => _searchProducts(categoryId),
+                        onClear: () => _clearSearch(categoryId),
+                      ),
                     ),
                   ),
                 ),
@@ -172,22 +178,34 @@ class _CategoryContentBodyState extends State<_CategoryContentBody> with Automat
     productController.clearCategoryProductFor(categoryId);
     productController.getCategoryProducts(categoryId, 1);
     setState(() {});
-  }
+  }}
 
+class CategorySearchBar extends StatelessWidget {
+  final TextEditingController controller;
+  final VoidCallback onChanged;
+  final VoidCallback onSearch;
+  final VoidCallback onClear;
 
+  const CategorySearchBar({
+    super.key,
+    required this.controller,
+    required this.onChanged,
+    required this.onSearch,
+    required this.onClear,
+  });
 
-
-  Widget _buildSearchBar(BuildContext context, int categoryId) {
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: Dimensions.homePagePadding, vertical: Dimensions.paddingSizeSmall).copyWith(right: Dimensions.paddingSizeDefault),
       child: Row(
         children: [
           Expanded(
             child: TextFormField(
-            controller: searchTextEditingController,
+            controller: controller,
             textInputAction: TextInputAction.search,
-            onChanged: (value) => setState(() {}),
-            onFieldSubmitted: (value) => _searchProducts(categoryId),
+            onChanged: (value) => onChanged(),
+            onFieldSubmitted: (value) => onSearch(),
             style: textMedium.copyWith(fontSize: Dimensions.fontSizeLarge),
             decoration: InputDecoration(
                 isDense: true,
@@ -203,16 +221,16 @@ class _CategoryContentBodyState extends State<_CategoryContentBody> with Automat
                     borderSide: BorderSide(color: Colors.grey[300]!)),
                 hintText: getTranslated('search_products', context),
                 hintStyle: textRegular.copyWith(color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.9)),
-                suffixIcon: SizedBox(width: searchTextEditingController.text.isNotEmpty ? 70 : 50,
+                suffixIcon: SizedBox(width: controller.text.isNotEmpty ? 70 : 50,
                   child: Row(children: [
-                    if(searchTextEditingController.text.isNotEmpty)
+                    if(controller.text.isNotEmpty)
                       InkWell(
-                        onTap: () => _clearSearch(categoryId),
+                        onTap: onClear,
                         child: const Icon(Icons.clear, size: 20,),
                       ),
 
                     InkWell(
-                      onTap: () => _searchProducts(categoryId),
+                      onTap: onSearch,
                       child: Container(
                         margin: const EdgeInsets.all(Dimensions.paddingSizeExtraSmall),
                         padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
@@ -228,32 +246,8 @@ class _CategoryContentBodyState extends State<_CategoryContentBody> with Automat
             ),
           ),
           ),
-
-
-          // SizedBox(width: Dimensions.paddingSizeSmall),
-          // InkWell(
-          //   onTap: () {
-          //     showModalBottomSheet(
-          //       context: context,
-          //       isScrollControlled: true,
-          //       backgroundColor: Colors.transparent,
-          //       builder: (_) => CategoryProductFilterDialog(categoryId: categoryId),
-          //     );
-          //   },
-          //   child: Container(
-          //     decoration: BoxDecoration(
-          //       color: Theme.of(context).cardColor,
-          //       borderRadius: BorderRadius.circular(5),
-          //       border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha: 0.15)),
-          //     ),
-          //     padding: const EdgeInsets.all(Dimensions.paddingSizeTwelve),
-          //     child: CustomAssetImageWidget(Images.filterIcon, height: 20, width: 20)
-          //   ),
-          // )
-
         ],
-      )
-
+      ),
     );
   }
 }

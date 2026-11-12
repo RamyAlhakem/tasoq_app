@@ -33,6 +33,8 @@ class AuctionTransactionController extends ChangeNotifier {
   int? get totalSize => _listModel?.totalSize;
   int? get offset => _listModel?.offset;
 
+  int? get limit => _listModel?.limit;
+
   bool _isReportLoading = false;
   bool get isReportLoading => _isReportLoading;
 
@@ -127,11 +129,14 @@ class AuctionTransactionController extends ChangeNotifier {
       endDate: endDate ?? _appliedEndDate,
     );
 
-    if (response.response != null && response.response!.statusCode == 200) {
-      _listModel = AuctionTransactionListModel.fromJson(response.response!.data);
+    final int? statusCode = response.response?.statusCode;
+    if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
+      final dynamic data = response.response!.data;
+      _listModel = AuctionTransactionListModel.fromJson(
+          Map<String, dynamic>.from(data is Map ? data : {'data': data}));
       final List<AuctionTransactionModel> newItems = _listModel?.transactions ?? [];
       if (isRefresh) {
-        _transactions = newItems;
+        _transactions = [...newItems];
       } else {
         _transactions.addAll(newItems);
       }
@@ -154,7 +159,8 @@ class AuctionTransactionController extends ChangeNotifier {
       endDate: endDate,
     );
 
-    if (response.response?.statusCode == 200) {
+    final int? statusCode = response.response?.statusCode;
+    if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
       _salesReport = AuctionSalesReportModel.fromJson(response.response!.data);
     }
 

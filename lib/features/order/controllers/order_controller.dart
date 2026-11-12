@@ -100,15 +100,6 @@ class OrderController with ChangeNotifier {
   }
 
 
-  Orders? trackingModel;
-  Future<void> initTrackingInfo(String orderID) async {
-      ApiResponseModel apiResponse = await orderServiceInterface.getTrackingInfo(orderID);
-      if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-        trackingModel = Orders.fromJson(apiResponse.response!.data);
-      }
-      notifyListeners();
-  }
-
 
   Future<ApiResponseModel> cancelOrder(BuildContext context, int? orderId) async {
     _isLoading = true;

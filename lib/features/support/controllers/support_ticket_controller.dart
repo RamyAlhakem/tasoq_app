@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/features/support/domain/models/support_reply_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/support/domain/models/support_ticket_body.dart';
 import 'package:flutter_sixvalley_ecommerce/features/support/domain/models/support_ticket_model.dart';
@@ -21,7 +24,26 @@ class SupportTicketController extends ChangeNotifier {
   List<SupportReplyModel>? _supportReplyList;
   bool _isLoading = false;
 
+  int? _ticketTotalSize;
+  int? _ticketOffset;
+  int? _ticketLimit;
+
   List<SupportTicketModel>? get supportTicketList => _supportTicketList;
+
+  int? get ticketTotalSize => _ticketTotalSize;
+  int? get ticketOffset => _ticketOffset;
+  int? get ticketLimit => _ticketLimit;
+
+  int? _replyTotalSize;
+  int? _replyOffset;
+  int? _replyLimit;
+  SupportTicketModel? _conversationTicket;
+
+  int? get replyTotalSize => _replyTotalSize;
+  int? get replyOffset => _replyOffset;
+  int? get replyLimit => _replyLimit;
+
+  SupportTicketModel? get conversationTicket => _conversationTicket;
   List<SupportReplyModel>? get supportReplyList => _supportReplyList != null ? _supportReplyList!.reversed.toList() : _supportReplyList;
   bool get isLoading => _isLoading;
 
@@ -31,7 +53,7 @@ class SupportTicketController extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     http.StreamedResponse response = await supportTicketServiceInterface.createNewSupportTicket(supportTicketBody ,pickedImageFileStored);
-    if (response.statusCode == 200) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
       showCustomSnackBarWidget(getTranslated('support_ticket_created_successfully', Get.context!), Get.context!, snackBarType: SnackBarType.success);
       Navigator.pop(Get.context!);
       getSupportTicketList();
@@ -39,6 +61,7 @@ class SupportTicketController extends ChangeNotifier {
       pickedImageFileStored = [];
       _isLoading = false;
     } else {
+      showCustomSnackBarWidget(await _errorMessage(response), Get.context!, snackBarType: SnackBarType.error);
       _isLoading = false;
 
     }
@@ -49,28 +72,71 @@ class SupportTicketController extends ChangeNotifier {
     return response;
   }
 
-  Future<void> getSupportTicketList() async {
-    ApiResponseModel apiResponse = await supportTicketServiceInterface.getList();
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _supportTicketList = [];
-      apiResponse.response!.data.forEach((supportTicket) => _supportTicketList!.add(SupportTicketModel.fromJson(supportTicket)));
+  Future<String> _errorMessage(http.StreamedResponse response) async {
+    try {
+      final dynamic body = jsonDecode(await response.stream.bytesToString());
+      final dynamic errors = body is Map ? body['errors'] : null;
+      if (errors is List && errors.isNotEmpty) {
+        return '${errors.first['message']}';
+      }
+      return ApiEnvelope.message(body) ?? response.reasonPhrase ?? '';
+    } catch (_) {
+      return response.reasonPhrase ?? '';
+    }
+  }
+
+  Future<void> getSupportTicketList({int offset = 1}) async {
+    ApiResponseModel apiResponse = await supportTicketServiceInterface.getList(offset: offset);
+    final int? statusCode = apiResponse.response?.statusCode;
+    if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
+      final SupportTicketList tickets = SupportTicketList.fromJson(
+          Map<String, dynamic>.from(apiResponse.response!.data is Map ? apiResponse.response!.data : {'data': apiResponse.response!.data}));
+      _supportTicketList = offset > 1 ? [...?_supportTicketList, ...tickets.tickets] : tickets.tickets;
+      _ticketTotalSize = tickets.totalSize;
+      _ticketOffset = tickets.offset ?? offset;
+      _ticketLimit = tickets.limit;
     } else {
       ApiChecker.checkApi( apiResponse);
     }
     notifyListeners();
   }
 
-  Future<void> getSupportTicketReplyList(BuildContext context, int? ticketID) async {
-    _supportReplyList = null;
-    ApiResponseModel apiResponse = await supportTicketServiceInterface.getSupportReplyList(ticketID.toString());
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _supportReplyList = [];
-      apiResponse.response!.data.forEach((supportReply) => _supportReplyList!.add(SupportReplyModel.fromJson(supportReply)));
+  Future<void> getSupportTicketReplyList(BuildContext context, int? ticketID, {int offset = 1, bool reload = true}) async {
+    if (offset == 1 && reload) {
+      _supportReplyList = null;
+      notifyListeners();
+    }
+    ApiResponseModel apiResponse = await supportTicketServiceInterface.getSupportReplyList(ticketID.toString(), offset: offset);
+    final int? statusCode = apiResponse.response?.statusCode;
+    if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
+      final SupportReplyList replies = SupportReplyList.fromJson(
+          Map<String, dynamic>.from(apiResponse.response!.data is Map ? apiResponse.response!.data : {'data': apiResponse.response!.data}));
+      _supportReplyList = offset > 1 ? _mergeReplies(_supportReplyList, replies.replies) : replies.replies;
+      _conversationTicket = replies.ticket ?? _conversationTicket;
+      _replyTotalSize = replies.totalSize;
+      _replyOffset = replies.offset ?? offset;
+      _replyLimit = replies.limit;
     } else {
       ApiChecker.checkApi( apiResponse);
     }
     notifyListeners();
   }
+
+  List<SupportReplyModel> _mergeReplies(List<SupportReplyModel>? existing, List<SupportReplyModel> incoming) {
+    final Map<int, SupportReplyModel> byId = <int, SupportReplyModel>{};
+    final List<SupportReplyModel> withoutId = <SupportReplyModel>[];
+    for (final SupportReplyModel reply in [...?existing, ...incoming]) {
+      if (reply.id != null) {
+        byId[reply.id!] = reply;
+      } else {
+        withoutId.add(reply);
+      }
+    }
+    final List<SupportReplyModel> merged = byId.values.toList()
+      ..sort((SupportReplyModel a, SupportReplyModel b) => a.id!.compareTo(b.id!));
+    return merged..addAll(withoutId);
+  }
+
 
 
 
@@ -78,12 +144,13 @@ class SupportTicketController extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     http.StreamedResponse response = await supportTicketServiceInterface.sendReply(ticketID.toString(), message, pickedImageFileStored);
-    if (response.statusCode == 200) {
-      getSupportTicketReplyList(Get.context!, ticketID);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      getSupportTicketReplyList(Get.context!, ticketID, reload: false);
       _pickedImageFiles = [];
       pickedImageFileStored = [];
       _isLoading = false;
     } else {
+      showCustomSnackBarWidget(await _errorMessage(response), Get.context!, snackBarType: SnackBarType.error);
       _isLoading = false;
     }
     _pickedImageFiles = [];
@@ -96,7 +163,8 @@ class SupportTicketController extends ChangeNotifier {
 
   Future<void> closeSupportTicket(int? ticketID) async {
     ApiResponseModel apiResponse = await supportTicketServiceInterface.closeSupportTicket(ticketID.toString());
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    final int? statusCode = apiResponse.response?.statusCode;
+    if (statusCode != null && (statusCode == 200 || statusCode == 201)) {
       getSupportTicketList();
       showCustomSnackBarWidget(getTranslated('ticket_closed_successfully', Get.context!), Get.context!, snackBarType: SnackBarType.success);
     } else {
@@ -145,6 +213,4 @@ class SupportTicketController extends ChangeNotifier {
     }
     notifyListeners();
   }
-
-
 }

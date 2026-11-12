@@ -3,7 +3,7 @@ import 'package:flutter_sixvalley_ecommerce/common/basewidget/no_internet_screen
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/product_card_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/controllers/seller_product_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/responsive_helper.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_sliver_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/product_shimmer_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -25,23 +25,27 @@ class _ShopMoreProductViewListState extends State<ShopMoreProductViewList> {
         builder: (context, productController, _) {
           return productController.sellerMoreProduct != null ? (productController.sellerMoreProduct!.products != null &&
               productController.sellerMoreProduct!.products!.isNotEmpty) ?
-          PaginatedListView(scrollController: widget.scrollController,
-              onPaginate: (offset) async=> await productController.getSellerProductList(widget.sellerId.toString(), offset!, "", reload: false),
-              totalSize: productController.sellerMoreProduct?.totalSize,
-              offset: productController.sellerMoreProduct?.offset,
-              itemView: MasonryGridView.count(
-                itemCount: productController.sellerMoreProduct?.products?.length,
-                crossAxisCount: ResponsiveHelper.isTab(context)? 3 : 2,
-                padding: const EdgeInsets.all(0),
-                physics: const NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                itemBuilder: (BuildContext context, int index) {
-                  return Padding(
-                    padding: EdgeInsets.all(Dimensions.paddingSizeEight),
-                    child: ProductCardWidget(product: productController.sellerMoreProduct!.products![index]),
-                  );
-                },
-              )) : const NoInternetOrDataScreenWidget(isNoInternet: false):
+          CustomScrollView(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            slivers: [
+              PaginatedSliverListView(scrollController: widget.scrollController,
+                  onPaginate: (offset) async=> await productController.getSellerProductList(widget.sellerId.toString(), offset!, "", reload: false),
+                  totalSize: productController.sellerMoreProduct?.totalSize,
+                  offset: productController.sellerMoreProduct?.offset,
+                  itemView: SliverMasonryGrid.count(
+                    crossAxisCount: ResponsiveHelper.isTab(context)? 3 : 2,
+                    itemBuilder: (BuildContext context, int index) {
+                      return Padding(
+                        padding: EdgeInsets.all(Dimensions.paddingSizeEight),
+                        child: ProductCardWidget(product: productController.sellerMoreProduct!.products![index]),
+                      );
+                    },
+                    childCount: productController.sellerMoreProduct?.products?.length,
+                  ),
+              ),
+            ],
+          ) : const NoInternetOrDataScreenWidget(isNoInternet: false):
           const ProductShimmer(isEnabled: true, isHomePage: false);
         }
     );

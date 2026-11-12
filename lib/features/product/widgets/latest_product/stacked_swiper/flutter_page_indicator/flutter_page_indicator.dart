@@ -1,5 +1,4 @@
 // ignore_for_file: constant_identifier_names
-/// page indicator library
 library;
 
 import 'package:flutter/material.dart';
@@ -315,22 +314,16 @@ class PageIndicator extends StatefulWidget {
     this.dropHeight = 20.0,
   });
 
-  /// size of the dots
   final double size;
 
-  /// space between dots.
   final double space;
 
-  /// count of dots
   final int count;
 
-  /// active color
   final Color activeColor;
 
-  /// normal color
   final Color color;
 
-  /// layout of the dots,default is [PageIndicatorLayout.SLIDE]
   final PageIndicatorLayout? layout;
 
   // Only valid when layout==PageIndicatorLayout.scale

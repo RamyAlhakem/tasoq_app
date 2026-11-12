@@ -132,7 +132,7 @@ class _HomeFeedWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isAuctionEnabled = Provider.of<SplashController>(context, listen: false).configModel?.isAuctionFeatureEnabled ?? false;
+    final bool isAuctionEnabled = Provider.of<SplashController>(context, listen: false).isAuctionEnabled;
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min,
       children: [

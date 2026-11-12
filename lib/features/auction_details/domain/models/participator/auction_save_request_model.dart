@@ -9,18 +9,48 @@ class AuctionSaveRequestModel {
 }
 
 class AuctionSaveResponseModel {
-  final String message;
-  final bool isSaved;
+  String? identicalCode;
+  String? message;
+  AuctionSaveContent? content;
+  List<dynamic>? errors;
 
-  AuctionSaveResponseModel({
-    required this.message,
-    required this.isSaved,
-  });
+  AuctionSaveResponseModel({this.identicalCode, this.message, this.content, this.errors});
 
-  factory AuctionSaveResponseModel.fromJson(Map<String, dynamic> json) {
-    return AuctionSaveResponseModel(
-      message: json['message'] ?? '',
-      isSaved: json['is_saved'] ?? false,
-    );
+  AuctionSaveResponseModel.fromJson(Map<String, dynamic> json) {
+    identicalCode = json['identical_code'];
+    message = json['message'];
+    content = json['content'] != null ? AuctionSaveContent.fromJson(json['content']) : null;
+    if (json['errors'] != null) {
+      errors = List<dynamic>.from(json['errors']);
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['identical_code'] = identicalCode;
+    data['message'] = message;
+    if (content != null) {
+      data['content'] = content!.toJson();
+    }
+    if (errors != null) {
+      data['errors'] = errors;
+    }
+    return data;
+  }
+}
+
+class AuctionSaveContent {
+  bool? isSaved;
+
+  AuctionSaveContent({this.isSaved});
+
+  AuctionSaveContent.fromJson(Map<String, dynamic> json) {
+    isSaved = json['is_saved'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['is_saved'] = isSaved;
+    return data;
   }
 }

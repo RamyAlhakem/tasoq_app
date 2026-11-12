@@ -99,7 +99,8 @@ class AuctionBidActionWidget extends StatelessWidget {
 
           bidAmountController.dispose();
 
-          if (context.mounted && response?.response?.statusCode == 200) {
+          final int? statusCode = response?.response?.statusCode;
+          if (context.mounted && statusCode != null && (statusCode == 200 || statusCode == 201)) {
             Navigator.pop(context);
           }
         },
@@ -139,8 +140,8 @@ class AuctionBidActionWidget extends StatelessWidget {
 
   void _openPlaceBidSheet(BuildContext context) {
     final splashController = Provider.of<SplashController>(context, listen: false);
-    final isEntryFeeEnabled = ((splashController.configModel?.isAuctionEntryFeeEnabled ?? false) && (splashController.configModel?.auctionEntryFeeAmount ?? 0) > 0);
-    final double entryFeePercentage = splashController.configModel?.auctionEntryFeeAmount ?? 0.0;
+    final isEntryFeeEnabled = splashController.configModel?.auctionConfig?.isEntryFeeEnabled ?? false;
+    final double entryFeePercentage = splashController.configModel?.auctionConfig?.entryFee?.amount ?? 0.0;
     final double entryFee = (entryFeePercentage / 100) * (auctionDetails?.product?.startingPrice ?? 0);
     final String selectedCurrency = splashController.myCurrency?.code ?? '';
     final isEntryFeePaid = Provider.of<AuctionParticipationController>(context, listen: false).isEntryFeePaid;
@@ -163,8 +164,8 @@ class AuctionBidActionWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final splashController = Provider.of<SplashController>(context, listen: false);
-    final isEntryFeeEnabled = ((splashController.configModel?.isAuctionEntryFeeEnabled ?? false) && (splashController.configModel?.auctionEntryFeeAmount ?? 0) > 0);
-    double entryFeePercentage = splashController.configModel?.auctionEntryFeeAmount ?? 0.0;
+    final isEntryFeeEnabled = splashController.configModel?.auctionConfig?.isEntryFeeEnabled ?? false;
+    double entryFeePercentage = splashController.configModel?.auctionConfig?.entryFee?.amount ?? 0.0;
     final selectedCurrency = splashController.myCurrency?.code;
     bool isParticipated = auctionDetails?.product?.myParticipation != null;
     double entryFee = (entryFeePercentage / 100) * (auctionDetails?.product?.startingPrice ?? 0);

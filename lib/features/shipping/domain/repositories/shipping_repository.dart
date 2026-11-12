@@ -17,7 +17,11 @@ class ShippingRepository implements ShippingRepositoryInterface{
   @override
   Future<ApiResponseModel> getShippingMethod(int? sellerId, String? type) async {
     try {
-      final response = await dioClient!.get('${AppConstants.getShippingMethod}/$sellerId/$type?guest_id=1');
+      final response = await dioClient!.get(AppConstants.getShippingMethod, queryParameters: {
+        'seller_id': sellerId,
+        'seller_is': type,
+        'guest_id': Provider.of<AuthController>(Get.context!, listen: false).getGuestToken(),
+      });
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -29,7 +33,8 @@ class ShippingRepository implements ShippingRepositoryInterface{
   Future<ApiResponseModel> addShippingMethod(int? id, String? cartGroupId) async {
     log('===>${{"id":id, "cart_group_id": cartGroupId}}');
     try {
-      final response = await dioClient!.post(AppConstants.chooseShippingMethod,
+      // v6 chooses a shipping method through PUT on the cart's shipping methods.
+      final response = await dioClient!.put(AppConstants.chooseShippingMethod,
           data: {"id":id, 'guest_id' : Provider.of<AuthController>(Get.context!, listen: false).getGuestToken(),
             "cart_group_id": cartGroupId});
       return ApiResponseModel.withSuccess(response);

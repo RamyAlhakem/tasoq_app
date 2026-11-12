@@ -33,6 +33,13 @@ class _GuestTrackOrderScreenState extends State<GuestTrackOrderScreen> {
 
   GlobalKey<FormState> formKey = GlobalKey();
 
+  @override
+  void dispose() {
+    orderIdController.dispose();
+    phoneNumberController.dispose();
+    super.dispose();
+  }
+
 
   @override
   void initState() {
@@ -154,7 +161,7 @@ class _GuestTrackOrderScreenState extends State<GuestTrackOrderScreen> {
                       if(formKey.currentState?.validate() ?? false) {
                         await orderTrackingProvider.trackOrder(orderId: orderId, phoneNumber: phone, isUpdate: true,).then((value) async {
                           if (value.response?.statusCode == 200) {
-                            await orderTrackingProvider.getTrackOrderDetailsId(orderId: orderId);
+                            await orderTrackingProvider.getTrackOrderDetailsId(orderId: orderId, phoneNumber: phone);
 
                             if(context.mounted) {
                               RouterHelper.getTrackingResultRoute(

@@ -1,3 +1,5 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
+
 class WithdrawStoreOrUpdateResponseModel {
   final String? message;
   final WithdrawResult? withdraw;
@@ -5,10 +7,16 @@ class WithdrawStoreOrUpdateResponseModel {
 
   WithdrawStoreOrUpdateResponseModel({this.message, this.withdraw, this.breakdown});
 
-  WithdrawStoreOrUpdateResponseModel.fromJson(Map<String, dynamic> json)
-      : message = json['message'],
-        withdraw = json['withdraw'] != null ? WithdrawResult.fromJson(json['withdraw']) : null,
-        breakdown = json['breakdown'] != null ? WithdrawBreakdown.fromJson(json['breakdown']) : null;
+  factory WithdrawStoreOrUpdateResponseModel.fromJson(Map<String, dynamic> json) {
+    final Map content = ApiEnvelope.content(json);
+    return WithdrawStoreOrUpdateResponseModel(
+      message: ApiEnvelope.message(json),
+      withdraw: content['withdraw'] is Map
+          ? WithdrawResult.fromJson(Map<String, dynamic>.from(content['withdraw'])) : null,
+      breakdown: content['breakdown'] is Map
+          ? WithdrawBreakdown.fromJson(Map<String, dynamic>.from(content['breakdown'])) : null,
+    );
+  }
 }
 
 class WithdrawResult {
@@ -20,7 +28,7 @@ class WithdrawResult {
   WithdrawResult({this.id, this.status, this.amount, this.commissionAmount});
 
   WithdrawResult.fromJson(Map<String, dynamic> json)
-      : id = json['id'],
+      : id = json['id'] is int ? json['id'] : int.tryParse('${json['id']}'),
         status = json['status'],
         amount = json['amount'] != null ? double.tryParse(json['amount'].toString()) : null,
         commissionAmount = json['commission_amount'] != null ? double.tryParse(json['commission_amount'].toString()) : null;

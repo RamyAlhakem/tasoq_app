@@ -1,3 +1,5 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
+
 class AuctionDescriptionModel {
   bool? success;
   String? message;
@@ -7,8 +9,9 @@ class AuctionDescriptionModel {
 
   AuctionDescriptionModel.fromJson(Map<String, dynamic> json) {
     success = json['success'];
-    message = json['message'];
-    data = json['data'] != null ? Data.fromJson(json['data']) : null;
+    message = ApiEnvelope.message(json);
+    final dynamic payload = json['content'] ?? json['data'];
+    data = payload is Map ? Data.fromJson(Map<String, dynamic>.from(payload)) : null;
   }
 
   Map<String, dynamic> toJson() {

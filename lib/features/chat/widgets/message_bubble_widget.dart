@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/helper/image_size_checker.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/domain/models/message_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/controllers/chat_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
@@ -319,10 +320,11 @@ class _FileItem extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: textBold.copyWith(fontSize: Dimensions.fontSizeDefault),
                   ),
-                  Text(
-                    "${file.size}",
-                    style: textRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).hintColor),
-                  ),
+                  if (int.tryParse(file.size ?? '') != null)
+                    Text(
+                      ImageValidationHelper.getFileSizeFromBytesToString(int.parse(file.size!)),
+                      style: textRegular.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).hintColor),
+                    ),
                 ],
               )),
               const _DownloadButtonWidget(),

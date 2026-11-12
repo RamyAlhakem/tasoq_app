@@ -15,6 +15,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Widget? reset;
   final bool showLogo;
   final List<Widget>? actions;
+  final List<BoxShadow>? boxShadow;
 
   const CustomAppBar({
     super.key,
@@ -28,14 +29,13 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.reset,
     this.showLogo = false,
     this.actions,
+    this.boxShadow,
   });
 
   @override
   Widget build(BuildContext context) {
 
-    return PreferredSize(
-        preferredSize: const Size.fromHeight(50.0),
-        child: AppBar(
+    final Widget appBar = AppBar(
 
             actions: actions ?? (showResetIcon && reset != null ? [reset!] : []),
           backgroundColor: Theme.of(context).cardColor,
@@ -48,7 +48,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             centerTitle: centerTitle,
             excludeHeaderSemantics: true,
             titleSpacing: 0,
-            elevation: 1,
+            elevation: boxShadow != null ? 0 : 1,
             clipBehavior: Clip.none,
             shadowColor: Theme.of(context).primaryColor.withValues(alpha:.1),
             leadingWidth: isBackButtonExist? 50 : 120,
@@ -57,8 +57,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
             showLogo?
             Padding(padding: const EdgeInsets.only(left: Dimensions.paddingSizeDefault),
-              child: SizedBox(child: Image.asset(Images.logoWithNameImage))): const SizedBox())
+              child: SizedBox(child: Image.asset(Images.logoWithNameImage))): const SizedBox());
 
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(50.0),
+      child: boxShadow != null ? DecoratedBox(decoration: BoxDecoration(boxShadow: boxShadow), child: appBar) : appBar,
     );
   }
 

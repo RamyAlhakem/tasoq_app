@@ -13,13 +13,15 @@ import 'package:provider/provider.dart';
 
 
 class OfferProductListScreen extends StatefulWidget {
-  const OfferProductListScreen({super.key});
+  final bool isBacButtonExist;
+  const OfferProductListScreen({super.key, this.isBacButtonExist = true});
 
   @override
   State<OfferProductListScreen> createState() => _OfferProductListScreenState();
 }
 
 class _OfferProductListScreenState extends State<OfferProductListScreen> {
+  static const double _bottomNavHeight = 60;
   final ScrollController scrollController = ScrollController();
 
   @override
@@ -29,11 +31,17 @@ class _OfferProductListScreenState extends State<OfferProductListScreen> {
 
   }
 
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(title: '${getTranslated('offers', context)}',),
+      appBar: CustomAppBar(title: '${getTranslated('offers', context)}', isBackButtonExist: widget.isBacButtonExist,),
       body: Consumer<ProductController>(
         builder: (context, productController, child) {
 
@@ -53,7 +61,10 @@ class _OfferProductListScreenState extends State<OfferProductListScreen> {
                   child: MasonryGridView.count(
                     itemCount: productController.discountedProductModel?.products?.length,
                     crossAxisCount: 2,
-                    padding: const EdgeInsets.symmetric(horizontal: 11),
+                    padding: EdgeInsets.only(
+                      top: 10,
+                      bottom: widget.isBacButtonExist ? 0 : _bottomNavHeight + MediaQuery.of(context).padding.bottom,
+                    ),
                     controller: scrollController,
                     itemBuilder: (BuildContext context, int index) {
                       return Padding(

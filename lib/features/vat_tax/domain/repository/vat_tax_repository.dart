@@ -9,9 +9,19 @@ class VatTaxRepository implements VatTaxRepositoryInterface{
   VatTaxRepository({required this.dioClient});
 
   @override
+  Future<ApiResponseModel> getVatTaxSetup() async {
+    try {
+      final response = await dioClient!.get(AppConstants.auctionVatTaxSetup);
+      return ApiResponseModel.withSuccess(response);
+    } catch (e) {
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+    }
+  }
+
+  @override
   Future<ApiResponseModel> getVatTaxList() async {
     try {
-      final response = await dioClient!.get(AppConstants.getTaxVatList);
+      final response = await dioClient!.get(AppConstants.auctionVatTaxListUri);
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));

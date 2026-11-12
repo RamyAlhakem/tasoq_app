@@ -23,7 +23,6 @@ class BrandController extends ChangeNotifier {
   List<BrandModel>? get brandListSorted => _brandListSorted;
 
   Future<void> getBrandList({required int offset, bool isUpdate = true}) async {
-
     if(offset == 1) {
       _brandModel = null;
       _brandListSorted = null;
@@ -64,6 +63,62 @@ class BrandController extends ChangeNotifier {
       }
 
     }
+  }
+
+  Brand? _auctionBrandModel;
+  Brand? get auctionBrandModel => _auctionBrandModel;
+
+  final List<BrandModel> _auctionBrandList = [];
+  List<BrandModel> get auctionBrandList => _auctionBrandList;
+
+  bool _auctionBrandLoading = false;
+  bool get auctionBrandLoading => _auctionBrandLoading;
+
+  Future<void> getAuctionBrandList({required int offset, bool isUpdate = true}) async {
+    if(offset == 1) {
+      _auctionBrandModel = null;
+      _auctionBrandList.clear();
+
+      if(isUpdate) {
+        notifyListeners();
+      }
+    }
+
+    if(_auctionBrandLoading) return;
+    _auctionBrandLoading = true;
+
+    if(offset == 1) {
+      await DataSyncHelper.fetchAndSyncData(
+        fetchFromLocal: ()=> brandRepo!.getAuctionBrandList(offset: offset, source: DataSourceEnum.local),
+        fetchFromClient: ()=> brandRepo!.getAuctionBrandList(offset: offset, source: DataSourceEnum.client),
+        onResponse: (data, source) {
+          _auctionBrandModel = Brand.fromJson(data);
+          _auctionBrandList
+            ..clear()
+            ..addAll(_auctionBrandModel?.brands ?? []);
+
+          notifyListeners();
+        },
+      );
+    }else {
+
+      final ApiResponseModel apiResponse = await brandRepo!.getAuctionBrandList(offset: offset, source: DataSourceEnum.client);
+
+      if(apiResponse.response?.statusCode == 200) {
+        final Brand parsedBrand = Brand.fromJson(apiResponse.response?.data);
+
+        _auctionBrandModel?.offset = parsedBrand.offset;
+        _auctionBrandModel?.limit = parsedBrand.limit;
+        _auctionBrandModel?.totalSize = parsedBrand.totalSize;
+        _auctionBrandModel?.brands?.addAll(parsedBrand.brands ?? []);
+        _auctionBrandList.addAll(parsedBrand.brands ?? []);
+
+        notifyListeners();
+      }
+
+    }
+
+    _auctionBrandLoading = false;
   }
 
   Future<void> getSellerWiseBrandList(String slug) async {

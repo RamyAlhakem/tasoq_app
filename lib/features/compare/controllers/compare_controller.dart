@@ -32,10 +32,9 @@ class CompareController extends ChangeNotifier {
     ApiResponseModel apiResponse = await compareServiceInterface.getList();
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       compIds = [];
-      compareModel = null;
       compareModel = CompareModel.fromJson(apiResponse.response?.data);
-      for(int i = 0; i< compareModel!.compareLists!.length; i++){
-        compIds.add(compareModel!.compareLists![i].productId!);
+      for(final CompareLists row in compareModel?.compareLists ?? []){
+        if(row.productId != null) compIds.add(row.productId!);
       }
     } else {
       showCustomSnackBarWidget(apiResponse.error.toString(), Get.context!, snackBarType: SnackBarType.error);
@@ -67,18 +66,32 @@ class CompareController extends ChangeNotifier {
 
 
   List<AttributeModel>? attributeList = [];
-  void getAttributeList() async {
-    ApiResponseModel response = await compareServiceInterface.getAttributeList();
-    if (response.response != null && response.response!.statusCode == 200) {
-      attributeList = [];
-      response.response!.data.forEach((attribute) {
-        attributeList!.add(AttributeModel.fromJson(attribute));
-      });
-    } else {
-      ApiChecker.checkApi( response);
-    }
-    notifyListeners();
 
+  // The compare table renders one row per attribute, so every page is loaded before painting.
+  void getAttributeList() async {
+    final List<AttributeModel> attributes = [];
+    int offset = 1;
+    int? totalSize;
+
+    do {
+      ApiResponseModel response = await compareServiceInterface.getAttributeList(offset: offset);
+      if (response.response == null || response.response!.statusCode != 200) {
+        ApiChecker.checkApi(response);
+        notifyListeners();
+        return;
+      }
+
+      final AttributeResponseModel attributeResponse = AttributeResponseModel.fromJson(response.response!.data);
+      totalSize = attributeResponse.totalSize ?? 0;
+      if (attributeResponse.attributes == null || attributeResponse.attributes!.isEmpty) {
+        break;
+      }
+      attributes.addAll(attributeResponse.attributes!);
+      offset++;
+    } while (attributes.length < totalSize);
+
+    attributeList = attributes;
+    notifyListeners();
   }
 
 

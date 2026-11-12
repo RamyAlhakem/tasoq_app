@@ -18,10 +18,9 @@ class LoyaltyPointWidget extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,children: [
-              Row(children: [
+              Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: Dimensions.paddingSizeExtraSmall, runSpacing: Dimensions.paddingSizeExtraSmall, children: [
 
                   Image(image: AssetImage(loyaltyPointModel!.credit! > 0 ? Images.coinDebit: Images.coinCredit), width: 20,height: 20,),
-                  const SizedBox(width: Dimensions.paddingSizeEight,),
                   Text( loyaltyPointModel!.credit! > 0 ? '+': '-',
                     style: robotoBold.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color,
                         fontSize: Dimensions.fontSizeLarge),),
@@ -29,9 +28,22 @@ class LoyaltyPointWidget extends StatelessWidget {
                   Text('${loyaltyPointModel!.credit! > 0 ? loyaltyPointModel!.credit: loyaltyPointModel!.debit}',
                     style: textRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color,
                         fontSize: Dimensions.fontSizeLarge)),
-                  const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
-                  Text(getTranslated('points', context)!, style: textRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color))]),
+                  Text(getTranslated('points', context)!, style: textRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color)),
+
+                  if (loyaltyPointModel?.isWholesaleOrder ?? false)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeExtraExtraSmall),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(50),
+                        color: Theme.of(context).primaryColor.withValues(alpha: .1),
+                      ),
+                      child: Text(
+                        getTranslated('wholesale_order', context) ?? '',
+                        style: textBold.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).primaryColor),
+                      ),
+                    ),
+                ]),
               const SizedBox(height: Dimensions.paddingSizeExtraSmall,),
 
               Text(

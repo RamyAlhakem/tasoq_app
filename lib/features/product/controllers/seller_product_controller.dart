@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/domain/models/product_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/domain/services/seller_product_service_interface.dart';
@@ -134,7 +135,10 @@ class SellerProductController extends ChangeNotifier {
       fetchFromClient: () => sellerProductServiceInterface!.getShopAgainFromRecentStore(source: DataSourceEnum.client),
       onResponse: (data, source) {
         shopAgainFromRecentStoreList = [];
-        data.forEach((store) => shopAgainFromRecentStoreList.add(ShopAgainFromRecentStoreModel.fromJson(store)));
+        final dynamic products = ApiEnvelope.content(data)['data'];
+        if (products is List) {
+          products.forEach((store) => shopAgainFromRecentStoreList.add(ShopAgainFromRecentStoreModel.fromJson(store)));
+        }
         notifyListeners();
       },
     );

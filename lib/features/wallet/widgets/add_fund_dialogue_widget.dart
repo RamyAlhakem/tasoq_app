@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/controllers/checkout_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/wallet/controllers/wallet_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/helper/debounce_helper.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/price_converter.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
@@ -15,10 +16,23 @@ import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/custom_che
 import 'package:provider/provider.dart';
 
 
-class AddFundDialogueWidget extends StatelessWidget {
+class AddFundDialogueWidget extends StatefulWidget {
   const AddFundDialogueWidget({super.key, required this.focusNode, required this.inputAmountController});
   final FocusNode focusNode;
   final TextEditingController inputAmountController;
+
+  @override
+  State<AddFundDialogueWidget> createState() => _AddFundDialogueWidgetState();
+}
+
+class _AddFundDialogueWidgetState extends State<AddFundDialogueWidget> {
+  final DebounceHelper _tapGuard = DebounceHelper(milliseconds: 500);
+
+  @override
+  void dispose() {
+    _tapGuard.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +75,7 @@ class AddFundDialogueWidget extends StatelessWidget {
                                       SizedBox(
                                         width: 200,
                                         child: TextField(
-                                          controller: inputAmountController,
+                                          controller: widget.inputAmountController,
                                           inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
                                           textAlign: TextAlign.center,
                                           keyboardType: TextInputType.number,
@@ -137,20 +151,25 @@ class AddFundDialogueWidget extends StatelessWidget {
                                       // Payment Methods List
                                       Consumer<SplashController>(
                                         builder: (context, configProvider, _) {
-                                          return ListView.builder(
-                                            padding: EdgeInsets.zero,
-                                            itemCount: configProvider.configModel?.paymentMethods?.length ?? 0,
+                                          return CustomScrollView(
                                             shrinkWrap: true,
                                             physics: const NeverScrollableScrollPhysics(),
-                                            itemBuilder: (context, index) {
-                                              final method = configProvider.configModel!.paymentMethods![index];
-                                              return CustomCheckBoxWidget(
-                                                index: index,
-                                                icon: '${configProvider.configModel?.paymentMethodImagePath}/${method.additionalDatas?.gatewayImage ?? ''}',
-                                                name: method.keyName ?? '',
-                                                title: method.additionalDatas?.gatewayTitle ?? '',
-                                              );
-                                            },
+                                            slivers: [
+                                              SliverList(
+                                                delegate: SliverChildBuilderDelegate(
+                                                  (context, index) {
+                                                    final method = configProvider.configModel!.paymentMethods![index];
+                                                    return CustomCheckBoxWidget(
+                                                      index: index,
+                                                      icon: '${configProvider.configModel?.paymentMethodImagePath}/${method.additionalDatas?.gatewayImage ?? ''}',
+                                                      name: method.keyName ?? '',
+                                                      title: method.additionalDatas?.gatewayTitle ?? '',
+                                                    );
+                                                  },
+                                                  childCount: configProvider.configModel?.paymentMethods?.length ?? 0,
+                                                ),
+                                              ),
+                                            ],
                                           );
                                         },
                                       ),
@@ -167,19 +186,21 @@ class AddFundDialogueWidget extends StatelessWidget {
                                         digitalPaymentProvider.setDigitalPaymentMethodName(0,
                                             configProvider.configModel!.paymentMethods![0].keyName!);
                                       }
-                                      if(inputAmountController.text.trim().isEmpty){
+                                      if(widget.inputAmountController.text.trim().isEmpty){
                                         showCustomSnackBar(getTranslated('please_input_amount', context), context, isError: true);
-                                      }else if(double.parse(inputAmountController.text.trim()) <= 0){
+                                      }else if(double.parse(widget.inputAmountController.text.trim()) <= 0){
                                         showCustomSnackBar(getTranslated('please_input_amount', context), context, isError: true);
                                       }else if(digitalPaymentProvider.paymentMethodIndex == -1){
                                         showCustomSnackBar(getTranslated('please_select_any_payment_type', context), context, isError: true);
                                       }else{
-                                        Provider.of<WalletController>(context, listen: false).addFundToWallet(
-                                          inputAmountController.text.trim(),
-                                          digitalPaymentProvider.selectedDigitalPaymentMethodName,
-                                        ).then((response){
-                                          inputAmountController.clear();
-                                          Navigator.pop(Get.context!);
+                                        _tapGuard.runOnce(() {
+                                          Provider.of<WalletController>(context, listen: false).addFundToWallet(
+                                            widget.inputAmountController.text.trim(),
+                                            digitalPaymentProvider.selectedDigitalPaymentMethodName,
+                                          ).then((response){
+                                            widget.inputAmountController.clear();
+                                            Navigator.pop(Get.context!);
+                                          });
                                         });
                                       }
                                     },

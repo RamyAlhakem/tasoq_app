@@ -1,3 +1,4 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/image_full_url.dart';
 
 class NotificationItemModel {
@@ -15,13 +16,14 @@ class NotificationItemModel {
         this.notification});
 
   NotificationItemModel.fromJson(Map<String, dynamic> json) {
-    totalSize = json['total_size'];
-    limit = json['limit'];
-    offset = json['offset'];
-    newNotificationItem = json['new_notification'];
-    if (json['notification'] != null) {
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json, legacyKeys: ['notification']);
+    totalSize = envelope.totalSize;
+    limit = envelope.limit;
+    offset = envelope.offset;
+    newNotificationItem = envelope.read('new_notification');
+    if (envelope.data != null) {
       notification = <NotificationItem>[];
-      json['notification'].forEach((v) {
+      envelope.data!.forEach((v) {
         notification!.add(NotificationItem.fromJson(v));
       });
     }
@@ -40,6 +42,7 @@ class NotificationItem {
   int? status;
   String? createdAt;
   String? updatedAt;
+  bool isSeen = false;
   NotificationSeenBy? seen;
 
 
@@ -54,6 +57,7 @@ class NotificationItem {
         this.status,
         this.createdAt,
         this.updatedAt,
+        this.isSeen = false,
         this.seen,
         this.imageFullUrl
       });
@@ -64,7 +68,7 @@ class NotificationItem {
     sentTo = json['sent_to'];
     title = json['title'];
     description = json['description'];
-    notificationCount = int.parse(json['notification_count'].toString());
+    notificationCount = int.tryParse('${json['notification_count']}');
     image = json['image'];
     imageFullUrl = json['image_full_url'] != null
       ? ImageFullUrl.fromJson(json['image_full_url'])
@@ -73,7 +77,7 @@ class NotificationItem {
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
     seen = json['notification_seen_by'] != null ? NotificationSeenBy.fromJson(json['notification_seen_by']) : null;
-
+    isSeen = json['is_seen'] == true || seen != null;
   }
 }
 
@@ -93,8 +97,8 @@ class NotificationSeenBy {
 
   NotificationSeenBy.fromJson(Map<String, dynamic> json) {
     id = json['id'];
-    userId = int.parse(json['user_id'].toString());
-    notificationId = int.parse(json['notification_id'].toString());
+    userId = int.tryParse('${json['user_id']}');
+    notificationId = int.tryParse('${json['notification_id']}');
     createdAt = json['created_at'];
   }
 }
@@ -109,21 +113,89 @@ class AuctionNotificationListModel {
   AuctionNotificationListModel({this.totalSize, this.limit, this.offset, this.newAuctionNotification, this.notifications});
 
   AuctionNotificationListModel.fromJson(Map<String, dynamic> json) {
-    totalSize = json['total_size'];
-    limit = json['limit'];
-    offset = json['offset'];
-    newAuctionNotification = json['new_notification'];
-    if (json['notifications'] != null) {
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json, legacyKeys: ['notifications']);
+    totalSize = envelope.totalSize;
+    limit = envelope.limit;
+    offset = envelope.offset;
+    newAuctionNotification = envelope.read('new_notification');
+    if (envelope.data != null) {
       notifications = <AuctionNotificationItem>[];
-      json['notifications'].forEach((v) {
+      envelope.data!.forEach((v) {
         notifications!.add(AuctionNotificationItem.fromJson(v));
       });
     }
   }
 }
 
-int totalNewNotification(NotificationItemModel? general, AuctionNotificationListModel? auction, {bool isAuctionEnabled = true}) {
-  return (general?.newNotificationItem ?? 0) + (isAuctionEnabled ? (auction?.newAuctionNotification ?? 0) : 0);
+class WholesaleNotificationListModel {
+  int? totalSize;
+  int? limit;
+  int? offset;
+  int? newWholesaleNotification;
+  List<WholesaleNotificationItem>? notifications;
+
+  WholesaleNotificationListModel({this.totalSize, this.limit, this.offset, this.newWholesaleNotification, this.notifications});
+
+  WholesaleNotificationListModel.fromJson(Map<String, dynamic> json) {
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json, legacyKeys: ['notifications']);
+    totalSize = envelope.totalSize;
+    limit = envelope.limit;
+    offset = envelope.offset;
+    newWholesaleNotification = envelope.read('new_notification');
+    if (envelope.data != null) {
+      notifications = <WholesaleNotificationItem>[];
+      envelope.data!.forEach((v) {
+        notifications!.add(WholesaleNotificationItem.fromJson(v));
+      });
+    }
+  }
+}
+
+class WholesaleNotificationItem {
+  int? id;
+  String? title;
+  String? description;
+  String? image;
+
+  String? imageFullUrl;
+  String? sentTo;
+  int? notificationCount;
+  bool isSeen;
+  String? createdAt;
+
+  WholesaleNotificationItem({
+    this.id,
+    this.title,
+    this.description,
+    this.image,
+    this.imageFullUrl,
+    this.sentTo,
+    this.notificationCount,
+    this.isSeen = false,
+    this.createdAt,
+  });
+
+  WholesaleNotificationItem.fromJson(Map<String, dynamic> json)
+      : id = json['id'],
+        title = json['title'] ?? json['type'],
+        description = json['description'] ?? json['message'],
+        image = json['image'],
+        imageFullUrl = json['image_full_url']?.toString(),
+        sentTo = json['sent_to'],
+        notificationCount = int.tryParse('${json['notification_count']}'),
+        isSeen = json['is_seen'] == true || json['is_read'] == true,
+        createdAt = json['created_at'];
+}
+
+int totalNewNotification(
+  NotificationItemModel? general,
+  AuctionNotificationListModel? auction, {
+  bool isAuctionEnabled = true,
+  WholesaleNotificationListModel? wholesale,
+}) {
+  return (general?.newNotificationItem ?? 0) +
+      (isAuctionEnabled ? (auction?.newAuctionNotification ?? 0) : 0) +
+      (wholesale?.newWholesaleNotification ?? 0);
 }
 
 class AuctionNotificationItem {

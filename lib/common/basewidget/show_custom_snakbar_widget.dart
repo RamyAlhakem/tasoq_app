@@ -13,9 +13,9 @@ import 'package:fluttertoast/fluttertoast.dart';
      timeInSecForIosWeb: 1,
      backgroundColor: isError ? const Color(0xFFFF0014) : const Color(0xFF1E7C15),
      textColor: Colors.white,
-     fontSize: 16.0
+     fontSize: 14.0
    );
-}
+ }
 
 enum SnackBarType {
   error,

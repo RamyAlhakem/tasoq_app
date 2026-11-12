@@ -51,6 +51,14 @@ class _BrandAndCategoryProductScreenState extends State<BrandAndCategoryProductS
 
   final DebounceHelper debounceHelper = DebounceHelper(milliseconds: 500);
 
+  @override
+  void dispose() {
+    searchTextEditingController.dispose();
+    _scrollController.dispose();
+    _categoryScrollController.dispose();
+    super.dispose();
+  }
+
 
   void _initializeCategoryList(String categoryName) {
     subCategoryList = [];

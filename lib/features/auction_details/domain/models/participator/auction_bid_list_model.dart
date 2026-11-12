@@ -1,22 +1,30 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
+
 class AuctionBidListModel {
   int? totalSize;
   int? limit;
   int? offset;
+  int? lastPage;
   List<AuctionBidItem>? bids;
 
-  AuctionBidListModel(
-      {this.totalSize, this.limit, this.offset, this.bids});
+  AuctionBidListModel({this.totalSize, this.limit, this.offset, this.lastPage, this.bids});
 
   AuctionBidListModel.fromJson(Map<String, dynamic> json) {
-    totalSize = json['total_size'];
-    limit = json['limit'];
-    offset = json['offset'];
-    if (json['bids'] != null) {
-      bids = <AuctionBidItem>[];
-      json['bids'].forEach((v) {
-        bids!.add(AuctionBidItem.fromJson(v));
-      });
-    }
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json, legacyKeys: const ['bids']);
+    totalSize = envelope.totalSize;
+    limit = envelope.limit;
+    offset = envelope.offset;
+    lastPage = envelope.lastPage;
+
+    bids = (envelope.data ?? const []).whereType<Map>()
+        .map((v) => AuctionBidItem.fromJson(Map<String, dynamic>.from(v))).toList();
+  }
+
+  bool get hasNextPage {
+    final int page = offset ?? 1;
+    if (lastPage != null) return page < lastPage!;
+    if (totalSize != null && limit != null && limit! > 0) return page * limit! < totalSize!;
+    return false;
   }
 
   Map<String, dynamic> toJson() {
@@ -24,6 +32,7 @@ class AuctionBidListModel {
     data['total_size'] = totalSize;
     data['limit'] = limit;
     data['offset'] = offset;
+    data['last_page'] = lastPage;
     if (bids != null) {
       data['bids'] = bids!.map((v) => v.toJson()).toList();
     }
@@ -34,53 +43,44 @@ class AuctionBidListModel {
 class AuctionBidItem {
   int? id;
   int? auctionProductId;
-  int? userId;
   double? bidAmount;
   bool? isAutoBid;
   bool? isWithdrawBid;
+  bool? isRollbackBid;
   String? bidTime;
   String? claimStartTime;
-  String? createdAt;
-  String? updatedAt;
   bool? isLeadBid;
-  bool? isMyBid;
-  Customer? customer;
+  Bidder? bidder;
   UserContext? userContext;
 
   AuctionBidItem(
     {this.id,
       this.auctionProductId,
-      this.userId,
       this.bidAmount,
       this.isAutoBid,
       this.isWithdrawBid,
+      this.isRollbackBid,
       this.bidTime,
       this.claimStartTime,
-      this.createdAt,
-      this.updatedAt,
       this.isLeadBid,
-      this.isMyBid,
-      this.customer,
+      this.bidder,
       this.userContext});
 
   AuctionBidItem.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    auctionProductId = json['auction_product_id'];
-    userId = json['user_id'];
-    bidAmount = json['bid_amount'] != null ? double.tryParse(json['bid_amount'].toString()) : null;
-    isAutoBid = json['is_auto_bid'];
-    isWithdrawBid = json['is_withdraw_bid'];
-    bidTime = json['bid_time'];
-    claimStartTime = json['claim_start_time'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
-    isLeadBid = json['is_lead_bid'];
-    isMyBid = json['is_my_bid'];
-    customer = json['customer'] != null
-        ? Customer.fromJson(json['customer'])
-        : null;
-    userContext = json['user_context'] != null
-        ? UserContext.fromJson(json['user_context'])
+    id = _asInt(json['id']);
+    auctionProductId = _asInt(json['auction_product_id']);
+    bidAmount = _asDouble(json['bid_amount']);
+    isAutoBid = _asBool(json['is_auto_bid']);
+    isWithdrawBid = _asBool(json['is_withdraw_bid']);
+    isRollbackBid = _asBool(json['is_rollback_bid']);
+    bidTime = json['bid_time']?.toString();
+    claimStartTime = json['claim_start_time']?.toString();
+    isLeadBid = _asBool(json['is_lead_bid']);
+
+    final dynamic rawBidder = json['bidder'] ?? json['customer'];
+    bidder = rawBidder is Map ? Bidder.fromJson(Map<String, dynamic>.from(rawBidder)) : null;
+    userContext = json['user_context'] is Map
+        ? UserContext.fromJson(Map<String, dynamic>.from(json['user_context']))
         : null;
   }
 
@@ -88,18 +88,15 @@ class AuctionBidItem {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
     data['auction_product_id'] = auctionProductId;
-    data['user_id'] = userId;
     data['bid_amount'] = bidAmount;
     data['is_auto_bid'] = isAutoBid;
     data['is_withdraw_bid'] = isWithdrawBid;
+    data['is_rollback_bid'] = isRollbackBid;
     data['bid_time'] = bidTime;
     data['claim_start_time'] = claimStartTime;
-    data['created_at'] = createdAt;
-    data['updated_at'] = updatedAt;
     data['is_lead_bid'] = isLeadBid;
-    data['is_my_bid'] = isMyBid;
-    if (customer != null) {
-      data['customer'] = customer!.toJson();
+    if (bidder != null) {
+      data['bidder'] = bidder!.toJson();
     }
     if (userContext != null) {
       data['user_context'] = userContext!.toJson();
@@ -108,22 +105,20 @@ class AuctionBidItem {
   }
 }
 
-class Customer {
+class Bidder {
   int? id;
   String? fName;
   String? lName;
-  String? image;
   ImageFullUrl? imageFullUrl;
 
-  Customer({this.id, this.fName, this.lName, this.image, this.imageFullUrl});
+  Bidder({this.id, this.fName, this.lName, this.imageFullUrl});
 
-  Customer.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    fName = json['f_name'];
-    lName = json['l_name'];
-    image = json['image'];
-    imageFullUrl = json['image_full_url'] != null
-        ? ImageFullUrl.fromJson(json['image_full_url'])
+  Bidder.fromJson(Map<String, dynamic> json) {
+    id = _asInt(json['id']);
+    fName = json['f_name']?.toString();
+    lName = json['l_name']?.toString();
+    imageFullUrl = json['image_full_url'] is Map
+        ? ImageFullUrl.fromJson(Map<String, dynamic>.from(json['image_full_url']))
         : null;
   }
 
@@ -132,7 +127,6 @@ class Customer {
     data['id'] = id;
     data['f_name'] = fName;
     data['l_name'] = lName;
-    data['image'] = image;
     if (imageFullUrl != null) {
       data['image_full_url'] = imageFullUrl!.toJson();
     }
@@ -148,9 +142,9 @@ class ImageFullUrl {
   ImageFullUrl({this.key, this.path, this.status});
 
   ImageFullUrl.fromJson(Map<String, dynamic> json) {
-    key = json['key'];
-    path = json['path'];
-    status = json['status'];
+    key = json['key']?.toString();
+    path = json['path']?.toString();
+    status = _asInt(json['status']);
   }
 
   Map<String, dynamic> toJson() {
@@ -179,12 +173,12 @@ class UserContext {
       this.isClaimExpired});
 
   UserContext.fromJson(Map<String, dynamic> json) {
-    myPosition = json['my_position'];
-    isLeading = json['is_leading'];
-    isWinner = json['is_winner'];
-    claimEndTime = json['claim_end_time'];
-    claimTimeRemaining = json['claim_time_remaining'] != null ? double.tryParse(json['claim_time_remaining'].toString()) : null;
-    isClaimExpired = json['is_claim_expired'];
+    myPosition = _asInt(json['my_position']);
+    isLeading = _asBool(json['is_leading']);
+    isWinner = _asBool(json['is_winner']);
+    claimEndTime = json['claim_end_time']?.toString();
+    claimTimeRemaining = _asDouble(json['claim_time_remaining']);
+    isClaimExpired = _asBool(json['is_claim_expired']);
   }
 
   Map<String, dynamic> toJson() {
@@ -197,4 +191,26 @@ class UserContext {
     data['is_claim_expired'] = isClaimExpired;
     return data;
   }
+}
+
+bool? _asBool(dynamic value) {
+  if (value == null) return null;
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  final String text = value.toString().toLowerCase();
+  if (text == 'true' || text == '1') return true;
+  if (text == 'false' || text == '0') return false;
+  return null;
+}
+
+int? _asInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  return int.tryParse('$value');
+}
+
+double? _asDouble(dynamic value) {
+  if (value == null) return null;
+  if (value is num) return value.toDouble();
+  return double.tryParse('$value');
 }

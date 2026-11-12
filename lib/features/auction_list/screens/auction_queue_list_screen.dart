@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_app_bar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/no_internet_screen_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_sliver_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/confirmation_dialog_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/enums/auction_approval_status_enum.dart';
 import 'package:flutter_sixvalley_ecommerce/common/enums/user_created_auction_enum.dart';
@@ -21,7 +21,8 @@ import 'package:shimmer/shimmer.dart';
 
 class AuctionQueueListScreen extends StatefulWidget {
   final bool? fromNotification;
-  const AuctionQueueListScreen({super.key, this.fromNotification = false});
+  final bool fromAuctionCreate;
+  const AuctionQueueListScreen({super.key, this.fromNotification = false, this.fromAuctionCreate = false});
 
   @override
   State<AuctionQueueListScreen> createState() => _AuctionQueueListScreenState();
@@ -43,9 +44,9 @@ class _AuctionQueueListScreenState extends State<AuctionQueueListScreen> {
     });
   }
 
-  void _loadData({bool isReload = false}) {
+  Future<void> _loadData({bool isReload = false}) {
     final controller = Provider.of<AuctionProductQueueController>(context, listen: false);
-    controller.getAuctionProductList(selectedStatus, 1, reload: isReload);
+    return controller.getAuctionProductList(selectedStatus, 1, reload: isReload);
   }
 
   void _showDeleteConfirmationDialog(BuildContext context, int productId) {
@@ -73,122 +74,141 @@ class _AuctionQueueListScreenState extends State<AuctionQueueListScreen> {
   }
 
 
+  void _onBack() {
+    if (widget.fromAuctionCreate) {
+      RouterHelper.getDashboardRoute(action: RouteAction.pushNamedAndRemoveUntil, page: 'auction');
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
         if (widget.fromNotification!) {
-          /// TODO: Navigation
         } else {
           if (!didPop) {
-            Navigator.of(context).pop();
+            _onBack();
           }
         }
       },
       child: Scaffold(
         appBar: CustomAppBar(
+          onBackPressed: _onBack,
           title: getTranslated('auction_request', context) ?? 'Auction Request',
         ),
-        floatingActionButton: (Provider.of<SplashController>(context, listen: false).configModel?.isAuctionFeatureEnabled == true) &&
-            (Provider.of<SplashController>(context, listen: false).configModel?.isActiveAuctionForCustomer == true)
-            ? FloatingActionButton(
-                shape: const CircleBorder(),
-                backgroundColor: Theme.of(context).cardColor,
-                onPressed: () => RouterHelper.getAddEditAuctionProductRoute(action: RouteAction.push),
-                child: Image.asset(Images.addIcon, width: Dimensions.iconSizeLarge),
-              ) : null,
+        floatingActionButton: Provider.of<SplashController>(context, listen: false).canCustomerCreateAuction
+          ? FloatingActionButton(
+            shape: const CircleBorder(),
+            backgroundColor: Theme.of(context).cardColor,
+            onPressed: () => RouterHelper.getAddEditAuctionProductRoute(action: RouteAction.push),
+            child: Image.asset(Images.addIcon, width: Dimensions.iconSizeLarge),
+          ) : null,
         body: Column(
-              children: [
-                const SizedBox(height: Dimensions.paddingSizeTwelve),
+          children: [
+            const SizedBox(height: Dimensions.paddingSizeTwelve),
 
-                Consumer<AuctionProductQueueController>(
-                  builder: (context, queueController, _) => Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: AuctionTabBarWidget(
-                      selectedIndex: _visibleStatuses.indexOf(selectedStatus),
-                      tabs: _visibleStatuses.map((status) => status.label(context)).toList(),
-                      counts: _visibleStatuses.map((s) => queueController.countFor(s)).toList(),
-                      onTabChanged: (index) {
-                        setState(() {
-                          selectedStatus = _visibleStatuses[index];
-                        });
-                        _loadData(isReload: true);
-                      },
-                    ),
-                  ),
+            Consumer<AuctionProductQueueController>(
+              builder: (context, queueController, _) => Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: AuctionTabBarWidget(
+                  selectedIndex: _visibleStatuses.indexOf(selectedStatus),
+                  tabs: _visibleStatuses.map((status) => status.label(context)).toList(),
+                  counts: _visibleStatuses.map((s) => queueController.countFor(s)).toList(),
+                  onTabChanged: (index) {
+                    setState(() {
+                      selectedStatus = _visibleStatuses[index];
+                    });
+                    _loadData(isReload: true);
+                  },
                 ),
+              ),
+            ),
 
-                const SizedBox(height: Dimensions.paddingSizeTwelve),
+            const SizedBox(height: Dimensions.paddingSizeTwelve),
 
-                Expanded(
-                  child: Consumer<AuctionProductQueueController>(
-                    builder: (context, controller, _) {
-                      final bool isLoading = controller.isLoading(selectedStatus);
-                      final AuctionProductListModel? model = controller.getModel(selectedStatus);
+              Expanded(
+                child: Consumer<AuctionProductQueueController>(
+                  builder: (context, controller, _) {
+                    final bool isLoading = controller.isLoading(selectedStatus);
+                    final AuctionProductListModel? model = controller.getModel(selectedStatus);
 
-                      if (isLoading || model == null) {
-                        return const AuctionQueueListShimmerWidget();
-                      }
+                    if (isLoading || model == null) {
+                      return const AuctionQueueListShimmerWidget();
+                    }
 
-                      final List<AuctionProduct>? products = model.products;
+                    final List<AuctionProduct>? products = model.products;
 
-                      if (products == null || products.isEmpty) {
-                        return NoInternetOrDataScreenWidget(isNoInternet: false, message: getTranslated('no_auction_found', context) ?? 'No auctions found');
-                      }
-
+                    if (products == null || products.isEmpty) {
                       return RefreshIndicator(
-                        onRefresh: () async {
-                          _loadData(isReload: true);
-                        },
-                        child: SingleChildScrollView(
-                          child: PaginatedListView(
+                        onRefresh: () => _loadData(isReload: true),
+                        child: CustomScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          slivers: [
+                            SliverFillRemaining(
+                              hasScrollBody: false,
+                              child: NoInternetOrDataScreenWidget(isNoInternet: false, message: getTranslated('no_auction_found', context) ?? 'No auctions found'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return RefreshIndicator(
+                      onRefresh: () => _loadData(isReload: true),
+                      child: CustomScrollView(
+                        controller: _scrollController,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        slivers: [
+                          PaginatedSliverListView(
                             scrollController: _scrollController,
                             totalSize: model.totalSize,
                             offset: model.offset,
                             onPaginate: (offset) async {
                               await controller.getAuctionProductList(selectedStatus, offset ?? 1);
                             },
-                            itemView: ListView.builder(
-                              controller: _scrollController,
-                              itemCount: products.length,
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemBuilder: (context, index) {
-                                final product = products[index];
-
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: Dimensions.paddingSizeSmall,
-                                    vertical: Dimensions.paddingSizeExtraSmall,
-                                  ),
-                                  child: AuctionQueueItemWidget(
-                                    auctionId: product.id.toString(),
-                                    productName: product.name ?? '',
-                                    startingPrice: product.startingPrice?.toDouble(),
-                                    categoryName: product.category?.name ?? '',
-                                    thumbnailFullUrl: product.thumbnailFullUrl?.path ?? '',
-                                    auctionState: UserCreatedAuctionEnum.resolve(
-                                      approvalStatus: product.approvalStatus,
-                                      auctionStatus: product.auctionStatus,
-                                      deliveryStatus: null,
+                            itemView: SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  final product = products[index];
+  
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: Dimensions.paddingSizeSmall,
+                                      vertical: Dimensions.paddingSizeExtraSmall,
                                     ),
-                                    onTap: () => RouterHelper.getCreatorAuctionDetailsRoute(slug: product.slug ?? '', action: RouteAction.push),
-                                    onMoreTap: () => RouterHelper.getAddEditAuctionProductRoute(productId: product.id ?? 0, slug: product.slug ?? '', fromDetails: true, action: RouteAction.push),
-                                    onRelaunch: () => RouterHelper.getAddEditAuctionProductRoute(productId: product.id ?? 0, slug: product.slug ?? '', fromDetails: true, isRelaunchMode: true, action: RouteAction.push),
-                                    onCancel: () => _showDeleteConfirmationDialog(context, product.id ?? 0),
-                                  ),
-                                );
-                              },
+                                    child: AuctionQueueItemWidget(
+                                      auctionId: product.id.toString(),
+                                      productName: product.name ?? '',
+                                      startingPrice: product.startingPrice?.toDouble(),
+                                      categoryName: product.category?.name ?? '',
+                                      thumbnailFullUrl: product.thumbnailFullUrl?.path ?? '',
+                                      auctionState: UserCreatedAuctionEnum.resolve(
+                                        approvalStatus: product.approvalStatus,
+                                        auctionStatus: product.auctionStatus,
+                                        deliveryStatus: null,
+                                      ),
+                                      onTap: () => RouterHelper.getCreatorAuctionDetailsRoute(slug: product.slug ?? '', action: RouteAction.push),
+                                      onMoreTap: () => RouterHelper.getAddEditAuctionProductRoute(productId: product.id ?? 0, slug: product.slug ?? '', fromDetails: true, action: RouteAction.push),
+                                      onRelaunch: () => RouterHelper.getAddEditAuctionProductRoute(productId: product.id ?? 0, slug: product.slug ?? '', fromDetails: true, isRelaunchMode: true, action: RouteAction.push),
+                                      onCancel: () => _showDeleteConfirmationDialog(context, product.id ?? 0),
+                                    ),
+                                  );
+                                },
+                                childCount: products.length,
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
       ),
     );
   }

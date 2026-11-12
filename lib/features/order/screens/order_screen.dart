@@ -12,7 +12,7 @@ import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_app_bar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/no_internet_screen_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/not_loggedin_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_sliver_list_view_widget.dart';
 import 'package:provider/provider.dart';
 
 class OrderScreen extends StatefulWidget {
@@ -28,7 +28,6 @@ class OrderScreen extends StatefulWidget {
 }
 
 class _OrderScreenState extends State<OrderScreen> {
-  ScrollController scrollController  = ScrollController();
    bool isGuestMode = !Provider.of<AuthController>(Get.context!, listen: false).isLoggedIn();
   @override
   void initState() {
@@ -60,7 +59,6 @@ class _OrderScreenState extends State<OrderScreen> {
   @override
   void dispose() {
     widget.loginNotifier?.removeListener(_onLoginChanged);
-    scrollController.dispose();
     super.dispose();
   }
 
@@ -90,6 +88,7 @@ class _OrderScreenState extends State<OrderScreen> {
              Navigator.of(context).pop();
            }
           },
+          boxShadow: const [BoxShadow(color: Color(0x0D000000), offset: Offset(0, 4), blurRadius: 4)],
          ),
           body: isGuestMode ? NotLoggedInWidget(
             message: getTranslated('to_view_the_order_history', context),
@@ -104,58 +103,76 @@ class _OrderScreenState extends State<OrderScreen> {
               widget.onLoginSuccess?.call();
             },
           ) :
-          Consumer<OrderController>(
-            builder: (context, orderController, child) {
-              return Column(children: [
-
-
-                Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge, vertical: Dimensions.paddingSizeSmall),
-                  child: Row(children: [
-                    OrderTypeButton(text: getTranslated('RUNNING', context), index: 0),
-                    const SizedBox(width: Dimensions.paddingSizeSmall),
-                    OrderTypeButton(text: getTranslated('DELIVERED', context), index: 1),
-                    const SizedBox(width: Dimensions.paddingSizeSmall),
-                    OrderTypeButton(text: getTranslated('CANCELED', context), index: 2)])),
-
-
-
-                  Expanded(child: orderController.orderModel != null ? (orderController.orderModel!.orders != null &&
-                      orderController.orderModel!.orders!.isNotEmpty)?
-                    SingleChildScrollView(
-                      controller: scrollController,
-                      child: PaginatedListView(scrollController: scrollController,
-                        onPaginate: (int? offset) async{
-                          await orderController.getOrderList(offset!, orderController.selectedType);
-                        },
-                        totalSize: orderController.orderModel?.totalSize,
-                        offset: orderController.orderModel?.offset != null ? int.parse(orderController.orderModel!.offset!):1,
-                        itemView: ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: (orderController.orderModel?.orders!.length ?? 0) + 1,
-                          padding: const EdgeInsets.all(0),
-                          itemBuilder: (context, index) {
-                            if (index == orderController.orderModel?.orders!.length) {
-                              return SizedBox(height: MediaQuery.of(context).padding.bottom);
-                            }
-                            return OrderWidget(orderModel: orderController.orderModel?.orders![index]);
-                          },
-                        ),
-                      ),
-                    ) : const NoInternetOrDataScreenWidget(isNoInternet: false, icon: Images.noOrder, message: 'no_order_found') :
-                      const OrderShimmerWidget()
-                  )
-
-                ],
-              );
-            }
-          ),
+          const _OrderListTabContent(),
         ),
       ),
     );
   }
 }
 
+class _OrderListTabContent extends StatefulWidget {
+  const _OrderListTabContent();
+
+  @override
+  State<_OrderListTabContent> createState() => _OrderListTabContentState();
+}
+
+class _OrderListTabContentState extends State<_OrderListTabContent> {
+  final ScrollController scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<OrderController>(
+      builder: (context, orderController, child) {
+        return Column(children: [
+
+          Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge, vertical: Dimensions.paddingSizeSmall),
+            child: Row(children: [
+              OrderTypeButton(text: getTranslated('RUNNING', context), index: 0),
+              const SizedBox(width: Dimensions.paddingSizeSmall),
+              OrderTypeButton(text: getTranslated('DELIVERED', context), index: 1),
+              const SizedBox(width: Dimensions.paddingSizeSmall),
+              OrderTypeButton(text: getTranslated('CANCELED', context), index: 2)])),
+
+          Expanded(child: orderController.orderModel != null ? (orderController.orderModel!.orders != null &&
+              orderController.orderModel!.orders!.isNotEmpty)?
+            CustomScrollView(
+              controller: scrollController,
+              slivers: [
+                PaginatedSliverListView(scrollController: scrollController,
+                  onPaginate: (int? offset) async{
+                    await orderController.getOrderList(offset!, orderController.selectedType);
+                  },
+                  totalSize: orderController.orderModel?.totalSize,
+                  offset: orderController.orderModel?.offset != null ? int.parse(orderController.orderModel!.offset!) : 1,
+                  itemView: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        if (index == orderController.orderModel?.orders!.length) {
+                          return SizedBox(height: MediaQuery.of(context).padding.bottom);
+                        }
+                        return OrderWidget(orderModel: orderController.orderModel?.orders![index]);
+                      },
+                      childCount: (orderController.orderModel?.orders!.length ?? 0) + 1,
+                    ),
+                  ),
+                ),
+              ],
+            ) : const NoInternetOrDataScreenWidget(isNoInternet: false, icon: Images.noOrder, message: 'no_order_found') :
+              const OrderShimmerWidget()
+          )
+
+        ]);
+      }
+    );
+  }
+}
 
 
 

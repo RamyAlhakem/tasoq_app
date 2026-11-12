@@ -1,9 +1,9 @@
 import 'dart:convert';
-
 import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/enums/data_source_enum.dart';
 import 'package:flutter_sixvalley_ecommerce/data/local/cache_response.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/domain/models/product_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shop/domain/models/more_store_model.dart';
@@ -70,7 +70,8 @@ class ShopController extends ChangeNotifier {
       fetchFromClient: () => shopServiceInterface!.getMoreStore(source: DataSourceEnum.client),
       onResponse: (data, source) {
         moreStoreList.clear();
-        data.forEach((store) => moreStoreList.add(MostPopularStoreModel.fromJson(store)));
+        final List? stores = data is Map<String, dynamic> ? ApiListEnvelope.fromJson(data).data : (data is List ? data : null);
+        stores?.whereType<Map>().forEach((store) => moreStoreList.add(MostPopularStoreModel.fromJson(Map<String, dynamic>.from(store))));
         isLoading = false;
         notifyListeners();
       },
@@ -140,7 +141,7 @@ class ShopController extends ChangeNotifier {
   }
 
   SellerModel? filteredSellerModel;
-  Future<void> getFilteredSellerList({required int offset, required String type, bool isUpdate = true}) async {
+  Future<void> getFilteredSellerList({required int offset, required String type, String? search, bool isUpdate = true}) async {
 
     if(offset == 1) {
       filteredSellerModel = null;
@@ -152,8 +153,8 @@ class ShopController extends ChangeNotifier {
 
     if(offset == 1) {
       DataSyncHelper.fetchAndSyncData(
-        fetchFromLocal: ()=> shopServiceInterface!.getSellerList(type: type, limit: 10, offset: offset, source: DataSourceEnum.local),
-        fetchFromClient: ()=> shopServiceInterface!.getSellerList(type: type, limit: 10, offset: offset, source: DataSourceEnum.client),
+        fetchFromLocal: ()=> shopServiceInterface!.getSellerList(type: type, limit: 10, offset: offset, search: search, source: DataSourceEnum.local),
+        fetchFromClient: ()=> shopServiceInterface!.getSellerList(type: type, limit: 10, offset: offset, search: search, source: DataSourceEnum.client),
         onResponse: (data, source) {
           filteredSellerModel = SellerModel.fromJson(data);
           notifyListeners();
@@ -161,7 +162,7 @@ class ShopController extends ChangeNotifier {
         },
       );
     }else {
-      final ApiResponseModel apiResponse = await shopServiceInterface!.getSellerList(type: type, limit: 10,  offset: offset, source: DataSourceEnum.client);
+      final ApiResponseModel apiResponse = await shopServiceInterface!.getSellerList(type: type, limit: 10,  offset: offset, search: search, source: DataSourceEnum.client);
 
       if(apiResponse.response?.statusCode == 200) {
         final SellerModel parseSellerModel = SellerModel.fromJson(apiResponse.response.data);
@@ -227,7 +228,7 @@ class ShopController extends ChangeNotifier {
   ProductModel? clearanceProductModel;
   Future<void> getClearanceShopProductList(String type, String offset, String slug, {bool reload = false}) async {
 
-    var localData =  await database.getCacheResponseById("${AppConstants.clearanceShopProductUri}$slug/products?guest_id=1&limit=10&offset=$offset&offer_type=$type");
+    var localData =  await database.getCacheResponseById("${AppConstants.clearanceShopProductUri}$slug/products?limit=10&offset=$offset&offer_type=$type");
 
     if(localData != null) {
       clearanceProductModel = ProductModel.fromJson(jsonDecode(localData.response));
@@ -239,7 +240,6 @@ class ShopController extends ChangeNotifier {
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       if(offset == '1'){
         clearanceProductModel = null;
-        // SellerModel.fromJson(apiResponse.response?.data);
         clearanceProductModel = ProductModel.fromJson(apiResponse.response?.data);
       }else{
         clearanceProductModel?.products?.addAll(ProductModel.fromJson(apiResponse.response!.data).products??[]);
@@ -248,15 +248,15 @@ class ShopController extends ChangeNotifier {
       }
 
       if (localData != null) {
-        await database.updateCacheResponse("${AppConstants.clearanceShopProductUri}$slug/products?guest_id=1&limit=10&offset=$offset&offer_type=$type", CacheResponseCompanion(
-          endPoint: Value("${AppConstants.clearanceShopProductUri}$slug/products?guest_id=1&limit=10&offset=$offset&offer_type=$type"),
+        await database.updateCacheResponse("${AppConstants.clearanceShopProductUri}$slug/products?limit=10&offset=$offset&offer_type=$type", CacheResponseCompanion(
+          endPoint: Value("${AppConstants.clearanceShopProductUri}$slug/products?limit=10&offset=$offset&offer_type=$type"),
           header: Value(jsonEncode(apiResponse.response!.headers.map)),
           response: Value(jsonEncode(apiResponse.response!.data)),
         ));
       } else {
         await database.insertCacheResponse(
           CacheResponseCompanion(
-            endPoint: Value("${AppConstants.clearanceShopProductUri}$slug/products?guest_id=1&limit=10&offset=$offset&offer_type=$type"),
+            endPoint: Value("${AppConstants.clearanceShopProductUri}$slug/products?limit=10&offset=$offset&offer_type=$type"),
             header: Value(jsonEncode(apiResponse.response!.headers.map)),
             response: Value(jsonEncode(apiResponse.response!.data)),
           ),

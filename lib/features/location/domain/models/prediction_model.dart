@@ -27,9 +27,7 @@ class Suggestions {
   Suggestions({this.placePrediction});
 
   Suggestions.fromJson(Map<String, dynamic> json) {
-    placePrediction = json['placePrediction'] != null
-        ? PlacePrediction.fromJson(json['placePrediction'])
-        : null;
+    placePrediction = json['placePrediction'] != null ? PlacePrediction.fromJson(json['placePrediction']) : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -55,10 +53,8 @@ class PlacePrediction {
     place = json['place'];
     placeId = json['placeId'];
     text = json['text'] != null ? Text.fromJson(json['text']) : null;
-    structuredFormat = json['structuredFormat'] != null
-        ? StructuredFormat.fromJson(json['structuredFormat'])
-        : null;
-    types = json['types'].cast<String>();
+    structuredFormat = json['structuredFormat'] != null ? StructuredFormat.fromJson(json['structuredFormat']) : null;
+    types = json['types'] is List ? List<String>.from(json['types']) : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -125,11 +121,8 @@ class StructuredFormat {
   StructuredFormat({this.mainText, this.secondaryText});
 
   StructuredFormat.fromJson(Map<String, dynamic> json) {
-    mainText =
-    json['mainText'] != null ? Text.fromJson(json['mainText']) : null;
-    secondaryText = json['secondaryText'] != null
-        ? SecondaryText.fromJson(json['secondaryText'])
-        : null;
+    mainText = json['mainText'] != null ? Text.fromJson(json['mainText']) : null;
+    secondaryText = json['secondaryText'] != null ? SecondaryText.fromJson(json['secondaryText']) : null;
   }
 
   Map<String, dynamic> toJson() {

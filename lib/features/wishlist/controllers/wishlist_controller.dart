@@ -15,13 +15,17 @@ class WishListController extends ChangeNotifier {
   bool get isLoading => _isLoading;
   List<WishlistModel>? _wishList;
   List<WishlistModel>? get wishList => _wishList;
+  int? _totalSize;
+  int? get totalSize => _totalSize;
+  int? _offset;
+  int? get offset => _offset;
   List<int> addedIntoWish =[];
 
 
   void addWishList(int? productID) async {
     addedIntoWish.add(productID!);
     ApiResponseModel apiResponse = await wishlistServiceInterface!.add(productID);
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    if (apiResponse.response != null && (apiResponse.response!.statusCode == 200 || apiResponse.response!.statusCode == 201)) {
       showCustomSnackBarWidget(getTranslated("successfully_added_to_wishlist", Get.context!), Get.context!, snackBarType: SnackBarType.success);
     } else {
       showCustomSnackBarWidget(apiResponse.error.toString(), Get.context!, snackBarType: SnackBarType.warning);
@@ -30,7 +34,7 @@ class WishListController extends ChangeNotifier {
   }
 
   void removeWishList(int? productID, {int? index}) async {
-    addedIntoWish.removeAt(addedIntoWish.indexOf(productID!));
+    addedIntoWish.remove(productID!);
     ApiResponseModel apiResponse = await wishlistServiceInterface!.delete(productID);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       getWishList('');
@@ -41,20 +45,28 @@ class WishListController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> getWishList(String searchText, {bool clearSearch = false}) async {
+  Future<void> getWishList(String searchText, {bool clearSearch = false, int offset = 1}) async {
     if(clearSearch) {
       _wishList = null;
       notifyListeners();
     }
-    ApiResponseModel apiResponse = await wishlistServiceInterface!.getWishList(search: searchText);
+    ApiResponseModel apiResponse = await wishlistServiceInterface!.getWishList(offset: offset, search: searchText);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _wishList = [];
-      addedIntoWish = [];
-      apiResponse.response?.data.forEach((wish)=> _wishList?.add(WishlistModel.fromJson(wish)));
-      if(_wishList!.isNotEmpty){
-        for(int i=0; i< _wishList!.length; i++){
-          addedIntoWish.add(_wishList![i].productId!);
-        }
+      final WishlistPageModel page = WishlistPageModel.fromJson(apiResponse.response?.data);
+      final List<int> pageProductIds = page.wishList.map((wish) => wish.productId).whereType<int>().toList();
+
+      if (offset == 1) {
+        _wishList = page.wishList;
+      } else {
+        _wishList = [...?_wishList, ...page.wishList];
+      }
+      _totalSize = page.totalSize;
+      _offset = page.offset;
+
+      if (offset == 1 && searchText.isEmpty) {
+        addedIntoWish = pageProductIds;
+      } else {
+        addedIntoWish.addAll(pageProductIds.where((id) => !addedIntoWish.contains(id)));
       }
     } else {
       ApiChecker.checkApi( apiResponse);
@@ -65,6 +77,8 @@ class WishListController extends ChangeNotifier {
 
   void emptyWishList() {
     _wishList = [];
+    _totalSize = null;
+    _offset = null;
     addedIntoWish = [];
     notifyListeners();
   }

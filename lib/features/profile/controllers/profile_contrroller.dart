@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/response_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/profile/domain/models/profile_model.dart';
@@ -23,6 +24,8 @@ class ProfileController extends ChangeNotifier {
   double? _balance;
   double? get balance =>_balance;
   ProfileModel? get userInfoModel => _userInfoModel;
+  bool get hasWholesaleOrders => (_userInfoModel?.wholesaleOrderCount ?? 0) > 0;
+  bool get showAuctionMenuForUser => _userInfoModel?.showAuctionMenuForUser ?? false;
   bool get isLoading => _isLoading;
   double? loyaltyPoint = 0;
   String userID = '-1';
@@ -50,9 +53,7 @@ class ProfileController extends ChangeNotifier {
     ApiResponseModel apiResponse = await profileServiceInterface!.delete(customerId);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       _isDeleting = false;
-      Map map = apiResponse.response!.data;
-      String message = map ['message'];
-      showCustomSnackBarWidget(message, Get.context!, snackBarType: SnackBarType.error);
+      showCustomSnackBarWidget(ApiEnvelope.message(apiResponse.response!.data), Get.context!, snackBarType: SnackBarType.error);
     } else {
       _isDeleting = false;
 
@@ -73,20 +74,25 @@ class ProfileController extends ChangeNotifier {
     _isLoading = false;
     if (response.statusCode == 200) {
       Map map = jsonDecode(await response.stream.bytesToString());
-      String? message = map["message"];
-      _userInfoModel = updateUserModel;
-      responseModel = ResponseModel(message, true);
+
+      ProfileModel updated = ProfileModel.fromJson(Map<String, dynamic>.from(map));
+      _userInfoModel = updated.id != null ? updated : updateUserModel;
+
+      responseModel = ResponseModel(ApiEnvelope.message(map), true);
       Navigator.of(Get.context!).pop();
     } else {
 
       final String responseBody = await response.stream.bytesToString();
       var decodedData = jsonDecode(responseBody);
-    
+
 
       String? errorMessage;
 
       if(decodedData != null){
-        errorMessage = decodedData['errors']?[0]?['message'];
+        final dynamic errors = decodedData['errors'];
+        errorMessage = errors is List && errors.isNotEmpty
+            ? errors.first['message']
+            : ApiEnvelope.message(decodedData);
       }
       responseModel = ResponseModel('${errorMessage ?? response.reasonPhrase}', false);
     }

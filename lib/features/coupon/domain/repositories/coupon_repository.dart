@@ -11,7 +11,7 @@ class CouponRepository implements CouponRepositoryInterface{
   @override
   Future<ApiResponseModel> get(dynamic coupon) async {
     try {
-      final response = await dioClient!.get('${AppConstants.couponUri}$coupon');
+      final response = await dioClient!.get(AppConstants.couponUri, queryParameters: {'code': coupon});
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -19,9 +19,9 @@ class CouponRepository implements CouponRepositoryInterface{
   }
 
   @override
-  Future<ApiResponseModel> getList({int? offset}) async {
+  Future<ApiResponseModel> getList({int? offset, int limit = 25}) async {
     try {
-      final response = await dioClient!.get('${AppConstants.couponListApi}$offset');
+      final response = await dioClient!.get('${AppConstants.couponListApi}?limit=$limit&offset=${offset ?? 1}');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -39,9 +39,9 @@ class CouponRepository implements CouponRepositoryInterface{
   }
 
   @override
-  Future<ApiResponseModel> getSellerCouponList(String slug, int offset) async {
+  Future<ApiResponseModel> getSellerCouponList(String slug, int offset, {int limit = 25}) async {
     try {
-      final response = await dioClient!.get('${AppConstants.sellerWiseCouponListApi}$slug/seller-wise-coupons?limit=100&offset=$offset');
+      final response = await dioClient!.get('${AppConstants.sellerWiseCouponListApi}$slug/coupons?limit=$limit&offset=$offset');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));

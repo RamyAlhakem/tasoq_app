@@ -109,7 +109,7 @@ class FindWhatYouNeedView extends StatelessWidget {
                                                     borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
                                                     border: Border.all(width: 0.50, color: Theme.of(context).primaryColor.withValues(alpha:0.125)),),
                                                   child: CustomImageWidget(fit: BoxFit.cover,
-                                                    image: '${productController.findWhatYouNeedModel!.findWhatYouNeed![index].childes?[subIndex].iconFullUrl?.path}',),),
+                                                    image: '${productController.findWhatYouNeedModel!.findWhatYouNeed![index].childes?[subIndex].iconFullUrl}',),),
                                               ),
                                               const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 

@@ -4,7 +4,6 @@ import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakba
 import 'package:flutter_sixvalley_ecommerce/features/checkout/controllers/checkout_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/checkout/widgets/shipping_details_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/offline_payment/widgets/offline_payment_section_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/features/order/controllers/order_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/controllers/order_details_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/widgets/cal_chat_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/order_details/widgets/cancel_and_support_center_widget.dart';
@@ -51,14 +50,13 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   void _loadData(BuildContext context) async {
     if(Provider.of<AuthController>(context, listen: false).isLoggedIn() && !widget.fromTrack) {
       await Provider.of<OrderDetailsController>(Get.context!, listen: false).getOrderDetails(widget.orderId.toString());
-      await Provider.of<OrderController>(Get.context!, listen: false).initTrackingInfo(widget.orderId.toString());
       await Provider.of<OrderDetailsController>(Get.context!, listen: false).getOrderFromOrderId(widget.orderId.toString());
     } else {
       await Provider.of<OrderDetailsController>(Get.context!, listen: false).trackOrder(orderId: widget.orderId.toString(), phoneNumber: widget.phone, isUpdate: false);
       await Provider.of<OrderDetailsController>(Get.context!, listen: false).getOrderFromOrderId(widget.orderId.toString());
     }
     Provider.of<CheckoutController>(Get.context!, listen: false).getOfflinePaymentList();
-    await Provider.of<OrderDetailsController>(Get.context!, listen: false).getTrackOrderDetailsId(orderId: widget.orderId.toString());
+    await Provider.of<OrderDetailsController>(Get.context!, listen: false).getTrackOrderDetailsId(orderId: widget.orderId.toString(), phoneNumber: widget.phone);
   }
 
   @override
@@ -167,7 +165,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                   Column(
                     children: [
                       Expanded(
-                        child: ListView(padding: const EdgeInsets.all(0), children: [
+                        child: CustomScrollView(slivers: [
+                          SliverToBoxAdapter(child: Column(children: [
                           const SizedBox(height: Dimensions.paddingSizeDefault),
                           const OrderPaymentInfoWidget(),
 
@@ -259,7 +258,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
 
 
-                                  if(orderProvider.orderDetails?[0].order?.offlinePayments != null)...[
+                                  if(orderProvider.orders?.offlinePayments != null)...[
                                     SizedBox(height: Dimensions.paddingSizeSmall),
 
                                     OfflinePaymentSection(orderProvider: orderProvider),
@@ -267,7 +266,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
 
 
-                                if(orderProvider.orderDetails![0].latestEditHistory != null && !(orderProvider.orders?.paymentStatus ==  'unpaid' && orderProvider.orders?.paymentMethod == 'cash_on_delivery'))...[
+                                if(orderProvider.orders?.latestEditHistory != null && !(orderProvider.orders?.paymentStatus ==  'unpaid' && orderProvider.orders?.paymentMethod == 'cash_on_delivery'))...[
                                   SizedBox(height: Dimensions.paddingSizeSmall),
                                   Padding(
                                     padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
@@ -294,25 +293,25 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                         ),
 
 
-                                        if(orderProvider.orderDetails![0].latestEditHistory?.orderDuePaymentStatus  != null && orderProvider.orderDetails![0].latestEditHistory!.orderDuePaymentStatus!.isNotEmpty
-                                           && (orderProvider.orderDetails![0].latestEditHistory?.orderDueAmount ?? 0) > 0)
+                                        if(orderProvider.orders?.latestEditHistory?.orderDuePaymentStatus  != null && (orderProvider.orders?.latestEditHistory)!.orderDuePaymentStatus!.isNotEmpty
+                                           && (orderProvider.orders?.latestEditHistory?.orderDueAmount ?? 0) > 0)
                                         Text(
-                                        getTranslated(orderProvider.orderDetails![0].latestEditHistory?.orderDuePaymentStatus, context) ?? 'Digital Payment',
+                                        getTranslated(orderProvider.orders?.latestEditHistory?.orderDuePaymentStatus, context) ?? 'Digital Payment',
                                           style: titilliumSemiBold.copyWith(
                                             fontSize: Dimensions.fontSizeDefault,
-                                            color: orderProvider.orderDetails![0].latestEditHistory?.orderDuePaymentStatus == 'paid' ?
+                                            color: orderProvider.orders?.latestEditHistory?.orderDuePaymentStatus == 'paid' ?
                                             Theme.of(context).colorScheme.onTertiaryContainer : Theme.of(context).colorScheme.error
                                           )
                                         ),
 
 
-                                        if(orderProvider.orderDetails![0].latestEditHistory?.orderReturnPaymentStatus != null && orderProvider.orderDetails![0].latestEditHistory!.orderReturnPaymentStatus!.isNotEmpty
-                                         && (orderProvider.orderDetails![0].latestEditHistory?.orderReturnAmount ?? 0) > 0)
+                                        if(orderProvider.orders?.latestEditHistory?.orderReturnPaymentStatus != null && (orderProvider.orders?.latestEditHistory)!.orderReturnPaymentStatus!.isNotEmpty
+                                         && (orderProvider.orders?.latestEditHistory?.orderReturnAmount ?? 0) > 0)
                                           Text(
-                                            getTranslated(orderProvider.orderDetails![0].latestEditHistory?.orderReturnPaymentStatus, context) ?? 'Digital Payment',
+                                            getTranslated(orderProvider.orders?.latestEditHistory?.orderReturnPaymentStatus, context) ?? 'Digital Payment',
                                             style: titilliumSemiBold.copyWith(
                                               fontSize: Dimensions.fontSizeDefault,
-                                              color: (orderProvider.orderDetails![0].latestEditHistory?.orderReturnPaymentStatus == 'paid' || orderProvider.orderDetails![0].latestEditHistory?.orderReturnPaymentStatus == 'returned') ?
+                                              color: (orderProvider.orders?.latestEditHistory?.orderReturnPaymentStatus == 'paid' || orderProvider.orders?.latestEditHistory?.orderReturnPaymentStatus == 'returned') ?
                                               Theme.of(context).colorScheme.onTertiaryContainer : Theme.of(context).colorScheme.error
                                             )
                                           ),
@@ -324,7 +323,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
 
 
-                                  if(orderProvider.orderDetails![0].latestEditHistory?.orderDuePaymentMethod != null)...[
+                                  if(orderProvider.orders?.latestEditHistory?.orderDuePaymentMethod != null)...[
                                     Padding(
                                       padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
                                       child: SizedBox(height: 1, child: Divider(thickness: .200, color: Theme.of(context).hintColor.withValues(alpha: 0.45)))),
@@ -340,7 +339,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                             style: textRegular.copyWith(color: Theme.of(context).textTheme.titleMedium?.color)
                                           ),
 
-                                          Text(orderProvider.orderDetails![0].latestEditHistory!.orderDuePaymentMethod!.replaceAll('_', ' ').capitalize(),
+                                          Text((orderProvider.orders?.latestEditHistory)!.orderDuePaymentMethod!.replaceAll('_', ' ').capitalize(),
                                             style: textMedium.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).primaryColor)
                                           )
                                         ],
@@ -356,7 +355,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
 
 
-                                  if(orderProvider.orderDetails![0].latestEditHistory?.orderReturnPaymentMethod != null)...[
+                                  if(orderProvider.orders?.latestEditHistory?.orderReturnPaymentMethod != null)...[
                                     Padding(
                                       padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
                                       child: SizedBox(height: 1, child: Divider(thickness: .200, color: Theme.of(context).hintColor.withValues(alpha: 0.45)))),
@@ -372,7 +371,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                             style: textRegular.copyWith(color: Theme.of(context).textTheme.titleMedium?.color)
                                           ),
 
-                                          Text(orderProvider.orderDetails![0].latestEditHistory!.orderReturnPaymentMethod!.replaceAll('_', ' ').capitalize(),
+                                          Text((orderProvider.orders?.latestEditHistory)!.orderReturnPaymentMethod!.replaceAll('_', ' ').capitalize(),
                                             style: textMedium.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).primaryColor)
                                           )
                                         ],
@@ -387,7 +386,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                   ],
 
 
-                                  if (orderProvider.orderDetails?[0].latestEditHistory?.orderDuePaymentInfo != null)...[
+                                  if (orderProvider.orders?.latestEditHistory?.orderDuePaymentInfo != null)...[
                                     SizedBox(height: Dimensions.paddingSizeSmall),
 
                                     CustomerPaymentSection(orderProvider: orderProvider),
@@ -396,14 +395,19 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                   
 
 
-                                if(orderProvider.orderDetails![0].order?.editedStatus == 1)...[
-                                  if(orderProvider.orderDetails![0].order?.editedStatus == 1 && (orderProvider.orderDetails?[0].latestEditHistory?.orderDueAmount ?? 0) > 0
-                                    &&  orderProvider.orderDetails![0].latestEditHistory!.orderDuePaymentMethod != 'cash_on_delivery' && orderProvider.orderDetails?[0].latestEditHistory?.orderDuePaymentStatus != 'paid'
-                                      && !(orderProvider.orderDetails![0].latestEditHistory!.orderDuePaymentMethod == 'offline_payment' && orderProvider.orderDetails?[0].latestEditHistory?.orderDuePaymentStatus == 'unpaid'))
+                                if(orderProvider.orders?.editedStatus == 1)...[
+                                  // A due/return raised by an edit only means something once the customer has
+                                  // actually paid something. For an unpaid COD order nothing's been collected yet,
+                                  // so any change in total is just reflected in what the delivery man collects -
+                                  // it shouldn't surface as an in-app "pay now" or "amount to be returned" prompt.
+                                  if(orderProvider.orders?.editedStatus == 1 && (orderProvider.orders?.latestEditHistory?.orderDueAmount ?? 0) > 0
+                                    && !(orderProvider.orders?.paymentMethod == 'cash_on_delivery' && orderProvider.orders?.paymentStatus == 'unpaid')
+                                    &&  (orderProvider.orders?.latestEditHistory)!.orderDuePaymentMethod != 'cash_on_delivery' && orderProvider.orders?.latestEditHistory?.orderDuePaymentStatus != 'paid'
+                                      && !((orderProvider.orders?.latestEditHistory)!.orderDuePaymentMethod == 'offline_payment' && orderProvider.orders?.latestEditHistory?.orderDuePaymentStatus == 'unpaid'))
                                   AmountDueCard(
                                     showButton: true,
                                     title: getTranslated('pay_due_bill', context)!,
-                                    price: PriceConverter.convertPrice(context, orderProvider.orderDetails![0].latestEditHistory!.orderDueAmount!),
+                                    price: PriceConverter.convertPrice(context, (orderProvider.orders?.latestEditHistory)!.orderDueAmount!),
                                     description: getTranslated('after_editing_your_product_list', context)!,
                                     buttonText:  getTranslated('pay_now', context)!,
                                     onTap: () {
@@ -413,18 +417,19 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                           return OrderPaymentMethodBottomSheetWidget(
                                             onlyDigital: false,
                                             orderId: orderProvider.orderDetails![0].orderId.toString(),
-                                            payableAmount : orderProvider.orderDetails![0].latestEditHistory!.orderDueAmount!,
+                                            payableAmount : (orderProvider.orders?.latestEditHistory)!.orderDueAmount!,
                                           );
                                         },
                                       );
                                     },
                                   ),
 
-                                  if(orderProvider.orderDetails![0].order?.editedStatus == 1 && (orderProvider.orderDetails?[0].latestEditHistory?.orderReturnAmount ?? 0) > 0 && orderProvider.orderDetails?[0].latestEditHistory?.orderReturnPaymentStatus != 'returned' )
+                                  if(orderProvider.orders?.editedStatus == 1 && (orderProvider.orders?.latestEditHistory?.orderReturnAmount ?? 0) > 0 && orderProvider.orders?.latestEditHistory?.orderReturnPaymentStatus != 'returned'
+                                    && !(orderProvider.orders?.paymentMethod == 'cash_on_delivery' && orderProvider.orders?.paymentStatus == 'unpaid'))
                                   AmountDueCard(
                                     showButton: false,
                                     title: getTranslated('amount_to_be_returned', context)!,
-                                    price: PriceConverter.convertPrice(context, orderProvider.orderDetails![0].latestEditHistory!.orderReturnAmount!),
+                                    price: PriceConverter.convertPrice(context, (orderProvider.orders?.latestEditHistory)!.orderReturnAmount!),
                                     description: getTranslated('after_editing_your_product_list_you_will_receive_this', context)!, buttonText: '',
                                     onTap: null,
                                   ),
@@ -495,21 +500,22 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
 
                           SellerSectionWidget(order: orderProvider),
-
+                          ])),
 
                           if(orderProvider.orders != null)
                             OrderProductListWidget(
                               orderType: orderProvider.orders!.orderType,
                               fromTrack: widget.fromTrack,
-                              isGuest: orderProvider.orders!.isGuest!,
+                              isGuest: orderProvider.orders!.isGuest ?? 0,
                               orderId: orderProvider.orders!.id.toString(),
                             ),
+
+                          SliverToBoxAdapter(child: Column(children: [
                           const SizedBox(height: Dimensions.paddingSizeSmall),
 
                           OrderAmountCalculation(orderProvider: orderProvider,itemTotalAmount: itemTotalAmount,discount: discount,eeDiscount: eeDiscount,shippingCost: shippingCost, tax: tax, referAndEarnDiscount: referAndEarnDiscount),
                           const SizedBox(height: Dimensions.paddingSizeSmall),
 
-                          /// Delivery Man Section
                           orderProvider.orders!.deliveryMan != null ?
                           Column(
                             children: [
@@ -532,7 +538,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                             insetPadding: EdgeInsets.zero, backgroundColor: Colors.transparent,
                                             child: DeliveryManReviewDialogWidget(
                                               deliverymanAssignedAt: orderProvider.orders?.deliverymanAssignedAt,
-                                              existingDeliveryManReview: orderProvider.orderDetails?[0].order?.deliveryManReview,
+                                              existingDeliveryManReview: orderProvider.orders?.deliveryManReview,
                                               deliveryMan: orderProvider.orders!.deliveryMan,
                                               orderId: orderProvider.orders?.id.toString(),
                                               callback: ()=> showCustomSnackBarWidget(getTranslated('review_submitted_successfully', context)!, context, snackBarType: SnackBarType.success),
@@ -550,7 +556,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                             const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
 
-                                            Text(orderProvider.orderDetails?[0].order?.deliveryManReview != null ?
+                                            Text(orderProvider.orders?.deliveryManReview != null ?
                                             '${getTranslated('update_review', context)}' :
                                             '${getTranslated('review', context)}', style: textBold.copyWith(
                                               fontSize: Dimensions.fontSizeSmall,
@@ -627,7 +633,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                           ) : const SizedBox(),
 
                           if(orderProvider.orderDetails != null && orderProvider.orderDetails!.isNotEmpty &&
-                            orderProvider.orderDetails![0].verificationImages != null &&orderProvider.orderDetails![0].verificationImages!.isNotEmpty)
+                            orderProvider.orders?.verificationImages != null &&(orderProvider.orders?.verificationImages)!.isNotEmpty)
                             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                               Padding(padding: const EdgeInsets.fromLTRB(Dimensions.paddingSizeSmall,
                                 Dimensions.paddingSizeSmall, Dimensions.paddingSizeSmall, Dimensions.paddingSizeExtraSmall),
@@ -640,23 +646,23 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
                               SizedBox(height: 120,
                                 child: ListView.builder(
-                                  itemCount: orderProvider.orderDetails![0].verificationImages?.length,
+                                  itemCount: orderProvider.orders?.verificationImages?.length,
                                   scrollDirection: Axis.horizontal,
                                   itemBuilder: (context, index){
                                     return InkWell(onTap: () {
                                       showDialog(context: context, builder: (_)=> ImageDialog(
-                                        imageUrl: '${orderProvider.orderDetails![0].verificationImages?[index].imageFullUrl?.path}')
+                                        imageUrl: '${orderProvider.orders?.verificationImages?[index].imageFullUrl?.path}')
                                       );
                                     },
                                     child: Padding(padding:  EdgeInsets.only(left: Dimensions.paddingSizeSmall,
-                                      right: orderProvider.orderDetails![0].verificationImages!.length == index+1?
+                                      right: (orderProvider.orders?.verificationImages)!.length == index+1?
                                       Dimensions.paddingSizeSmall : 0),
                                       child: SizedBox(width: 200,
                                         child: ClipRRect(borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall),
                                           child: Container(decoration: BoxDecoration(
                                             border: Border.all(color: Theme.of(context).primaryColor.withValues(alpha:.25), width: .25),
                                             borderRadius: BorderRadius.circular(Dimensions.paddingSizeSmall)),
-                                            child: CustomImageWidget(image: '${orderProvider.orderDetails![0].verificationImages?[index].imageFullUrl?.path}'),
+                                            child: CustomImageWidget(image: '${orderProvider.orders?.verificationImages?[index].imageFullUrl?.path}'),
                                           ),
                                         ),
                                       ),
@@ -669,11 +675,12 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
 
                           if(orderProvider.orderDetails != null && orderProvider.orderDetails!.isNotEmpty &&
-                            orderProvider.orderDetails![0].verificationImages != null &&orderProvider.orderDetails![0].verificationImages!.isNotEmpty)
+                            orderProvider.orders?.verificationImages != null &&(orderProvider.orders?.verificationImages)!.isNotEmpty)
                           const SizedBox(height: Dimensions.paddingSizeSmall),
 
 
                           CancelAndSupportWidget(orderModel: orderProvider.orders, showSupport: true),
+                          ])),
                         ]),
                       ),
                       const SizedBox(height: Dimensions.paddingSizeSmall),
@@ -682,6 +689,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                         color: Theme.of(context).cardColor,
                         child: CancelAndSupportWidget(orderModel: orderProvider.orders, showSupport: false)
                       ),
+
+
                     ],
                   ) : const OrderDetailsShimmer();
                 },

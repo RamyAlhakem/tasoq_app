@@ -52,7 +52,7 @@ class _ShippingAndBillingWidgetState extends State<ShippingAndBillingWidget> {
                     Expanded(
                       child: IconWithTextRowWidget(
                         icon: Icons.call,
-                        text: '${widget.orderProvider.orders!.shippingAddressData != null ?
+                        text: '\u200E${widget.orderProvider.orders!.shippingAddressData != null ?
                         widget.orderProvider.orders!.shippingAddressData!.phone : ''}',),
                     ),
                   ],
@@ -155,7 +155,7 @@ class _ShippingAndBillingWidgetState extends State<ShippingAndBillingWidget> {
 
                         Expanded(
                           child: IconWithTextRowWidget(icon: Icons.call,
-                              text: '${widget.orderProvider.orders!.billingAddressData != null ?
+                              text: '\u200E${widget.orderProvider.orders!.billingAddressData != null ?
                               widget.orderProvider.orders!.billingAddressData!.phone : ''}'),
                         )
                       ],

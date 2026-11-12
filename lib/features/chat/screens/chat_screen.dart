@@ -10,7 +10,6 @@ import 'package:flutter_sixvalley_ecommerce/features/chat/domain/models/message_
 import 'package:flutter_sixvalley_ecommerce/features/chat/domain/models/message_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/widgets/custom_image_pick_bottom_sheet.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/date_converter.dart';
-import 'package:flutter_sixvalley_ecommerce/helper/image_size_checker.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/controllers/chat_controller.dart';
@@ -22,7 +21,7 @@ import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_image_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_textfield_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/no_internet_screen_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_sliver_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/widgets/chat_shimmer_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/chat/widgets/message_bubble_widget.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -78,6 +77,13 @@ class _ChatScreenState extends State<ChatScreen> {
    await Provider.of<ChatController>(context, listen: false).getMessageList( context, widget.id, 1, userType: widget.userType);
   }
 
+  @override
+  void dispose() {
+    _controller.dispose();
+    scrollController.dispose();
+    super.dispose();
+  }
+
 
   bool _isMediaExist (ChatController chatController){
     return (chatController.pickedMediaStored?.isNotEmpty ?? false) || (chatController.pickedFiles?.isNotEmpty ?? false);
@@ -130,63 +136,63 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Consumer<ChatController>(builder: (context, chatController, child) => Column(children: [
             chatController.messageModel != null? (chatController.messageModel!.message != null && chatController.messageModel!.message!.isNotEmpty)?
-            Expanded(child:  SingleChildScrollView(
+            Expanded(child:  CustomScrollView(
               controller: scrollController,
               reverse: true,
-              child: Padding(padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeSmall),
-                child: PaginatedListView(
-                  reverse: true,
-                  scrollController: scrollController,
-                  onPaginate: (int? offset) => chatController.getMessageList(context,widget.id, offset ?? 1, reload: false),
-                  totalSize: chatController.messageModel?.totalSize,
-                  offset: chatController.messageModel?.offset,
-                  limit: chatController.messageModel?.limit,
-                  // enabledPagination: chatController.messageModel == null,
-                  itemView: ListView.builder(
-                    itemCount: chatController.messageModel?.message?.length,
-                    padding: EdgeInsets.zero,
-                    physics: const NeverScrollableScrollPhysics(),
-                    shrinkWrap: true,
-                    reverse: true,
-                    itemBuilder: (context, index) {
-                      return  Column(
-                        crossAxisAlignment: chatController.messageModel?.message?[index].sentByCustomer ?? false
-                          ? CrossAxisAlignment.end
-                          : CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeSmall),
+                  sliver: PaginatedSliverListView(
+                    scrollController: scrollController,
+                    onPaginate: (int? offset) => chatController.getMessageList(context,widget.id, offset ?? 1, reload: false),
+                    totalSize: chatController.messageModel?.totalSize,
+                    offset: chatController.messageModel?.offset,
+                    limit: chatController.messageModel?.limit,
+                    // enabledPagination: chatController.messageModel == null,
+                    itemView: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          return  Column(
+                            crossAxisAlignment: chatController.messageModel?.message?[index].sentByCustomer ?? false
+                              ? CrossAxisAlignment.end
+                              : CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
 
-                          if(_willShowDate(index, chatController.messageModel) != null)
-                            Center(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: Dimensions.paddingSizeExtraSmall,
-                                  vertical: Dimensions.paddingSizeSmall,
-                                ),
-                                // DateConverter.customTime(DateTime.parse(chat!.createdAt!))
-                                child: Text(
-                                  DateConverter.dateStringMonthYear(DateTime.tryParse(chatController.messageModel!.message![index].createdAt!)),
-                                  style: textMedium.copyWith(
-                                    fontSize: Dimensions.fontSizeSmall,
-                                    color: Theme.of(context).textTheme.bodyLarge!.color!,
+                              if(_willShowDate(index, chatController.messageModel) != null)
+                                Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: Dimensions.paddingSizeExtraSmall,
+                                      vertical: Dimensions.paddingSizeSmall,
+                                    ),
+                                    // DateConverter.customTime(DateTime.parse(chat!.createdAt!))
+                                    child: Text(
+                                      DateConverter.dateStringMonthYear(DateTime.tryParse(chatController.messageModel!.message![index].createdAt!)),
+                                      style: textMedium.copyWith(
+                                        fontSize: Dimensions.fontSizeSmall,
+                                        color: Theme.of(context).textTheme.bodyLarge!.color!,
+                                      ),
+                                      textDirection: TextDirection.ltr,
+                                    ),
                                   ),
-                                  textDirection: TextDirection.ltr,
                                 ),
+
+
+                              MessageBubbleWidget(
+                                message: chatController.messageModel!.message![index],
+                                previous: (index != 0) ? chatController.messageModel!.message![index -1 ] : null,
+                                next: index == (chatController.messageModel!.message!.length -1) ?  null : chatController.messageModel!.message![index + 1],
                               ),
-                            ),
 
-
-                          MessageBubbleWidget(
-                            message: chatController.messageModel!.message![index],
-                            previous: (index != 0) ? chatController.messageModel!.message![index -1 ] : null,
-                            next: index == (chatController.messageModel!.message!.length -1) ?  null : chatController.messageModel!.message![index + 1],
-                          ),
-
-                        ],);
-                    },
+                            ],);
+                        },
+                        childCount: chatController.messageModel?.message?.length ?? 0,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             )) : const Expanded(child: NoInternetOrDataScreenWidget(isNoInternet: false)):
             const Expanded(child: ChatShimmerWidget()),
 
@@ -322,7 +328,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           separatorBuilder: (context, index) => const SizedBox(width: Dimensions.paddingSizeDefault),
                           itemCount: chatController.pickedFiles?.length ?? 0,
                           itemBuilder: (context, index){
-                            String fileSize =  ImageValidationHelper.getFileSizeFromPlatformFileToString(chatController.pickedFiles![index]);
+                            String fileSize = index < chatController.pickedFileSizeLabels.length ? chatController.pickedFileSizeLabels[index] : '';
                             return Container(width: 180,
                               decoration: BoxDecoration(
                                 color: Theme.of(context).cardColor,
@@ -391,7 +397,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           inputAction: TextInputAction.send,
                           //showLabelText: false,
                           prefixIcon: Images.emoji,
-                          prefixColor: Theme.of(context).colorScheme.onSecondary.withValues(alpha:0.50),
+                          prefixColor: Provider.of<ThemeController>(context).darkTheme ? Colors.white : Theme.of(context).colorScheme.onSecondary.withValues(alpha:0.50),
                           suffixIcon: Images.attachment,
                           suffixIcon2: Images.file,
                           suffixColor: Theme.of(context).primaryColor,

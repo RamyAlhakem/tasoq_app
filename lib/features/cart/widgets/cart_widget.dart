@@ -347,7 +347,6 @@ class _CartProductDetailsWidget extends StatelessWidget {
         const SizedBox(width: Dimensions.paddingSizeSmall),
 
 
-        /// Todo: remove vat tax
         // Tax info
         // cartModel!.taxModel == 'exclude'
         //     ? Padding(

@@ -143,8 +143,7 @@ class _AuctionHorizontalCardWidgetState extends State<AuctionHorizontalCardWidge
                     Text(widget.productName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: titilliumRegular.copyWith(
-                        fontSize: Dimensions.fontSizeSmall,
+                      style: titilliumRegular.copyWith(fontSize: Dimensions.fontSizeSmall,
                         color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
                     ),
@@ -153,7 +152,7 @@ class _AuctionHorizontalCardWidgetState extends State<AuctionHorizontalCardWidge
                     Row(
                       children: [
                         Text(
-                          isLive ? getTranslated('highest_bid', context) ?? '' : getTranslated('starting_price', context) ?? '',
+                          isLive && (widget.bidCount ?? 0) > 0 ? getTranslated('highest_bid', context) ?? '' : getTranslated('starting_price', context) ?? '',
                           style: titilliumRegular.copyWith(
                             fontSize: Dimensions.fontSizeSmall,
                             color: Theme.of(context).textTheme.titleMedium?.color,

@@ -1,3 +1,5 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
+
 class AuctionCounts {
   final int upcoming;
   final int live;
@@ -24,16 +26,17 @@ class AuctionCounts {
   int get total => upcoming + live + readyToClaim + purchaseComplete + readyToDelivery + onTheWay + delivered + unsold + canceled;
 
   factory AuctionCounts.fromJson(Map<String, dynamic> json) {
+    int count(String key) => int.tryParse('${json[key]}') ?? 0;
     return AuctionCounts(
-      upcoming: json['upcoming'] as int? ?? 0,
-      live: json['live'] as int? ?? 0,
-      readyToClaim: json['ready_to_claim'] as int? ?? 0,
-      purchaseComplete: json['purchase_complete'] as int? ?? 0,
-      readyToDelivery: json['ready_to_delivery'] as int? ?? 0,
-      onTheWay: json['on_the_way'] as int? ?? 0,
-      delivered: json['delivered'] as int? ?? 0,
-      unsold: json['unsold'] as int? ?? 0,
-      canceled: json['canceled'] as int? ?? 0,
+      upcoming: count('upcoming'),
+      live: count('live'),
+      readyToClaim: count('ready_to_claim'),
+      purchaseComplete: count('purchase_complete'),
+      readyToDelivery: count('ready_to_delivery'),
+      onTheWay: count('on_the_way'),
+      delivered: count('delivered'),
+      unsold: count('unsold'),
+      canceled: count('canceled'),
     );
   }
 }
@@ -48,16 +51,18 @@ class UserCreatedAuctionListModel {
   UserCreatedAuctionListModel({this.totalSize, this.limit, this.offset, this.products, this.counts});
 
   UserCreatedAuctionListModel.fromJson(Map<String, dynamic> json) {
-    totalSize = json['total_size'];
-    limit = json['limit'];
-    offset = json['offset'];
-    if (json['products'] != null) {
-      products = <UserCreatedAuctionProduct>[];
-      for (var v in json['products']) {
-        products!.add(UserCreatedAuctionProduct.fromJson(v));
-      }
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json, legacyKeys: ['products']);
+    totalSize = envelope.totalSize;
+    limit = envelope.limit;
+    offset = envelope.offset;
+    if (envelope.data != null) {
+      products = <UserCreatedAuctionProduct>[
+        for (final Map v in envelope.data!.whereType<Map>())
+          UserCreatedAuctionProduct.fromJson(Map<String, dynamic>.from(v)),
+      ];
     }
-    counts = json['counts'] != null ? AuctionCounts.fromJson(json['counts']) : null;
+    final dynamic countsJson = envelope.read('counts');
+    counts = countsJson is Map ? AuctionCounts.fromJson(Map<String, dynamic>.from(countsJson)) : null;
   }
 }
 
@@ -71,7 +76,14 @@ class UserCreatedAuctionProduct {
   bool? isAdminCommissionPaid;
   bool? isRelaunched;
   ThumbnailFullUrl? thumbnailFullUrl;
-  UserCreatedAuctionDetails? auctionDetails;
+  String? startTime;
+  String? endTime;
+  double? highestBidAmount;
+  int? totalBids;
+  int? totalParticipants;
+  int? totalViews;
+  String? auctionCurrentStatus;
+  String? deliveryStatus;
   ClaimTransaction? claimTransaction;
 
   UserCreatedAuctionProduct({
@@ -84,7 +96,14 @@ class UserCreatedAuctionProduct {
     this.isAdminCommissionPaid,
     this.isRelaunched,
     this.thumbnailFullUrl,
-    this.auctionDetails,
+    this.startTime,
+    this.endTime,
+    this.highestBidAmount,
+    this.totalBids,
+    this.totalParticipants,
+    this.totalViews,
+    this.auctionCurrentStatus,
+    this.deliveryStatus,
     this.claimTransaction,
   });
 
@@ -95,47 +114,22 @@ class UserCreatedAuctionProduct {
     productType = json['product_type'];
     startingPrice = json['starting_price'] != null ? double.tryParse(json['starting_price'].toString()) : null;
     adminCommission = json['admin_commission'] != null ? double.tryParse(json['admin_commission'].toString()) : null;
-    isAdminCommissionPaid = json['admin_commission_given'];
-    isRelaunched = json['is_relaunched'] as bool?;
+    isAdminCommissionPaid = _asBool(json['admin_commission_given']);
+    isRelaunched = _asBool(json['is_relaunched']);
     thumbnailFullUrl = json['thumbnail_full_url'] != null ? ThumbnailFullUrl.fromJson(json['thumbnail_full_url']) : null;
-    auctionDetails = json['auction_details'] != null ? UserCreatedAuctionDetails.fromJson(json['auction_details']) : null;
+    startTime = json['start_time']?.toString();
+    endTime = json['end_time']?.toString();
+    highestBidAmount = json['highest_bid_amount'] != null ? double.tryParse(json['highest_bid_amount'].toString()) : null;
+    totalBids = int.tryParse('${json['total_bids']}');
+    totalParticipants = int.tryParse('${json['total_participants']}');
+    totalViews = int.tryParse('${json['total_views']}');
+    auctionCurrentStatus = json['auction_current_status']?.toString();
+    deliveryStatus = json['delivery_status']?.toString();
     claimTransaction = json['claim_transaction'] != null ? ClaimTransaction.fromJson(json['claim_transaction']) : null;
   }
+
+  static bool? _asBool(dynamic value) => value == null ? null : (value == true || '$value' == '1');
 }
-
-class UserCreatedAuctionDetails {
-  String? startTime;
-  String? endTime;
-  double? highestBidAmount;
-  int? totalBids;
-  int? totalParticipants;
-  int? totalViews;
-  String? status;
-  String? deliveryStatus;
-
-  UserCreatedAuctionDetails({
-    this.startTime,
-    this.endTime,
-    this.highestBidAmount,
-    this.totalBids,
-    this.totalParticipants,
-    this.totalViews,
-    this.status,
-    this.deliveryStatus,
-  });
-
-  UserCreatedAuctionDetails.fromJson(Map<String, dynamic> json) {
-    startTime = json['start_time'];
-    endTime = json['end_time'];
-    highestBidAmount = json['highest_bid_amount'] != null ? double.tryParse(json['highest_bid_amount'].toString()) : null;
-    totalBids = json['total_bids'];
-    totalParticipants = json['total_participants'];
-    totalViews = json['total_views'];
-    status = json['status'];
-    deliveryStatus = json['delivery_status'];
-  }
-}
-
 
 class ThumbnailFullUrl {
   String? key;

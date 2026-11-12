@@ -40,25 +40,24 @@ class HomeCategoryProductItemWidget extends StatelessWidget {
         ConstrainedBox(constraints: homeCategoryProduct.products!.isNotEmpty ?
         const BoxConstraints(maxHeight: BouncingScrollSimulation.maxSpringTransferVelocity):
         const BoxConstraints(maxHeight: 0),
-
-            child: RepaintBoundary(
-              child: MasonryGridView.count(
-                  itemCount: (isHomePage && homeCategoryProduct.products!.length > 4) ? 4
-                      : homeCategoryProduct.products!.length,
-                  padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
-                  physics: const BouncingScrollPhysics(),
-                  crossAxisCount: ResponsiveHelper.isTab(context) ? 3 : 2,
-                  shrinkWrap: true,
-                  itemBuilder: (BuildContext context, int i) {
-                    return InkWell(onTap: () {
-                      RouterHelper.getProductDetailsRoute(action: RouteAction.push, productId: homeCategoryProduct.products![i].id! , slug: homeCategoryProduct.products![i].slug!);
-                    },
-                        child: Padding(
-                          padding: EdgeInsets.all(Dimensions.paddingSizeEight),
-                          child: ProductCardWidget(product: homeCategoryProduct.products![i]),
-                        ));
-                  }),
-            ),
+          child: RepaintBoundary(
+            child: MasonryGridView.count(
+              itemCount: (isHomePage && homeCategoryProduct.products!.length > 4) ? 4
+                  : homeCategoryProduct.products!.length,
+              padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
+              physics: const BouncingScrollPhysics(),
+              crossAxisCount: ResponsiveHelper.isTab(context) ? 3 : 2,
+              shrinkWrap: true,
+              itemBuilder: (BuildContext context, int i) {
+                return InkWell(onTap: () {
+                  RouterHelper.getProductDetailsRoute(action: RouteAction.push, productId: homeCategoryProduct.products![i].id! , slug: homeCategoryProduct.products![i].slug!);
+                },
+                  child: Padding(
+                    padding: EdgeInsets.all(Dimensions.paddingSizeEight),
+                    child: ProductCardWidget(product: homeCategoryProduct.products![i]),
+                  ));
+              }),
+          ),
         ),
         const SizedBox(height: Dimensions.paddingSizeSmall),
       ],

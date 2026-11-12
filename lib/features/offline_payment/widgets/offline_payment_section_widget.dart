@@ -15,8 +15,7 @@ class OfflinePaymentSection extends StatefulWidget {
   });
 
   @override
-  State<OfflinePaymentSection> createState() =>
-      _OfflinePaymentSectionState();
+  State<OfflinePaymentSection> createState() => _OfflinePaymentSectionState();
 }
 
 class _OfflinePaymentSectionState extends State<OfflinePaymentSection> {
@@ -24,8 +23,7 @@ class _OfflinePaymentSectionState extends State<OfflinePaymentSection> {
 
   @override
   Widget build(BuildContext context) {
-    final info =
-        widget.orderProvider.orderDetails?[0].order?.offlinePayments;
+    final info = widget.orderProvider.orders?.offlinePayments;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
@@ -135,7 +133,7 @@ class _CustomerPaymentSectionState
 
   @override
   Widget build(BuildContext context) {
-    final info = widget.orderProvider.orderDetails?[0].latestEditHistory?.orderDuePaymentInfo;
+    final info = widget.orderProvider.orders?.latestEditHistory?.orderDuePaymentInfo;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),

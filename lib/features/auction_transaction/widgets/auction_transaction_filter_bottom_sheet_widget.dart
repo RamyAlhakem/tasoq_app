@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/helper/date_converter.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_asset_image_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_button_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_transaction/controller/auction_transaction_controller.dart';
@@ -7,7 +8,6 @@ import 'package:flutter_sixvalley_ecommerce/theme/controllers/theme_controller.d
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class AuctionTransactionFilterBottomSheetWidget extends StatefulWidget {
@@ -325,7 +325,7 @@ class _DatePickerField extends StatelessWidget {
           ),
           child: Row(children: [
             Expanded(child: Text(
-              date != null ? DateFormat('dd MMM yyyy').format(date!) : 'dd-mm-yyyy',
+              date != null ? DateConverter.estimatedDate(date!) : 'dd-mm-yyyy',
               style: textRegular.copyWith(
                 fontSize: Dimensions.fontSizeDefault,
                 color: date != null ? Theme.of(context).textTheme.bodyLarge?.color : Theme.of(context).hintColor,

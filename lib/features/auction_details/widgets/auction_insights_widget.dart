@@ -35,6 +35,7 @@ class _AuctionInsightsWidgetState extends State<AuctionInsightsWidget> {
         left: Dimensions.paddingSizeDefault,
         right: Dimensions.paddingSizeDefault,
         bottom: Dimensions.paddingSizeDefault,
+        top: Dimensions.paddingSizeDefault
       ),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
@@ -102,6 +103,7 @@ class _AuctionInsightsWidgetState extends State<AuctionInsightsWidget> {
                     Container(
                       padding: EdgeInsets.all(Dimensions.paddingSizeEight),
                       decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(Dimensions.radiusSmall)
                       ),
                       child: RichText(

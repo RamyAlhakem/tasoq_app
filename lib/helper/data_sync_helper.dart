@@ -6,7 +6,6 @@ import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/api_checker.dart';
 
 class DataSyncHelper {
-  /// Generic method to fetch data from local and remote sources
  static Future<void> fetchAndSyncData({
     required Future<ApiResponseModel<CacheResponseData>> Function() fetchFromLocal,
     required Future<ApiResponseModel<Response>> Function() fetchFromClient,

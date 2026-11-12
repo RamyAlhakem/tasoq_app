@@ -17,6 +17,11 @@ class SplashService implements SplashServiceInterface{
   }
 
   @override
+  Future getFaqList() {
+    return splashRepositoryInterface.getFaqList();
+  }
+
+  @override
   Future getBusinessPages(String type) {
     return splashRepositoryInterface.getBusinessPages(type);
   }

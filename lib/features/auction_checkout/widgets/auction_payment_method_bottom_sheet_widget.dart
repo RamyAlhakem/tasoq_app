@@ -40,6 +40,12 @@ class AuctionPaymentMethodBottomSheetWidgetState extends State<AuctionPaymentMet
   }
 
   @override
+  void dispose() {
+    changeAmountTextController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final ConfigModel? configModel = Provider.of<SplashController>(context, listen: false).configModel;
     final bool isLtr = Provider.of<LocalizationController>(context, listen: false).isLtr;

@@ -31,7 +31,6 @@ class ProductFilterDialogState extends State<ProductFilterDialog> {
   List<int> authors = [];
   List<int> publishingHouses = [];
 
-  bool _showAllCategories = false;
   bool _showAllBrands = false;
   bool _showAllAuthors = false;
   bool _showAllPublishing = false;
@@ -40,25 +39,8 @@ class ProductFilterDialogState extends State<ProductFilterDialog> {
   @override
   void initState() {
     super.initState();
-  }
 
-  Widget _buildSeeMoreToggle(BuildContext context, {required bool showAll, required int remaining, required VoidCallback onTap}) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
-      const SizedBox(height: Dimensions.paddingSizeExtraSmall),
-      Divider(height: 1, color: Theme.of(context).hintColor.withValues(alpha: .15)),
-      const SizedBox(height: Dimensions.paddingSizeSmall),
-      GestureDetector(
-        onTap: onTap,
-        child: Text(
-          showAll ? getTranslated('see_less', context)! : '${getTranslated('see_more', context)!} ($remaining)',
-          textAlign: TextAlign.center,
-          style: titilliumSemiBold.copyWith(
-            fontSize: Dimensions.fontSizeDefault,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-      ),
-    ]);
+    Provider.of<CategoryController>(context, listen: false).getCategoryList(false);
   }
 
   @override
@@ -214,52 +196,53 @@ class ProductFilterDialogState extends State<ProductFilterDialog> {
                               ],
 
                               // Category
-                              if(categoryProvider.filteredCategoryList.isNotEmpty)...[
-                                _FilterSectionCard(
-                                  title: getTranslated('CATEGORY', context)!,
-                                  child: Builder(builder: (context) {
-                                    final categories = categoryProvider.filteredCategoryList;
-                                    final hasMore = categories.length > _initialItemCount;
-                                    final visibleCount = _showAllCategories || !hasMore ? categories.length : _initialItemCount;
-                                    final remaining = categories.length - _initialItemCount;
-                                    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                      ListView.builder(
-                                        itemCount: visibleCount,
-                                        shrinkWrap: true,
-                                        padding: EdgeInsets.zero,
-                                        physics: const NeverScrollableScrollPhysics(),
-                                        itemBuilder: (context, index){
-                                          return Column(children: [
-                                            CategoryFilterItem(title: categories[index].name,
-                                              checked: categories[index].isSelected!,
-                                              onTap: () => categoryProvider.checkedToggleCategory(index)),
-                                            if(categories[index].isSelected!)
-                                              Padding(padding: const EdgeInsets.only(left: Dimensions.paddingSizeExtraLarge),
-                                                child: RepaintBoundary(
-                                                  child: ListView.builder(
-                                                    itemCount: categories[index].subCategories?.length??0,
-                                                    shrinkWrap: true,
-                                                    padding: EdgeInsets.zero,
-                                                    physics: const NeverScrollableScrollPhysics(),
-                                                    itemBuilder: (context, subIndex){
-                                                      return CategoryFilterItem(title: categories[index].subCategories![subIndex].name,
-                                                        checked: categories[index].subCategories![subIndex].isSelected!,
-                                                        onTap: () => categoryProvider.checkedToggleSubCategory(index, subIndex));
-                                                    }),
-                                                ),
-                                              )
-                                          ],
-                                          );
-                                        }),
-                                      if(hasMore) _buildSeeMoreToggle(context,
-                                        showAll: _showAllCategories,
-                                        remaining: remaining,
-                                        onTap: () => setState(() => _showAllCategories = !_showAllCategories)),
-                                    ]);
-                                  }),
-                                ),
-                                const SizedBox(height: Dimensions.paddingSizeDefault),
-                              ],
+                              _FilterSectionCard(
+                                title: getTranslated('CATEGORY', context)!,
+                                child: Builder(builder: (context) {
+                                  final categories = categoryProvider.filteredCategoryList;
+
+                                  if(categories.isEmpty) {
+                                    return const Padding(
+                                      padding: EdgeInsets.all(Dimensions.paddingSizeDefault),
+                                      child: Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))),
+                                    );
+                                  }
+
+                                  final total = categoryProvider.categoryResponseModel?.totalSize ?? categories.length;
+                                  final remaining = total - categories.length;
+
+                                  return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                    ListView.builder(
+                                      itemCount: categories.length,
+                                      shrinkWrap: true,
+                                      padding: EdgeInsets.zero,
+                                      physics: const NeverScrollableScrollPhysics(),
+                                      itemBuilder: (context, index){
+                                        return Column(children: [
+                                          CategoryFilterItem(title: categories[index].name,
+                                            checked: categories[index].isSelected!,
+                                            onTap: () => categoryProvider.checkedToggleCategory(index)),
+                                          if(categories[index].isSelected!)
+                                            Padding(padding: const EdgeInsets.only(left: Dimensions.paddingSizeExtraLarge),
+                                              child: RepaintBoundary(
+                                                child: SubCategoryFilterList(category: categories[index], categoryIndex: index),
+                                              ),
+                                            )
+                                        ],
+                                        );
+                                      }),
+                                    if(remaining > 0) SeeMoreToggle(
+                                      showAll: false,
+                                      remaining: remaining,
+                                      isLoading: categoryProvider.categoryLoading,
+                                      onTap: () => categoryProvider.getCategoryList(
+                                        false,
+                                        offset: (categoryProvider.categoryResponseModel?.offset ?? 1) + 1,
+                                      )),
+                                  ]);
+                                }),
+                              ),
+                              const SizedBox(height: Dimensions.paddingSizeDefault),
 
                               // Brand
                               if((searchProvider.productTypeIndex == 0 || searchProvider.productTypeIndex == 1) && brandProvider.brandList.isNotEmpty)...[
@@ -281,7 +264,7 @@ class ProductFilterDialogState extends State<ProductFilterDialog> {
                                               checked: brands[index].checked!,
                                               onTap: () => brandProvider.checkedToggleBrand(index));
                                         }),
-                                      if(hasMore) _buildSeeMoreToggle(context,
+                                      if(hasMore) SeeMoreToggle(
                                         showAll: _showAllBrands,
                                         remaining: remaining,
                                         onTap: () => setState(() => _showAllBrands = !_showAllBrands)),
@@ -350,7 +333,7 @@ class ProductFilterDialogState extends State<ProductFilterDialog> {
                                               checked: authorList[index].isChecked!,
                                               onTap: () => searchProvider.checkedToggleAuthors(index, widget.fromShop));
                                           }),
-                                        if(hasMore) _buildSeeMoreToggle(context,
+                                        if(hasMore) SeeMoreToggle(
                                           showAll: _showAllAuthors,
                                           remaining: remaining,
                                           onTap: () => setState(() => _showAllAuthors = !_showAllAuthors)),
@@ -422,7 +405,7 @@ class ProductFilterDialogState extends State<ProductFilterDialog> {
                                               onTap: () => searchProvider.checkedTogglePublishingHouse(index, widget.fromShop)
                                             );
                                           }),
-                                        if(hasMore) _buildSeeMoreToggle(context,
+                                        if(hasMore) SeeMoreToggle(
                                           showAll: _showAllPublishing,
                                           remaining: remaining,
                                           onTap: () => setState(() => _showAllPublishing = !_showAllPublishing)),
@@ -517,6 +500,80 @@ class ProductFilterDialogState extends State<ProductFilterDialog> {
         });
       },
     );
+  }
+}
+
+class SeeMoreToggle extends StatelessWidget {
+  final bool showAll;
+  final int remaining;
+  final bool isLoading;
+  final VoidCallback onTap;
+
+  const SeeMoreToggle({super.key, required this.showAll, required this.remaining, required this.onTap, this.isLoading = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
+      const SizedBox(height: Dimensions.paddingSizeExtraSmall),
+      Divider(height: 1, color: Theme.of(context).hintColor.withValues(alpha: .15)),
+      const SizedBox(height: Dimensions.paddingSizeSmall),
+      isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : GestureDetector(
+        onTap: onTap,
+        child: Text(
+          showAll ? getTranslated('see_less', context)! : '${getTranslated('see_more', context)!} ($remaining)',
+          textAlign: TextAlign.center,
+          style: titilliumSemiBold.copyWith(
+            fontSize: Dimensions.fontSizeDefault,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
+      ),
+    ]);
+  }
+}
+
+class SubCategoryFilterList extends StatelessWidget {
+  final CategoryModel category;
+  final int categoryIndex;
+
+  const SubCategoryFilterList({super.key, required this.category, required this.categoryIndex});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<CategoryController>(builder: (context, categoryProvider, _) {
+      final subCategories = category.subCategories;
+
+      if(subCategories == null) {
+        return const Padding(
+          padding: EdgeInsets.all(Dimensions.paddingSizeSmall),
+          child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
+        );
+      }
+
+      final total = category.subCategoryTotalSize ?? subCategories.length;
+      final remaining = total - subCategories.length;
+
+      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        ListView.builder(
+          itemCount: subCategories.length,
+          shrinkWrap: true,
+          padding: EdgeInsets.zero,
+          physics: const NeverScrollableScrollPhysics(),
+          itemBuilder: (context, subIndex) {
+            return CategoryFilterItem(title: subCategories[subIndex].name,
+              checked: subCategories[subIndex].isSelected!,
+              onTap: () => categoryProvider.checkedToggleSubCategory(categoryIndex, subIndex));
+          }),
+        if(remaining > 0) SeeMoreToggle(
+          showAll: false,
+          remaining: remaining,
+          isLoading: categoryProvider.isChildLoading(category.id),
+          onTap: () => categoryProvider.getSubCategoryList(
+            category: category,
+            offset: (category.subCategoryOffset ?? 1) + 1,
+          )),
+      ]);
+    });
   }
 }
 

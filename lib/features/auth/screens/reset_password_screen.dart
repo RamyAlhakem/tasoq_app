@@ -32,6 +32,15 @@ class ResetPasswordScreenState extends State<ResetPasswordScreen> {
     super.initState();
   }
 
+  @override
+  void dispose() {
+    _passwordController?.dispose();
+    _confirmPasswordController?.dispose();
+    _newPasswordNode.dispose();
+    _confirmPasswordNode.dispose();
+    super.dispose();
+  }
+
 
   void resetPassword() async {
       String password = _passwordController!.text.trim();

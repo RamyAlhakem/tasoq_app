@@ -27,6 +27,21 @@ class AddAuctionProductRepository implements AddAuctionProductRepositoryInterfac
     };
   }
 
+  static void _putSeoFlag(Map<String, dynamic> fields, String key, String? value) {
+    const Set<String> onValues = {'1', 'true', 'nofollow', 'noarchive', 'noimageindex'};
+    if (onValues.contains(value?.trim().toLowerCase())) fields[key] = '1';
+  }
+
+  static void _putSeoImagePreviewSize(Map<String, dynamic> fields, String? value) {
+    const Map<String, String> sizes = {
+      '0': 'small', 'none': 'small', 'small': 'small',
+      '1': 'medium', 'standard': 'medium', 'medium': 'medium',
+      '2': 'large', 'large': 'large',
+    };
+    final String? size = sizes[value?.trim().toLowerCase()];
+    if (size != null) fields['meta_max_image_preview_value'] = size;
+  }
+
   @override
   Future<ApiResponseModel> addAuctionProduct({
     required AddAuctionProductModel addAuctionProduct,
@@ -79,9 +94,9 @@ class AddAuctionProductRepository implements AddAuctionProductRepositoryInterfac
       List<MultipartWithKey> multipartFiles = [];
 
       // Basic auction product fields
-      fields['name'] = jsonEncode(addAuctionProduct.titleList);
-      fields['lang'] = jsonEncode(addAuctionProduct.languageList);
-      fields['description'] = jsonEncode(addAuctionProduct.descriptionList);
+      fields['name[]'] = addAuctionProduct.titleList ?? const <String>[];
+      fields['lang[]'] = (addAuctionProduct.languageList ?? const <String?>[]).whereType<String>().toList();
+      fields['description[]'] = addAuctionProduct.descriptionList ?? const <String>[];
       fields['category_id'] = categoryId;
       if (brandId != null) {
         fields['brand_id'] = brandId;
@@ -114,7 +129,7 @@ class AddAuctionProductRepository implements AddAuctionProductRepositoryInterfac
 
       // Tax
       if (taxIds != null && taxIds.isNotEmpty) {
-        fields['tax_ids'] = jsonEncode(taxIds);
+        fields['tax_ids[]'] = taxIds;
       }
 
       // Search tags (comma-separated string)
@@ -126,16 +141,16 @@ class AddAuctionProductRepository implements AddAuctionProductRepositoryInterfac
       if (metaTitle != null) fields['meta_title'] = metaTitle;
       if (metaDescription != null) fields['meta_description'] = metaDescription;
       if (metaIndex != null) fields['meta_index'] = metaIndex;
-      if (metaNoFollow != null) fields['meta_no_follow'] = metaNoFollow;
-      if (metaNoImageIndex != null) fields['meta_no_image_index'] = metaNoImageIndex;
-      if (metaNoArchive != null) fields['meta_no_archive'] = metaNoArchive;
-      if (metaNoSnippet != null) fields['meta_no_snippet'] = metaNoSnippet;
-      if (metaMaxSnippet != null) fields['meta_max_snippet'] = metaMaxSnippet;
+      _putSeoFlag(fields, 'meta_no_follow', metaNoFollow);
+      _putSeoFlag(fields, 'meta_no_image_index', metaNoImageIndex);
+      _putSeoFlag(fields, 'meta_no_archive', metaNoArchive);
+      _putSeoFlag(fields, 'meta_no_snippet', metaNoSnippet);
+      _putSeoFlag(fields, 'meta_max_snippet', metaMaxSnippet);
       if (metaMaxSnippetValue != null) fields['meta_max_snippet_value'] = metaMaxSnippetValue;
-      if (metaMaxVideoPreview != null) fields['meta_max_video_preview'] = metaMaxVideoPreview;
+      _putSeoFlag(fields, 'meta_max_video_preview', metaMaxVideoPreview);
       if (metaMaxVideoPreviewValue != null) fields['meta_max_video_preview_value'] = metaMaxVideoPreviewValue;
-      if (metaMaxImagePreview != null) fields['meta_max_image_preview'] = metaMaxImagePreview;
-      if (metaMaxImagePreviewValue != null) fields['meta_max_image_preview_value'] = metaMaxImagePreviewValue;
+      _putSeoFlag(fields, 'meta_max_image_preview', metaMaxImagePreview);
+      _putSeoImagePreviewSize(fields, metaMaxImagePreviewValue);
       if (metaImage != null) {
         multipartFiles.add(MultipartWithKey(
           key: 'meta_image',
@@ -209,6 +224,7 @@ class AddAuctionProductRepository implements AddAuctionProductRepositoryInterfac
     String? returnPolicy,
     XFile? thumbnail,
     List<XFile>? images,
+    List<String>? existingImages,
     String? videoType,
     String? youtubeVideo,
     XFile? customerVideo,
@@ -237,9 +253,9 @@ class AddAuctionProductRepository implements AddAuctionProductRepositoryInterfac
       Map<String, dynamic> fields = {};
       List<MultipartWithKey> multipartFiles = [];
 
-      fields['name'] = jsonEncode(addAuctionProduct.titleList);
-      fields['lang'] = jsonEncode(addAuctionProduct.languageList);
-      fields['description'] = jsonEncode(addAuctionProduct.descriptionList);
+      fields['name[]'] = addAuctionProduct.titleList ?? const <String>[];
+      fields['lang[]'] = (addAuctionProduct.languageList ?? const <String?>[]).whereType<String>().toList();
+      fields['description[]'] = addAuctionProduct.descriptionList ?? const <String>[];
       fields['category_id'] = categoryId;
       if (brandId != null) fields['brand_id'] = brandId;
       fields['product_type'] = productType;
@@ -266,7 +282,7 @@ class AddAuctionProductRepository implements AddAuctionProductRepositoryInterfac
       }
 
       if (taxIds != null && taxIds.isNotEmpty) {
-        fields['tax_ids'] = jsonEncode(taxIds);
+        fields['tax_ids[]'] = taxIds;
       }
 
       // Search tags (comma-separated string)
@@ -277,16 +293,20 @@ class AddAuctionProductRepository implements AddAuctionProductRepositoryInterfac
       if (metaTitle != null) fields['meta_title'] = metaTitle;
       if (metaDescription != null) fields['meta_description'] = metaDescription;
       if (metaIndex != null) fields['meta_index'] = metaIndex;
-      if (metaNoFollow != null) fields['meta_no_follow'] = metaNoFollow;
-      if (metaNoImageIndex != null) fields['meta_no_image_index'] = metaNoImageIndex;
-      if (metaNoArchive != null) fields['meta_no_archive'] = metaNoArchive;
-      if (metaNoSnippet != null) fields['meta_no_snippet'] = metaNoSnippet;
-      if (metaMaxSnippet != null) fields['meta_max_snippet'] = metaMaxSnippet;
+      _putSeoFlag(fields, 'meta_no_follow', metaNoFollow);
+      _putSeoFlag(fields, 'meta_no_image_index', metaNoImageIndex);
+      _putSeoFlag(fields, 'meta_no_archive', metaNoArchive);
+      _putSeoFlag(fields, 'meta_no_snippet', metaNoSnippet);
+      _putSeoFlag(fields, 'meta_max_snippet', metaMaxSnippet);
       if (metaMaxSnippetValue != null) fields['meta_max_snippet_value'] = metaMaxSnippetValue;
-      if (metaMaxVideoPreview != null) fields['meta_max_video_preview'] = metaMaxVideoPreview;
+      _putSeoFlag(fields, 'meta_max_video_preview', metaMaxVideoPreview);
       if (metaMaxVideoPreviewValue != null) fields['meta_max_video_preview_value'] = metaMaxVideoPreviewValue;
-      if (metaMaxImagePreview != null) fields['meta_max_image_preview'] = metaMaxImagePreview;
-      if (metaMaxImagePreviewValue != null) fields['meta_max_image_preview_value'] = metaMaxImagePreviewValue;
+      _putSeoFlag(fields, 'meta_max_image_preview', metaMaxImagePreview);
+      _putSeoImagePreviewSize(fields, metaMaxImagePreviewValue);
+
+      // v6 requires `images` on update unless the stored images to keep are named.
+      final List<String> keptImages = (existingImages ?? const <String>[]).where((name) => name.isNotEmpty).toList();
+      if (keptImages.isNotEmpty) fields['existing_images[]'] = keptImages;
 
       // Optional files for update
       if (thumbnail != null) {
@@ -331,9 +351,6 @@ class AddAuctionProductRepository implements AddAuctionProductRepositoryInterfac
         ));
       }
 
-      // PUT via postMultipart with _method override
-      fields['_method'] = 'PUT';
-
       Response response = await dioClient!.postMultipart(
         '${AppConstants.updateAuctionProductsUri}/$productId',
         data: fields,
@@ -357,7 +374,7 @@ class AddAuctionProductRepository implements AddAuctionProductRepositoryInterfac
       );
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
@@ -369,12 +386,12 @@ class AddAuctionProductRepository implements AddAuctionProductRepositoryInterfac
     try {
       final Map<String, dynamic> fields = {'is_canceled': true};
       Response response = await dioClient!.post(
-        '${AppConstants.customerAuctionProductCancelUri}$productId',
+        '${AppConstants.customerAuctionProductCancelUri}$productId/cancel',
         data: fields,
       );
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
@@ -426,10 +443,9 @@ class AddAuctionProductRepository implements AddAuctionProductRepositoryInterfac
     try {
       Map<String, dynamic> fields = {};
       List<MultipartWithKey> multipartFiles = [];
-
-      fields['name'] = jsonEncode(addAuctionProduct.titleList);
-      fields['lang'] = jsonEncode(addAuctionProduct.languageList);
-      fields['description'] = jsonEncode(addAuctionProduct.descriptionList);
+      fields['name[]'] = addAuctionProduct.titleList ?? const <String>[];
+      fields['lang[]'] = (addAuctionProduct.languageList ?? const <String?>[]).whereType<String>().toList();
+      fields['description[]'] = addAuctionProduct.descriptionList ?? const <String>[];
       fields['category_id'] = categoryId;
       if (brandId != null) fields['brand_id'] = brandId;
       fields['product_type'] = productType;
@@ -520,14 +536,14 @@ class AddAuctionProductRepository implements AddAuctionProductRepositoryInterfac
       }
 
       Response response = await dioClient!.postMultipart(
-        '${AppConstants.auctionRelaunchUri}$auctionId',
+        '${AppConstants.auctionRelaunchUri}$auctionId/relaunch',
         data: fields,
         files: multipartFiles,
       );
 
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 

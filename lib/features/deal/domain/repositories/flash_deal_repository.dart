@@ -9,9 +9,9 @@ class FlashDealRepository implements FlashDealRepositoryInterface{
   FlashDealRepository({required this.dioClient});
 
   @override
-  Future<ApiResponseModel> getFlashDeal() async {
+  Future<ApiResponseModel> getFlashDeal({int offset = 1, int limit = 25}) async {
     try {
-      final response = await dioClient!.get(AppConstants.flashDealUri);
+      final response = await dioClient!.get('${AppConstants.flashDealUri}?limit=$limit&offset=$offset');
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -19,10 +19,10 @@ class FlashDealRepository implements FlashDealRepositoryInterface{
   }
 
   @override
-  Future<ApiResponseModel> get(String productID, {int offset = 1, int limit = 10}) async {
+  Future<ApiResponseModel> get(String dealId, {int offset = 1, int limit = 20}) async {
     try {
       final response = await dioClient!.get(
-        '${AppConstants.flashDealProductUri}$productID?limit=$limit&offset=$offset',
+        '${AppConstants.flashDealProductUri}$dealId/products?limit=$limit&offset=$offset',
       );
       return ApiResponseModel.withSuccess(response);
     } catch (e) {

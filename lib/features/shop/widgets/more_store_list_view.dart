@@ -20,7 +20,7 @@ class _MoreStoreViewListViewState extends State<MoreStoreViewListView> {
       appBar: CustomAppBar(title: widget.title??  getTranslated('other_store', context),),
       body: Consumer<ShopController>(
           builder: (context, moreSellerProvider, _) {
-            return GridView.builder(padding: EdgeInsets.zero, shrinkWrap: true,
+            return GridView.builder(padding: EdgeInsets.zero,
               itemCount: moreSellerProvider.moreStoreList.length,
               itemBuilder: (context, index) {
                 return Center(child: Padding(padding: const EdgeInsets.only(top: Dimensions.paddingSizeSmall),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_image_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/category/domain/models/category_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/controllers/product_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/route_healper.dart';
@@ -21,21 +22,50 @@ class CategoryScreen extends StatefulWidget {
 
 class _CategoryScreenState extends State<CategoryScreen> {
 
+  final ScrollController _categoryScrollController = ScrollController();
+  final ScrollController _subCategoryScrollController = ScrollController();
+  bool _subCategoryHasOverflow = false;
+
+  static const double _bottomNavHeight = 60;
+
+  @override
+  void dispose() {
+    _categoryScrollController.dispose();
+    _subCategoryScrollController.dispose();
+    super.dispose();
+  }
+
+  void _updateSubCategoryOverflow(double bottomSpace) {
+    if (!mounted || !_subCategoryScrollController.hasClients) return;
+    final double spacerNow = _subCategoryHasOverflow ? bottomSpace : 0;
+    final bool overflow = (_subCategoryScrollController.position.maxScrollExtent - spacerNow) > 0.5;
+    if (overflow != _subCategoryHasOverflow) {
+      setState(() => _subCategoryHasOverflow = overflow);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
 
     final categoryController = Provider.of<CategoryController>(context, listen: false);
 
-    if (categoryController.categoryList.isNotEmpty) {
-      Provider.of<ProductController>(context, listen: false).initBrandOrCategoryProductList(
-        isBrand: false,
-        id: categoryController.categoryList.first.id,
-        offset: 1,
-        isUpdate: false,
-      );
-      categoryController.onChangeSelectedIndex(0, isUpdate: false);
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      if (categoryController.categoryList.isNotEmpty) {
+        Provider.of<ProductController>(context, listen: false).initBrandOrCategoryProductList(
+          isBrand: false,
+          id: categoryController.categoryList.first.id,
+          offset: 1,
+          isUpdate: false,
+        );
+        categoryController.onChangeSelectedIndex(0, isUpdate: false);
+        categoryController.ensureSubCategoryLoaded(categoryController.categoryList.first);
+      } else {
+        categoryController.getCategoryList(false);
+      }
+    });
   }
 
   @override
@@ -44,6 +74,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
       appBar: CustomAppBar(title: getTranslated('CATEGORY', context), isBackButtonExist: widget.isBacButtonExist),
       body: Consumer<CategoryController>(
         builder: (context, categoryProvider, child) {
+          final double bottomSpace = _bottomNavHeight + MediaQuery.of(context).padding.bottom;
+
+          WidgetsBinding.instance.addPostFrameCallback((_) => _updateSubCategoryOverflow(bottomSpace));
+
           return categoryProvider.categoryList.isNotEmpty ?
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
@@ -61,31 +95,41 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   ),
                 ],
               ),
-              child: ListView.builder(
-                physics: const BouncingScrollPhysics(),
-                itemCount: categoryProvider.categoryList.length + 1,
-                padding: EdgeInsets.zero,
-                itemBuilder: (context, index) {
-                  if (index == categoryProvider.categoryList.length) {
-                    return SizedBox(height: MediaQuery.of(context).padding.bottom);
-                  }
-                  CategoryModel category = categoryProvider.categoryList[index];
-                  return InkWell(
-                    onTap: () {
-                      categoryProvider.onChangeSelectedIndex(index);
-                      Provider.of<ProductController>(context, listen: false).initBrandOrCategoryProductList(
-                        isBrand: false,
-                        id: categoryProvider.categoryList[index].id,
-                        offset: 1,
+              child: PaginatedListView(
+                scrollController: _categoryScrollController,
+                totalSize: categoryProvider.categoryResponseModel?.totalSize,
+                offset: categoryProvider.categoryResponseModel?.offset,
+                limit: categoryProvider.categoryResponseModel?.limit ?? 25,
+                onPaginate: (offset) => categoryProvider.getCategoryList(false, offset: offset ?? 1),
+                itemView: Expanded(
+                  child: ListView.builder(
+                    controller: _categoryScrollController,
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: categoryProvider.categoryList.length + 1,
+                    padding: EdgeInsets.zero,
+                    itemBuilder: (context, index) {
+                      if (index == categoryProvider.categoryList.length) {
+                        return SizedBox(height: MediaQuery.of(context).padding.bottom);
+                      }
+                      CategoryModel category = categoryProvider.categoryList[index];
+                      return InkWell(
+                        onTap: () {
+                          categoryProvider.onChangeSelectedIndex(index);
+                          Provider.of<ProductController>(context, listen: false).initBrandOrCategoryProductList(
+                            isBrand: false,
+                            id: categoryProvider.categoryList[index].id,
+                            offset: 1,
+                          );
+                        },
+                        child: CategoryItem(
+                          title: category.name,
+                          icon: category.imageFullUrl?.path,
+                          isSelected: categoryProvider.categorySelectedIndex == index,
+                        ),
                       );
                     },
-                    child: CategoryItem(
-                      title: category.name,
-                      icon: category.imageFullUrl?.path,
-                      isSelected: categoryProvider.categorySelectedIndex == index,
-                    ),
-                  );
-                },
+                  ),
+                ),
               ),
             )),
 
@@ -105,97 +149,115 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     ),
                   ],
                 ),
-                child: ListView.separated(
+                child: Builder(builder: (context) {
+                  final CategoryModel selectedCategory = categoryProvider.categoryList[categoryProvider.categorySelectedIndex!];
+                  final List<SubCategory> subCategories = selectedCategory.subCategories ?? [];
+
+                  if (subCategories.isEmpty && categoryProvider.isChildLoading(selectedCategory.id)) {
+                    return Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor)));
+                  }
+
+                  return NotificationListener<ScrollMetricsNotification>(
+                  onNotification: (_) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) => _updateSubCategoryOverflow(bottomSpace));
+                    return false;
+                  },
+                  child: PaginatedListView(
+                    scrollController: _subCategoryScrollController,
+                    totalSize: selectedCategory.subCategoryTotalSize,
+                    offset: selectedCategory.subCategoryOffset,
+                    limit: selectedCategory.subCategoryLimit ?? 25,
+                    onPaginate: (offset) => categoryProvider.getSubCategoryList(category: selectedCategory, offset: offset ?? 1),
+                    itemView: Expanded(
+                      child: CustomScrollView(
+                  controller: _subCategoryScrollController,
                   physics: const ClampingScrollPhysics(),
-                  padding: EdgeInsets.zero,
-                  shrinkWrap: true,
-                  itemCount: categoryProvider.categoryList[categoryProvider.categorySelectedIndex!].subCategories!.length + 2,
-                  itemBuilder: (context, index) {
-                    final subCategoryCount = categoryProvider.categoryList[categoryProvider.categorySelectedIndex!].subCategories!.length;
-                    if (index == subCategoryCount + 1) {
-                      return SizedBox(height: MediaQuery.of(context).padding.bottom);
-                    }
-                    late SubCategory subCategory;
-                    if(index != 0) {
-                      subCategory = categoryProvider.categoryList[categoryProvider.categorySelectedIndex!].subCategories![index-1];
-                    }
-                    if(index == 0) {
-                      return Material(
-                        color: Theme.of(context).highlightColor,
-                        child: ListTile(
-                          visualDensity: const VisualDensity(vertical: -4),
-                          title: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
-                            child: Text(
-                                (((categoryProvider.categoryList[categoryProvider.categorySelectedIndex!].subCategories?.length ?? 0) > 1)) ?
-                                getTranslated('all_products', context)! : getTranslated('view_all_products', context)!,
-                                style: textBold.copyWith(fontSize: Dimensions.fontSizeSmall),
-                                maxLines: 2, overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          onTap: () {
-                            RouterHelper.getBrandCategoryRoute(
-                              isBrand: false,
-                              id: categoryProvider.categoryList[categoryProvider.categorySelectedIndex!].id,
-                              name: categoryProvider.categoryList[categoryProvider.categorySelectedIndex!].name,
-                              categoryModel: categoryProvider.categoryList[categoryProvider.categorySelectedIndex!],
-                              isAllProduct: true,
+                  slivers: [
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, i) {
+                          final subCategoryCount = subCategories.length;
+
+                          // Odd i => separator (was separatorBuilder(context, i ~/ 2)); even i => item (was itemBuilder(context, i ~/ 2)).
+                          if (i.isOdd) {
+                            final sepIndex = i ~/ 2;
+                            if (sepIndex == subCategoryCount) {
+                              return const SizedBox.shrink();
+                            }
+                            return Container(
+                              margin: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
+                              child: Divider(
+                                color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.10),
+                                thickness: 1,
+                              ),
                             );
-                          },
-                        ),
-                      );
-                    } else if (subCategory.subSubCategories?.isNotEmpty ?? false) {
-                      return Material(
-                          color: Theme.of(context).highlightColor,
-                          child: ExpansionTile(
-                              visualDensity: const VisualDensity(vertical: -4),
-                              tilePadding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-                              iconColor: Theme.of(context).textTheme.bodyLarge?.color,
-                              shape: const Border(),
-                              key: Key('${Provider.of<CategoryController>(context).categorySelectedIndex}$index'),
-                              title: Text(subCategory.name ?? '', style: textBold.copyWith(
-                                color: Theme.of(context).textTheme.bodyLarge?.color,
-                                fontSize: Dimensions.fontSizeSmall,
-                              ), maxLines: 2, overflow: TextOverflow.ellipsis),
-                              children: _getSubSubCategories(context, subCategory)
-                          ),
-                      );
-                    } else {
-                      return Material(
-                        color: Theme.of(context).highlightColor,
-                        child: ListTile(
-                          title: Text(subCategory.name ?? '', style: textBold.copyWith(
-                              fontSize: Dimensions.fontSizeSmall,
-                          ), maxLines: 2, overflow: TextOverflow.ellipsis),
-                          contentPadding: const EdgeInsets.only(left: Dimensions.paddingSizeDefault, right: Dimensions.paddingSizeDefault),
-                          trailing: Icon(Icons.navigate_next, color: Theme.of(context).textTheme.bodyLarge!.color),
-                          onTap: () {
-                            RouterHelper.getBrandCategoryRoute(
-                              action: RouteAction.push,
-                              isBrand: false,
-                              id: subCategory.id,
-                              name: categoryProvider.categoryList[categoryProvider.categorySelectedIndex!].name,
-                              categoryModel: categoryProvider.categoryList[categoryProvider.categorySelectedIndex!],
+                          }
+
+                          final index = i ~/ 2;
+                          if (index == subCategoryCount + 1) {
+                            return SizedBox(height: _subCategoryHasOverflow ? bottomSpace : 0);
+                          }
+                          late SubCategory subCategory;
+                          if(index != 0) {
+                            subCategory = subCategories[index-1];
+                          }
+                          if(index == 0) {
+                            return Material(
+                              color: Theme.of(context).highlightColor,
+                              child: ListTile(
+                                visualDensity: const VisualDensity(vertical: -4),
+                                title: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
+                                  child: Text(
+                                      subCategoryCount > 1 ?
+                                      getTranslated('all_products', context)! : getTranslated('view_all_products', context)!,
+                                      style: textBold.copyWith(fontSize: Dimensions.fontSizeSmall),
+                                      maxLines: 2, overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                onTap: () {
+                                  RouterHelper.getBrandCategoryRoute(
+                                    isBrand: false,
+                                    id: selectedCategory.id,
+                                    name: selectedCategory.name,
+                                    categoryModel: selectedCategory,
+                                    isAllProduct: true,
+                                  );
+                                },
+                              ),
                             );
-                          },
-                        ),
-                      );
-                    }
-                  },
-                  separatorBuilder: (context, index) {
-                    final subCategoryCount = categoryProvider.categoryList[categoryProvider.categorySelectedIndex!].subCategories!.length;
-                    if (index == subCategoryCount) {
-                      return const SizedBox.shrink();
-                    }
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-                      child: Divider(
-                        color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.10),
-                        thickness: 1,
+                          } else {
+                            return Material(
+                                color: Theme.of(context).highlightColor,
+                                child: ExpansionTile(
+                                    visualDensity: const VisualDensity(vertical: -4),
+                                    tilePadding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
+                                    iconColor: Theme.of(context).textTheme.bodyLarge?.color,
+                                    shape: const Border(),
+                                    key: Key('${categoryProvider.categorySelectedIndex}$index'),
+                                    onExpansionChanged: (expanded) {
+                                      if(expanded) {
+                                        categoryProvider.ensureSubSubCategoryLoaded(subCategory);
+                                      }
+                                    },
+                                    title: Text(subCategory.name ?? '', style: textBold.copyWith(
+                                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                                      fontSize: Dimensions.fontSizeSmall,
+                                    ), maxLines: 2, overflow: TextOverflow.ellipsis),
+                                    children: _getSubSubCategories(context, subCategory, categoryProvider)
+                                ),
+                            );
+                          }
+                        },
+                        childCount: 2 * (subCategories.length + 2) - 1,
                       ),
-                    );
-                  },
+                    ),
+                  ],
                 ),
+                    ),
+                  ),
+                );
+                }),
               ),
             )),
 
@@ -205,7 +267,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
     );
   }
 
-  List<Widget> _getSubSubCategories(BuildContext context, SubCategory subCategory) {
+  List<Widget> _getSubSubCategories(BuildContext context, SubCategory subCategory, CategoryController categoryProvider) {
+
+    if (subCategory.subSubCategories == null) {
+      return [Padding(
+        padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
+        child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
+        ))),
+      )];
+    }
 
     List<Widget> subSubCategories = [];
     subSubCategories.add(Material(
@@ -261,6 +333,30 @@ class _CategoryScreenState extends State<CategoryScreen> {
         ),
       ));
     }
+
+    final int loadedCount = subCategory.subSubCategories!.length;
+    final int totalCount = subCategory.subSubCategoryTotalSize ?? loadedCount;
+    if (loadedCount < totalCount) {
+      final bool isLoading = categoryProvider.isChildLoading(subCategory.id);
+      subSubCategories.add(Material(
+        color: Theme.of(context).highlightColor,
+        child: ListTile(
+          visualDensity: const VisualDensity(vertical: -4),
+          title: isLoading ? Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
+          ))) : Text(
+            '${getTranslated('see_more', context)} (${totalCount - loadedCount})',
+            style: textBold.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).primaryColor),
+          ),
+          onTap: isLoading ? null : () => categoryProvider.getSubSubCategoryList(
+            subCategory: subCategory,
+            offset: (subCategory.subSubCategoryOffset ?? 1) + 1,
+          ),
+        ),
+      ));
+    }
+
     return subSubCategories;
   }
 }

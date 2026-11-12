@@ -117,9 +117,7 @@ class _UserCreatedAuctionListScreenState extends State<UserCreatedAuctionListScr
                         itemCount: products.length,
                         itemBuilder: (context, index) {
                           final UserCreatedAuctionProduct product = products[index];
-                          final details = product.auctionDetails;
-
-                          final UserCreatedAuctionPurchaseEnum itemStatus = UserCreatedAuctionPurchaseEnum.fromApi(details?.status, details?.deliveryStatus, isRelaunched: product.isRelaunched ?? false);
+                          final UserCreatedAuctionPurchaseEnum itemStatus = UserCreatedAuctionPurchaseEnum.fromApi(product.auctionCurrentStatus, product.deliveryStatus, isRelaunched: product.isRelaunched ?? false);
 
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall, horizontal: Dimensions.paddingSizeDefault),
@@ -130,13 +128,13 @@ class _UserCreatedAuctionListScreenState extends State<UserCreatedAuctionListScr
                               auctionId: product.id ?? 0,
                               productName: product.name ?? '',
                               startingPrice: (product.startingPrice ?? 0).toDouble(),
-                              participantCount: product.auctionDetails?.totalParticipants ?? 0,
-                              totalBidCount: details?.totalBids ?? 0,
-                              highestBidAmount: (details?.highestBidAmount ?? 0).toDouble(),
+                              participantCount: product.totalParticipants ?? 0,
+                              totalBidCount: product.totalBids ?? 0,
+                              highestBidAmount: product.highestBidAmount ?? 0,
                               targetTime: itemStatus == UserCreatedAuctionPurchaseEnum.upcoming
-                                  ? (details?.startTime != null ? DateConverter.isoStringToLocalDate(details!.startTime!) : DateTime.now())
-                                  : (details?.endTime != null ? DateConverter.isoStringToLocalDate(details!.endTime!) : DateTime.now()),
-                              viewCount: details?.totalViews ?? 0,
+                                  ? (product.startTime != null ? DateConverter.isoStringToLocalDate(product.startTime!) : DateTime.now())
+                                  : (product.endTime != null ? DateConverter.isoStringToLocalDate(product.endTime!) : DateTime.now()),
+                              viewCount: product.totalViews ?? 0,
                               adminCommission: product.adminCommission ?? 0.0,
                               isAdminCommissionPaid: product.isAdminCommissionPaid ?? false,
                               claimPaymentStatus: product.claimTransaction?.paymentStatus,

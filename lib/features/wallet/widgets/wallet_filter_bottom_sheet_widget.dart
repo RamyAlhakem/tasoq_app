@@ -3,6 +3,7 @@ import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_asset_image
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_button_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_calendar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_date_range_picker_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/wallet/controllers/wallet_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/wallet/domain/models/wallet_transaction_model.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/date_converter.dart';
@@ -36,6 +37,7 @@ class _WalletFilterBottomSheetWidgetState extends State<WalletFilterBottomSheetW
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.sizeOf(context);
+    final List<String> walletEarnTypeList = AppConstants.getWalletEarnTypeList(isAuctionEnabled: Provider.of<SplashController>(context, listen: false).isAuctionEnabled);
 
     return Consumer<WalletController>(builder: (context, walletController, _) {
       return Container(
@@ -62,7 +64,6 @@ class _WalletFilterBottomSheetWidgetState extends State<WalletFilterBottomSheetW
           Expanded(child: SizedBox(child: SingleChildScrollView(child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ///Filter by
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall, horizontal: Dimensions.paddingSizeDefault),
                 child: Text(getTranslated('filter_by', context)!, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge, color:  Theme.of(context).textTheme.bodyLarge?.color)),
@@ -105,7 +106,6 @@ class _WalletFilterBottomSheetWidgetState extends State<WalletFilterBottomSheetW
               Divider(height: 1, color: Theme.of(context).hintColor.withValues(alpha: .15), thickness: 1),
 
 
-              ///Date Range
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall, horizontal: Dimensions.paddingSizeDefault),
                 child: Text(getTranslated('date_range', context)!, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge, color:  Theme.of(context).textTheme.bodyLarge?.color)),
@@ -163,13 +163,13 @@ class _WalletFilterBottomSheetWidgetState extends State<WalletFilterBottomSheetW
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
                 child: ListView.builder(
-                  itemCount: AppConstants.walletEarnTypeList.length,
+                  itemCount: walletEarnTypeList.length,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemBuilder: (context, index)=> _FilterItem(
-                    title: getTranslated(AppConstants.walletEarnTypeList[index], context),
-                    checked: walletController.selectedEarnByList?.contains(AppConstants.walletEarnTypeList[index]) ?? false,
-                    onTap: ()=> walletController.onUpdateEarnBy(AppConstants.walletEarnTypeList[index]),
+                    title: getTranslated(walletEarnTypeList[index], context),
+                    checked: walletController.selectedEarnByList?.contains(walletEarnTypeList[index]) ?? false,
+                    onTap: ()=> walletController.onUpdateEarnBy(walletEarnTypeList[index]),
                   ),
                 ),
               ),
@@ -178,7 +178,6 @@ class _WalletFilterBottomSheetWidgetState extends State<WalletFilterBottomSheetW
             ],
           )))),
 
-          ///Bottom button
           SafeArea(child: Container(
             padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
             decoration: BoxDecoration(

@@ -37,6 +37,16 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
   }
 
   @override
+  void dispose() {
+    fullNameController.dispose();
+    emailController.dispose();
+    phoneController.dispose();
+    subjectController.dispose();
+    messageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(centerTitle: true,title: '${getTranslated('contact_us', context)}'),

@@ -5,7 +5,7 @@ abstract class SupportTicketServiceInterface{
 
   Future<dynamic> createNewSupportTicket(SupportTicketBody supportTicketModel, List<XFile?> file);
 
-  Future<dynamic> getSupportReplyList(String ticketID);
+  Future<dynamic> getSupportReplyList(String ticketID, {int? offset});
 
   Future<dynamic> sendReply(String ticketID, String message, List<XFile?> file);
 

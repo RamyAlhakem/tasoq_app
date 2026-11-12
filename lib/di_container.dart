@@ -9,6 +9,11 @@ import 'package:flutter_sixvalley_ecommerce/features/address/domain/repositories
 import 'package:flutter_sixvalley_ecommerce/features/address/domain/services/address_service.dart';
 import 'package:flutter_sixvalley_ecommerce/features/address/domain/services/address_service_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/ai_shopping/controllers/ai_shopping_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_ai_shopping/controllers/wholesale_ai_shopping_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_ai_shopping/domain/repositories/wholesale_ai_shopping_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_ai_shopping/domain/repositories/wholesale_ai_shopping_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_ai_shopping/domain/services/wholesale_ai_shopping_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_ai_shopping/domain/services/wholesale_ai_shopping_service_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/ai_shopping/domain/repository/ai_shopping_repository.dart';
 import 'package:flutter_sixvalley_ecommerce/features/ai_shopping/domain/repository/ai_shopping_repository_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/ai_shopping/domain/services/ai_shopping_service.dart';
@@ -59,6 +64,112 @@ import 'package:flutter_sixvalley_ecommerce/features/auction_search/domain/repos
 import 'package:flutter_sixvalley_ecommerce/features/auction_search/domain/services/auction_search_service.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_search/domain/services/auction_search_service_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_transaction/controller/auction_transaction_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_attribute/controllers/wholesale_attribute_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_attribute/domain/repositories/wholesale_attribute_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_attribute/domain/repositories/wholesale_attribute_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_attribute/domain/services/wholesale_attribute_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_attribute/domain/services/wholesale_attribute_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_banner/controllers/wholesale_banner_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_banner/domain/repositories/wholesale_banner_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_banner/domain/repositories/wholesale_banner_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_banner/domain/services/wholesale_banner_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_banner/domain/services/wholesale_banner_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_brand/controllers/wholesale_brand_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_brand/domain/repositories/wholesale_brand_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_brand/domain/repositories/wholesale_brand_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_brand/domain/services/wholesale_brand_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_brand/domain/services/wholesale_brand_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_brand/controllers/wholesale_brand_list_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_brand/controllers/wholesale_brand_products_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_brand/domain/repositories/wholesale_brand_list_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_brand/domain/repositories/wholesale_brand_list_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_brand/domain/services/wholesale_brand_list_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_brand/domain/services/wholesale_brand_list_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_category/controllers/wholesale_category_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_category/domain/repositories/wholesale_category_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_category/domain/repositories/wholesale_category_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_category/domain/services/wholesale_category_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_category/domain/services/wholesale_category_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_product_details/controllers/wholesale_product_details_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_product_details/domain/repositories/wholesale_product_details_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_product_details/domain/repositories/wholesale_product_details_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_product_details/domain/services/wholesale_product_details_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_product_details/domain/services/wholesale_product_details_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_wishlist/controllers/wholesale_wishlist_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_wishlist/domain/repositories/wholesale_wishlist_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_wishlist/domain/repositories/wholesale_wishlist_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_wishlist/domain/services/wholesale_wishlist_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_wishlist/domain/services/wholesale_wishlist_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_cart/controllers/wholesale_cart_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_cart/domain/repositories/wholesale_cart_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_cart/domain/repositories/wholesale_cart_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_cart/domain/services/wholesale_cart_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_cart/domain/services/wholesale_cart_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_restock/controllers/wholesale_restock_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_restock/domain/repositories/wholesale_restock_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_restock/domain/repositories/wholesale_restock_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_restock/domain/services/wholesale_restock_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_restock/domain/services/wholesale_restock_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_product/controllers/wholesale_product_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_product/domain/repositories/wholesale_product_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_product/domain/repositories/wholesale_product_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_product/domain/services/wholesale_product_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_product/domain/services/wholesale_product_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_coupon/controllers/wholesale_coupon_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_coupon/domain/repositories/wholesale_coupon_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_coupon/domain/repositories/wholesale_coupon_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_coupon/domain/services/wholesale_coupon_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_coupon/domain/services/wholesale_coupon_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_checkout/controllers/wholesale_checkout_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_checkout/domain/repositories/wholesale_checkout_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_checkout/domain/repositories/wholesale_checkout_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_checkout/domain/services/wholesale_checkout_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_checkout/domain/services/wholesale_checkout_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_home/controllers/wholesale_home_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_search/controllers/wholesale_search_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_shop/controllers/wholesale_shop_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_shop/domain/repositories/wholesale_shop_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_shop/domain/repositories/wholesale_shop_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_shop/domain/services/wholesale_shop_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_shop/domain/services/wholesale_shop_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_search/domain/repositories/wholesale_search_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_search/domain/repositories/wholesale_search_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_search/domain/services/wholesale_search_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_search/domain/services/wholesale_search_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_home/domain/repositories/wholesale_home_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_home/domain/repositories/wholesale_home_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_home/domain/services/wholesale_home_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_home/domain/services/wholesale_home_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_order/controllers/wholesale_order_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_order/controllers/wholesale_refund_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_order/domain/repositories/wholesale_order_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_order/domain/repositories/wholesale_order_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_order/domain/repositories/wholesale_refund_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_order/domain/repositories/wholesale_refund_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_order/domain/services/wholesale_order_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_order/domain/services/wholesale_order_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_order/domain/services/wholesale_refund_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_order/domain/services/wholesale_refund_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_order/controllers/wholesale_review_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_order/domain/repositories/wholesale_review_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_order/domain/repositories/wholesale_review_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_order/domain/services/wholesale_review_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_order/domain/services/wholesale_review_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_offer_products/controllers/wholesale_offer_products_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_offer_products/domain/repositories/wholesale_offer_products_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_offer_products/domain/repositories/wholesale_offer_products_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_offer_products/domain/services/wholesale_offer_products_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_offer_products/domain/services/wholesale_offer_products_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_offers/controllers/wholesale_offers_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_offers/domain/repositories/wholesale_offers_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_offers/domain/repositories/wholesale_offers_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_offers/domain/services/wholesale_offers_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_offers/domain/services/wholesale_offers_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_campaign/controllers/wholesale_campaign_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_campaign/domain/repositories/wholesale_campaign_repository.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_campaign/domain/repositories/wholesale_campaign_repository_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_campaign/domain/services/wholesale_campaign_service.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_campaign/domain/services/wholesale_campaign_service_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_transaction/domain/repository/auction_transaction_repository.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_transaction/domain/repository/auction_transaction_repository_interface.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_transaction/domain/service/auction_transaction_service.dart';
@@ -360,6 +471,11 @@ Future<void> init() async {
   sl.registerFactory(() => CompareController(compareServiceInterface: sl()));
   sl.registerFactory(() => LoyaltyPointController(loyaltyPointServiceInterface: sl()));
   sl.registerFactory(() => CheckoutController(checkoutServiceInterface: sl()));
+  WholesaleCheckoutRepositoryInterface wholesaleCheckoutRepositoryInterface = WholesaleCheckoutRepository(dioClient: sl());
+  sl.registerLazySingleton(() => wholesaleCheckoutRepositoryInterface);
+  WholesaleCheckoutServiceInterface wholesaleCheckoutServiceInterface = WholesaleCheckoutService(wholesaleCheckoutRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleCheckoutServiceInterface);
+  sl.registerFactory(() => WholesaleCheckoutController(checkoutServiceInterface: sl(), wholesaleCheckoutServiceInterface: sl()));
   sl.registerFactory(() => AuctionCheckoutController(auctionCheckoutServiceInterface: sl()));
   sl.registerFactory(() => LocationController(locationServiceInterface: sl()));
   sl.registerFactory(() => ShippingController(shippingServiceInterface: sl()));
@@ -679,6 +795,14 @@ Future<void> init() async {
 
   sl.registerFactory(() => AiShoppingController(aiShoppingServiceInterface: sl()));
 
+  WholesaleAiShoppingRepositoryInterface wholesaleAiShoppingRepositoryInterface = WholesaleAiShoppingRepository(dioClient: sl());
+  sl.registerLazySingleton(() => wholesaleAiShoppingRepositoryInterface);
+
+  WholesaleAiShoppingServiceInterface wholesaleAiShoppingServiceInterface = WholesaleAiShoppingService(wholesaleAiShoppingRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleAiShoppingServiceInterface);
+
+  sl.registerFactory(() => WholesaleAiShoppingController(wholesaleAiShoppingServiceInterface: sl()));
+
   AuctionAiRepositoryInterface auctionAiRepositoryInterface =
   AuctionAiRepository(dioClient: sl());
   sl.registerLazySingleton(() => auctionAiRepositoryInterface);
@@ -743,5 +867,126 @@ Future<void> init() async {
   sl.registerLazySingleton(() => auctionTransactionServiceInterface);
 
   sl.registerFactory(() => AuctionTransactionController(serviceInterface: sl()));
+
+  WholesaleHomeRepositoryInterface wholesaleHomeRepositoryInterface = WholesaleHomeRepository(dioClient: sl(), dataSyncRepoInterface: sl());
+  sl.registerLazySingleton(() => wholesaleHomeRepositoryInterface);
+  WholesaleHomeServiceInterface wholesaleHomeServiceInterface = WholesaleHomeService(wholesaleHomeRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleHomeServiceInterface);
+  sl.registerFactory(() => WholesaleHomeController(wholesaleHomeServiceInterface: sl()));
+
+  WholesaleCategoryRepositoryInterface wholesaleCategoryRepositoryInterface = WholesaleCategoryRepository(dioClient: sl());
+  sl.registerLazySingleton(() => wholesaleCategoryRepositoryInterface);
+  WholesaleCategoryServiceInterface wholesaleCategoryServiceInterface = WholesaleCategoryService(wholesaleCategoryRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleCategoryServiceInterface);
+  sl.registerFactory(() => WholesaleCategoryController(wholesaleCategoryServiceInterface: sl()));
+
+  WholesaleProductRepositoryInterface wholesaleProductRepositoryInterface = WholesaleProductRepository(dioClient: sl());
+  sl.registerLazySingleton(() => wholesaleProductRepositoryInterface);
+  WholesaleProductServiceInterface wholesaleProductServiceInterface = WholesaleProductService(wholesaleProductRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleProductServiceInterface);
+  sl.registerFactory(() => WholesaleProductController(wholesaleProductServiceInterface: sl()));
+
+  WholesaleProductDetailsRepositoryInterface wholesaleProductDetailsRepositoryInterface = WholesaleProductDetailsRepository(dioClient: sl());
+  sl.registerLazySingleton(() => wholesaleProductDetailsRepositoryInterface);
+  WholesaleProductDetailsServiceInterface wholesaleProductDetailsServiceInterface = WholesaleProductDetailsService(wholesaleProductDetailsRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleProductDetailsServiceInterface);
+  sl.registerFactory(() => WholesaleProductDetailsController(wholesaleProductDetailsServiceInterface: sl()));
+
+  WholesaleWishlistRepositoryInterface wholesaleWishlistRepositoryInterface = WholesaleWishlistRepository(dioClient: sl());
+  sl.registerLazySingleton(() => wholesaleWishlistRepositoryInterface);
+  WholesaleWishlistServiceInterface wholesaleWishlistServiceInterface = WholesaleWishlistService(wholesaleWishlistRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleWishlistServiceInterface);
+  sl.registerFactory(() => WholesaleWishlistController(wholesaleWishlistServiceInterface: sl()));
+
+  WholesaleCartRepositoryInterface wholesaleCartRepositoryInterface = WholesaleCartRepository(dioClient: sl());
+  sl.registerLazySingleton(() => wholesaleCartRepositoryInterface);
+  WholesaleCartServiceInterface wholesaleCartServiceInterface = WholesaleCartService(wholesaleCartRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleCartServiceInterface);
+  sl.registerFactory(() => WholesaleCartController(wholesaleCartServiceInterface: sl()));
+
+  WholesaleRestockRepositoryInterface wholesaleRestockRepositoryInterface = WholesaleRestockRepository(dioClient: sl());
+  sl.registerLazySingleton(() => wholesaleRestockRepositoryInterface);
+  WholesaleRestockServiceInterface wholesaleRestockServiceInterface = WholesaleRestockService(wholesaleRestockRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleRestockServiceInterface);
+  sl.registerFactory(() => WholesaleRestockController(wholesaleRestockServiceInterface: sl()));
+
+  WholesaleBannerRepositoryInterface wholesaleBannerRepositoryInterface = WholesaleBannerRepository(dioClient: sl());
+  sl.registerLazySingleton(() => wholesaleBannerRepositoryInterface);
+  WholesaleBannerServiceInterface wholesaleBannerServiceInterface = WholesaleBannerService(wholesaleBannerRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleBannerServiceInterface);
+  sl.registerFactory(() => WholesaleBannerController(wholesaleBannerServiceInterface: sl()));
+
+  WholesaleBrandRepositoryInterface wholesaleBrandRepositoryInterface = WholesaleBrandRepository(dioClient: sl());
+  sl.registerLazySingleton(() => wholesaleBrandRepositoryInterface);
+  WholesaleBrandServiceInterface wholesaleBrandServiceInterface = WholesaleBrandService(wholesaleBrandRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleBrandServiceInterface);
+  sl.registerFactory(() => WholesaleBrandController(wholesaleBrandServiceInterface: sl()));
+
+  WholesaleBrandListRepositoryInterface wholesaleBrandListRepositoryInterface = WholesaleBrandListRepository(dioClient: sl());
+  sl.registerLazySingleton(() => wholesaleBrandListRepositoryInterface);
+  WholesaleBrandListServiceInterface wholesaleBrandListServiceInterface = WholesaleBrandListService(wholesaleBrandListRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleBrandListServiceInterface);
+  sl.registerFactory(() => WholesaleBrandListController(wholesaleBrandListServiceInterface: sl()));
+  sl.registerFactory(() => WholesaleBrandProductsController(wholesaleBrandListServiceInterface: sl()));
+
+  WholesaleAttributeRepositoryInterface wholesaleAttributeRepositoryInterface = WholesaleAttributeRepository(dioClient: sl());
+  sl.registerLazySingleton(() => wholesaleAttributeRepositoryInterface);
+  WholesaleAttributeServiceInterface wholesaleAttributeServiceInterface = WholesaleAttributeService(wholesaleAttributeRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleAttributeServiceInterface);
+  sl.registerFactory(() => WholesaleAttributeController(wholesaleAttributeServiceInterface: sl()));
+
+  WholesaleCouponRepositoryInterface wholesaleCouponRepositoryInterface = WholesaleCouponRepository(dioClient: sl());
+  sl.registerLazySingleton(() => wholesaleCouponRepositoryInterface);
+  WholesaleCouponServiceInterface wholesaleCouponServiceInterface = WholesaleCouponService(wholesaleCouponRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleCouponServiceInterface);
+  sl.registerFactory(() => WholesaleCouponController(wholesaleCouponServiceInterface: sl()));
+
+  WholesaleOrderRepositoryInterface wholesaleOrderRepositoryInterface = WholesaleOrderRepository(dioClient: sl());
+  sl.registerLazySingleton(() => wholesaleOrderRepositoryInterface);
+  WholesaleOrderServiceInterface wholesaleOrderServiceInterface = WholesaleOrderService(wholesaleOrderRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleOrderServiceInterface);
+  sl.registerFactory(() => WholesaleOrderController(wholesaleOrderServiceInterface: sl()));
+
+  WholesaleRefundRepositoryInterface wholesaleRefundRepositoryInterface = WholesaleRefundRepository(dioClient: sl());
+  sl.registerLazySingleton(() => wholesaleRefundRepositoryInterface);
+  WholesaleRefundServiceInterface wholesaleRefundServiceInterface = WholesaleRefundService(wholesaleRefundRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleRefundServiceInterface);
+  sl.registerFactory(() => WholesaleRefundController(wholesaleRefundServiceInterface: sl()));
+
+  WholesaleReviewRepositoryInterface wholesaleReviewRepositoryInterface = WholesaleReviewRepository(dioClient: sl());
+  sl.registerLazySingleton(() => wholesaleReviewRepositoryInterface);
+  WholesaleReviewServiceInterface wholesaleReviewServiceInterface = WholesaleReviewService(wholesaleReviewRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleReviewServiceInterface);
+  sl.registerFactory(() => WholesaleReviewController(wholesaleReviewServiceInterface: sl()));
+
+  WholesaleOfferProductsRepositoryInterface wholesaleOfferProductsRepositoryInterface = WholesaleOfferProductsRepository(dioClient: sl());
+  sl.registerLazySingleton(() => wholesaleOfferProductsRepositoryInterface);
+  WholesaleOfferProductsServiceInterface wholesaleOfferProductsServiceInterface = WholesaleOfferProductsService(wholesaleOfferProductsRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleOfferProductsServiceInterface);
+  sl.registerFactory(() => WholesaleOfferProductsController(wholesaleOfferProductsServiceInterface: sl()));
+
+  WholesaleOffersRepositoryInterface wholesaleOffersRepositoryInterface = WholesaleOffersRepository(dioClient: sl());
+  sl.registerLazySingleton(() => wholesaleOffersRepositoryInterface);
+  WholesaleOffersServiceInterface wholesaleOffersServiceInterface = WholesaleOffersService(wholesaleOffersRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleOffersServiceInterface);
+  sl.registerFactory(() => WholesaleOffersController(wholesaleOffersServiceInterface: sl()));
+
+  WholesaleCampaignRepositoryInterface wholesaleCampaignRepositoryInterface = WholesaleCampaignRepository(dioClient: sl());
+  sl.registerLazySingleton(() => wholesaleCampaignRepositoryInterface);
+  WholesaleCampaignServiceInterface wholesaleCampaignServiceInterface = WholesaleCampaignService(wholesaleCampaignRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleCampaignServiceInterface);
+  sl.registerFactory(() => WholesaleCampaignController(wholesaleCampaignServiceInterface: sl()));
+
+  WholesaleSearchRepositoryInterface wholesaleSearchRepositoryInterface = WholesaleSearchRepository(dioClient: sl(), sharedPreferences: sl());
+  sl.registerLazySingleton(() => wholesaleSearchRepositoryInterface);
+  WholesaleSearchServiceInterface wholesaleSearchServiceInterface = WholesaleSearchService(wholesaleSearchRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleSearchServiceInterface);
+  sl.registerFactory(() => WholesaleSearchController(wholesaleSearchServiceInterface: sl()));
+
+  WholesaleShopRepositoryInterface wholesaleShopRepositoryInterface = WholesaleShopRepository(dioClient: sl());
+  sl.registerLazySingleton(() => wholesaleShopRepositoryInterface);
+  WholesaleShopServiceInterface wholesaleShopServiceInterface = WholesaleShopService(wholesaleShopRepositoryInterface: sl());
+  sl.registerLazySingleton(() => wholesaleShopServiceInterface);
+  sl.registerFactory(() => WholesaleShopController(wholesaleShopServiceInterface: sl()));
 
 }

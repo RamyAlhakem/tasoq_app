@@ -50,7 +50,7 @@ abstract class AuthServiceInterface{
 
   Future<dynamic> verifyPhone(String phone,  String otp, String token);
 
-  Future<dynamic> verifyOtp(String otp,  String identity);
+  Future<dynamic> verifyOtp(String identity, String otp, {String purpose});
 
   Future<void> saveUserEmailAndPassword(String userData);
 
@@ -62,13 +62,13 @@ abstract class AuthServiceInterface{
 
   Future<dynamic> firebaseAuthVerify({required String phoneNumber, required String session, required String otp, required bool isForgetPassword});
 
-  Future<dynamic> registerWithOtp(String name, {String? email, required String phone});
+  Future<dynamic> registerWithOtp({required String fName, String? lName, String? email, required String phone, required String temporaryToken, String? referralCode});
 
-  Future<dynamic> registerWithSocialMedia(String name, {required String email,String? phone});
+  Future<dynamic> registerWithSocialMedia({required String token, required String uniqueId, required String medium, required String phone});
 
   Future<dynamic> verifyToken(String email, String token);
 
-  Future<dynamic> existingAccountCheck({required String email, required int userResponse, required String medium});
+  Future<dynamic> existingAccountCheck({required String email, required int userResponse, required String medium, required String token, required String uniqueId});
 
   Future<dynamic>  verifyProfileInfo({required String userInput, required String token, required String type});
 

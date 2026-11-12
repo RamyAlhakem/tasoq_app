@@ -25,37 +25,6 @@ class _AuctionProductDetailsWidgetState extends State<AuctionProductDetailsWidge
 
   bool get _isLong => widget.description.isNotEmpty && widget.description.length > 400;
 
-  Widget _buildToggleButton(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Theme.of(context).cardColor,
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 12,
-            offset: Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        shape: const CircleBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => setState(() => _isExpanded = !_isExpanded),
-          child: Icon(
-            _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-            color: Theme.of(context).textTheme.bodyLarge?.color,
-            size: 24,
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -133,7 +102,10 @@ class _AuctionProductDetailsWidgetState extends State<AuctionProductDetailsWidge
                 if (_isLong && !_isExpanded)
                   Padding(
                     padding: const EdgeInsets.only(bottom: Dimensions.homePagePadding),
-                    child: _buildToggleButton(context),
+                    child: DescriptionToggleButton(
+                      isExpanded: _isExpanded,
+                      onToggle: () => setState(() => _isExpanded = !_isExpanded),
+                    ),
                   ),
               ],
             ),
@@ -142,7 +114,12 @@ class _AuctionProductDetailsWidgetState extends State<AuctionProductDetailsWidge
           if (_isLong && _isExpanded)
             Padding(
               padding: const EdgeInsets.only(top: 10, bottom: Dimensions.homePagePadding),
-              child: Center(child: _buildToggleButton(context)),
+              child: Center(
+                child: DescriptionToggleButton(
+                  isExpanded: _isExpanded,
+                  onToggle: () => setState(() => _isExpanded = !_isExpanded),
+                ),
+              ),
             ),
 
           if (widget.videoProvider == 'youtube_link' && (widget.videoUrl?.isNotEmpty ?? false)) ...[
@@ -155,6 +132,45 @@ class _AuctionProductDetailsWidgetState extends State<AuctionProductDetailsWidge
             CustomVideoPlayerWidget(url: widget.customVideoUrl!),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class DescriptionToggleButton extends StatelessWidget {
+  final bool isExpanded;
+  final VoidCallback onToggle;
+
+  const DescriptionToggleButton({super.key, required this.isExpanded, required this.onToggle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Theme.of(context).cardColor,
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 12,
+            offset: Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onToggle,
+          child: Icon(
+            isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+            size: 24,
+          ),
+        ),
       ),
     );
   }

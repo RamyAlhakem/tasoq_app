@@ -4,4 +4,6 @@ abstract class NotificationRepositoryInterface implements RepositoryInterface{
   Future<dynamic> seenNotification(int id);
   Future<dynamic> getAuctionList({int limit = 10, int offset = 1});
   Future<dynamic> markAuctionSeen({int? id});
+  Future<dynamic> getWholesaleList({int limit = 10, int offset = 1});
+  Future<dynamic> markWholesaleSeen(int id);
 }

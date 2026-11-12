@@ -1,3 +1,5 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
+
 class AuctionProductListModel {
   int? totalSize;
   int? limit;
@@ -7,12 +9,15 @@ class AuctionProductListModel {
   AuctionProductListModel({this.totalSize, this.limit, this.offset, this.products});
 
   AuctionProductListModel.fromJson(Map<String, dynamic> json) {
-    totalSize = json['total_size'];
-    limit = json['limit'];
-    offset = json['offset'];
-    if (json['products'] != null) {
-      products = <AuctionProduct>[];
-      json['products'].forEach((v) => products!.add(AuctionProduct.fromJson(v)));
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json, legacyKeys: ['products']);
+    totalSize = envelope.totalSize;
+    limit = envelope.limit;
+    offset = envelope.offset;
+    if (envelope.data != null) {
+      products = <AuctionProduct>[
+        for (final Map row in envelope.data!.whereType<Map>())
+          AuctionProduct.fromJson(Map<String, dynamic>.from(row)),
+      ];
     }
   }
 }
@@ -27,6 +32,9 @@ class AuctionProduct {
   double? startingPrice;
   ThumbnailFullUrl? thumbnailFullUrl;
   AuctionDetails? auctionDetails;
+  int? totalViews;
+  int? totalBids;
+  double? highestBidAmount;
 
   AuctionProduct({
     this.id,
@@ -38,6 +46,9 @@ class AuctionProduct {
     this.startingPrice,
     this.thumbnailFullUrl,
     this.auctionDetails,
+    this.totalViews,
+    this.totalBids,
+    this.highestBidAmount,
   });
 
   AuctionProduct.fromJson(Map<String, dynamic> json) {
@@ -49,7 +60,11 @@ class AuctionProduct {
     brandId = json['brand_id'];
     startingPrice = json['starting_price'] != null ? double.tryParse(json['starting_price'].toString()) : null;
     thumbnailFullUrl = json['thumbnail_full_url'] != null ? ThumbnailFullUrl.fromJson(json['thumbnail_full_url']) : null;
-    auctionDetails = json['auction_details'] != null ? AuctionDetails.fromJson(json['auction_details']) : null;
+    auctionDetails = json['auction_details'] is Map
+        ? AuctionDetails.fromJson(Map<String, dynamic>.from(json['auction_details'])) : AuctionDetails.fromProductJson(json);
+    totalViews = json['total_views'];
+    totalBids = json['total_bids'];
+    highestBidAmount = json['highest_bid_amount'] != null ? double.tryParse(json['highest_bid_amount'].toString()) : null;
   }
 }
 
@@ -81,6 +96,8 @@ class AuctionDetails {
     totalViews = json['total_views'];
     status = json['status']?.toString();
   }
+
+  AuctionDetails.fromProductJson(Map<String, dynamic> json) : this.fromJson({...json, 'status': json['auction_current_status']});
 }
 
 class ThumbnailFullUrl {

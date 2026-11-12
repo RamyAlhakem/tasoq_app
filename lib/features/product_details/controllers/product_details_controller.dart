@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/controllers/seller_product_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/domain/models/product_details_model.dart';
@@ -53,32 +54,32 @@ class ProductDetailsController extends ChangeNotifier {
 
   Future<void> getProductDetails(BuildContext context, String productId, String slug) async {
     _isDetails = true;
+    _productDetailsModel = null;
+
     log("=====slug===>$slug/ $productId");
+
     ApiResponseModel apiResponse = await productDetailsServiceInterface.get(slug);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       _isDetails = false;
-      _productDetailsModel = ProductDetailsModel.fromJson(apiResponse.response!.data);
+      try {
+        _productDetailsModel = ProductDetailsModel.fromJson(apiResponse.response!.data);
+      } catch (e) {
+        log("=====product details parse failed===>$e");
+      }
       if(_productDetailsModel != null){
-        log("=====slug===>$slug/ $productId");
-        // Provider.of<SellerProductController>(Get.context!, listen: false).
-        // getSellerProductList(_productDetailsModel?.addedBy == 'admin' ? '0' : productDetailsModel!.userId.toString(), 1, productId, reload: true);
 
-        Provider.of<SellerProductController>(Get.context!, listen: false).
-        getSellerMoreProductList(_productDetailsModel?.addedBy == 'admin' ?
+        // v6 excludes the current product by numeric id and rejects a slug with 422.
+        Provider.of<SellerProductController>(Get.context!, listen: false).getSellerMoreProductList(_productDetailsModel?.addedBy == 'admin' ?
           Provider.of<SplashController>(Get.context!, listen: false).configModel?.inHouseShop?.slug ?? ''
-          : productDetailsModel!.seller!.shop!.slug.toString(), 1, productId);
-
+            : productDetailsModel!.seller!.shop!.slug.toString(), 1, '${_productDetailsModel!.id ?? ''}');
       }
     } else {
       _isDetails = false;
-      showCustomSnackBarWidget(apiResponse.error.toString(), Get.context!, snackBarType: SnackBarType.error);
+      ApiChecker.checkApi(apiResponse);
     }
     _isDetails = false;
     notifyListeners();
   }
-
-
-
 
   void initData(ProductDetailsModel product, int? minimumOrderQuantity, BuildContext context) {
     _variantIndex = 0;
@@ -99,13 +100,12 @@ class ProductDetailsController extends ChangeNotifier {
     }
   }
 
-
-
   void getCount(String productID, BuildContext context) async {
     ApiResponseModel apiResponse = await productDetailsServiceInterface.getCount(productID);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _orderCount = apiResponse.response!.data['order_count'];
-      _wishCount = apiResponse.response!.data['wishlist_count'];
+      final Map content = ApiEnvelope.content(apiResponse.response!.data);
+      _orderCount = int.tryParse('${content['order_count']}');
+      _wishCount = int.tryParse('${content['wishlist_count']}');
     } else {
       ApiChecker.checkApi( apiResponse);
     }
@@ -116,7 +116,7 @@ class ProductDetailsController extends ChangeNotifier {
   void getSharableLink(String productID, BuildContext context) async {
     ApiResponseModel apiResponse = await productDetailsServiceInterface.getSharableLink(productID);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
-      _sharableLink = apiResponse.response!.data;
+      _sharableLink = ApiEnvelope.content(apiResponse.response!.data)['link']?.toString();
     } else {
       ApiChecker.checkApi(apiResponse);
     }

@@ -82,11 +82,16 @@ class TransactionWidget extends StatelessWidget {
             ),
             const SizedBox(height: Dimensions.paddingSizeExtraSmall,),
 
+            Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: Dimensions.paddingSizeSmall, runSpacing: Dimensions.paddingSizeExtraSmall,
+              children: [
+                transactionModel?.paymentMethod != null?
+                Text('${getTranslated(transactionModel?.transactionType, context)} ${getTranslated('via', context)} ${(transactionModel?.paymentMethod??'').replaceAll('_', ' ')}', style: textRegular.copyWith(color: Theme.of(context).hintColor),):
+                Text('${getTranslated(transactionModel?.transactionType, context)}', style: textRegular.copyWith(color: Theme.of(context).hintColor),),
 
-
-            transactionModel?.paymentMethod != null?
-            Text('${getTranslated(transactionModel?.transactionType, context)} ${getTranslated('via', context)} ${(transactionModel?.paymentMethod??'').replaceAll('_', ' ')}', style: textRegular.copyWith(color: Theme.of(context).hintColor),):
-            Text('${getTranslated(transactionModel?.transactionType, context)}', style: textRegular.copyWith(color: Theme.of(context).hintColor),),
+                if(transactionModel?.businessModule != null && transactionModel!.businessModule!.isNotEmpty)
+                  TransactionModuleTagWidget(businessModule: transactionModel!.businessModule!),
+              ],
+            ),
 
 
           ],)),
@@ -106,5 +111,32 @@ class TransactionWidget extends StatelessWidget {
             child: Divider(thickness: .4,color: Theme.of(context).hintColor.withValues(alpha:.8),),),
         ],
       ),);
+  }
+}
+
+class TransactionModuleTagWidget extends StatelessWidget {
+  final String businessModule;
+  const TransactionModuleTagWidget({super.key, required this.businessModule});
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color = switch (businessModule) {
+      'wholesale' => Colors.orange,
+      'auction' => Colors.purple,
+      _ => Theme.of(context).primaryColor,
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .1),
+        borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraSmall),
+        border: Border.all(color: color.withValues(alpha: .5), width: .5),
+      ),
+      child: Text(
+        getTranslated(businessModule, context) ?? businessModule.replaceAll('_', ' '),
+        style: textRegular.copyWith(color: color, fontSize: Dimensions.fontSizeSmall),
+      ),
+    );
   }
 }

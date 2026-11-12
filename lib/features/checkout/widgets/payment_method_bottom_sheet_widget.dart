@@ -37,6 +37,12 @@ class PaymentMethodBottomSheetWidgetState extends State<PaymentMethodBottomSheet
     super.initState();
   }
 
+  @override
+  void dispose() {
+    changeAmountTextController.dispose();
+    super.dispose();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -118,7 +124,6 @@ class PaymentMethodBottomSheetWidgetState extends State<PaymentMethodBottomSheet
                             ]),
 
 
-                            ///change amount
                             ChangeAmountWidget(changeAmountTextController: changeAmountTextController),
 
 

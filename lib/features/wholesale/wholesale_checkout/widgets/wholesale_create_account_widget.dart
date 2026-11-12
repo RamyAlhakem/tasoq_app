@@ -1,0 +1,88 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_textfield_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/features/wholesale/wholesale_checkout/controllers/wholesale_checkout_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/helper/velidate_check.dart';
+import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
+import 'package:flutter_sixvalley_ecommerce/theme/controllers/theme_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
+import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
+import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
+import 'package:provider/provider.dart';
+
+class WholesaleCreateAccountWidget extends StatelessWidget {
+  final GlobalKey<FormState> formKey;
+  const WholesaleCreateAccountWidget({super.key, required this.formKey});
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isDark = Provider.of<ThemeController>(context, listen: false).darkTheme;
+
+    return Consumer<WholesaleCheckoutController>(
+      builder: (context, checkoutController, _) {
+        return Container(
+          padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            boxShadow: isDark ? null : [BoxShadow(color: Theme.of(context).hintColor.withValues(alpha: 0.2), spreadRadius: 3, blurRadius: 3)],
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              SizedBox(
+                height: 24,
+                width: 30,
+                child: Checkbox(
+                  visualDensity: VisualDensity.compact,
+                  side: WidgetStateBorderSide.resolveWith(
+                      (states) => BorderSide(width: 2, color: isDark ? Theme.of(context).hintColor.withValues(alpha: 0.5) : Theme.of(context).primaryColor.withValues(alpha: 0.10))),
+                  checkColor: Colors.white,
+                  value: checkoutController.isCheckCreateAccount,
+                  onChanged: (bool? value) {
+                    checkoutController.setIsCheckCreateAccount(value!, update: true);
+                  },
+                ),
+              ),
+              Text(getTranslated('create_account_with', context) ?? '',
+                  style: textMedium.copyWith(fontSize: Dimensions.fontSizeDefault, color: Theme.of(context).textTheme.bodyLarge?.color)),
+            ]),
+
+            Text(getTranslated('your_provided_phone_number_use_as_a_login_credential', context) ?? '',
+                style: textRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).textTheme.titleMedium?.color)),
+
+            if (checkoutController.isCheckCreateAccount)
+              Form(
+                key: formKey,
+                child: Column(children: [
+                  const SizedBox(height: Dimensions.paddingSizeSmall),
+                  CustomTextFieldWidget(
+                    prefixIcon: Images.lockSvg,
+                    prefixColor: isDark ? Colors.white : Theme.of(context).primaryColor,
+                    suffixColor: isDark ? Colors.white : Theme.of(context).primaryColor,
+                    hintText: getTranslated('minimum_password_length', context),
+                    labelText: getTranslated('password', context),
+                    controller: checkoutController.passwordController,
+                    isPassword: true,
+                    required: true,
+                    inputAction: TextInputAction.next,
+                    validator: (value) => ValidateCheck.validatePassword(value, "password_must_be_required"),
+                  ),
+                  const SizedBox(height: Dimensions.paddingSizeSmall),
+                  CustomTextFieldWidget(
+                    prefixIcon: Images.lockSvg,
+                    prefixColor: isDark ? Colors.white : Theme.of(context).primaryColor,
+                    suffixColor: isDark ? Colors.white : Theme.of(context).primaryColor,
+                    isPassword: true,
+                    required: true,
+                    hintText: getTranslated('re_enter_password', context),
+                    labelText: getTranslated('re_enter_password', context),
+                    controller: checkoutController.confirmPasswordController,
+                    inputAction: TextInputAction.done,
+                    validator: (value) => ValidateCheck.validateConfirmPassword(value, checkoutController.passwordController.text.trim()),
+                  ),
+                ]),
+              ),
+          ]),
+        );
+      },
+    );
+  }
+}

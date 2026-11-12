@@ -1,6 +1,8 @@
 
 
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/image_full_url.dart';
+import 'package:flutter_sixvalley_ecommerce/features/order_details/domain/models/order_details_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shop/domain/models/seller_model.dart';
 
 class OrderModel {
@@ -12,12 +14,13 @@ class OrderModel {
   OrderModel({this.totalSize, this.limit, this.offset, this.orders});
 
   OrderModel.fromJson(Map<String, dynamic> json) {
-    totalSize = json['total_size'];
-    limit = json['limit'];
-    offset = json['offset'];
-    if (json['orders'] != null) {
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json, legacyKeys: ['orders']);
+    totalSize = envelope.totalSize;
+    limit = envelope.limit?.toString();
+    offset = envelope.offset?.toString();
+    if (envelope.data != null) {
       orders = <Orders>[];
-      json['orders'].forEach((v) {
+      envelope.data!.forEach((v) {
         orders!.add(Orders.fromJson(v));
       });
     }
@@ -63,6 +66,7 @@ class Orders {
   int? billingAddress;
   BillingAddressData? billingAddressData;
   String? orderType;
+  String? businessModule;
   double? extraDiscount;
   String? extraDiscountType;
   String? freeDeliveryBearer;
@@ -81,6 +85,12 @@ class Orders {
   int? editedStatus;
   double? editDueAmount;
   double? editReturnAmount;
+  // v6 puts these directly on the order object instead of duplicating them
+  // onto every line item (previously read via orderDetails[0].order?.X).
+  DeliveryManReview? deliveryManReview;
+  OfflinePayments? offlinePayments;
+  List<VerificationImages>? verificationImages;
+  OrderEditHistory? latestEditHistory;
 
 
 
@@ -121,6 +131,7 @@ class Orders {
         this.billingAddress,
         this.billingAddressData,
         this.orderType,
+        this.businessModule,
         this.extraDiscount,
         this.extraDiscountType,
         this.freeDeliveryBearer,
@@ -139,13 +150,19 @@ class Orders {
         this.taxModel,
         this.editedStatus,
         this.editDueAmount,
-        this.editReturnAmount
+        this.editReturnAmount,
+        this.deliveryManReview,
+        this.offlinePayments,
+        this.verificationImages,
+        this.latestEditHistory
       });
 
   Orders.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     customerId = json['customer_id'];
-    if(json['temporary_close'] != null){
+    if(json['is_guest'] != null){
+      isGuest = int.tryParse(json['is_guest'].toString());
+    }else if(json['temporary_close'] != null){
       isGuest = int.parse(json['temporary_close'].toString());
     }else{
       isGuest = 0;
@@ -158,9 +175,9 @@ class Orders {
     transactionRef = json['transaction_ref'];
     paymentBy = json['payment_by'];
     paymentNote = json['payment_note'];
-    orderAmount = json['order_amount'].toDouble();
+    orderAmount = double.tryParse(json['order_amount'].toString()) ?? 0;
     if (json['paid_amount'] != null) {
-      paidAmount = json['paid_amount'].toDouble();
+      paidAmount = double.tryParse(json['paid_amount'].toString()) ?? 0;
     }else{
       paidAmount = 0;
     }
@@ -168,18 +185,20 @@ class Orders {
     cause = json['cause'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
-    discountAmount = json['discount_amount'].toDouble();
+    discountAmount = double.tryParse(json['discount_amount'].toString()) ?? 0;
     discountType = json['discount_type'];
     couponCode = json['coupon_code'];
     couponDiscountBearer = json['coupon_discount_bearer'];
     shippingMethodId = json['shipping_method_id'];
-    shippingCost = json['shipping_cost'].toDouble();
+    shippingCost = double.tryParse(json['shipping_cost'].toString()) ?? 0;
     isShippingFree = json['is_shipping_free']??false;
     orderGroupId = json['order_group_id'];
     verificationCode = json['verification_code'];
     verificationStatus = json['verification_status']??false;
     sellerId = json['seller_id'];
     sellerIs = json['seller_is'];
+    // `shipping_address` is a different, raw FK relation object on v6 (confirmed
+    // by backend) — the address snapshot the UI needs is always `shipping_address_data`.
     final shippingData = json['shipping_address_data'];
     shippingAddressData = shippingData is Map<String, dynamic> ? ShippingAddressData.fromJson(shippingData) : null;
     deliveryManId = json['delivery_man_id'];
@@ -192,10 +211,15 @@ class Orders {
     expectedDeliveryDate = json['expected_delivery_date'];
     deliverymanAssignedAt = json['deliveryman_assigned_at'];
     orderNote = json['order_note'];
-    billingAddress = json['billing_address'];
-    billingAddressData = (json['billing_address_data'] != null  && json['billing_address_data'] is  !List) ? BillingAddressData.fromJson(json['billing_address_data']) : null;
+    // `billing_address` is a different, raw FK relation object on v6 (confirmed
+    // by backend), not the scalar id it used to be — unused elsewhere, so drop it.
+    billingAddress = json['billing_address'] is Map ? null : json['billing_address'];
+    // The address snapshot the UI needs is always `billing_address_data`.
+    final dynamic billingData = json['billing_address_data'];
+    billingAddressData = (billingData != null && billingData is! List) ? BillingAddressData.fromJson(billingData) : null;
     orderType = json['order_type'];
-    extraDiscount = json['extra_discount'].toDouble();
+    businessModule = json['business_module'];
+    extraDiscount = double.tryParse(json['extra_discount'].toString()) ?? 0;
     extraDiscountType = json['extra_discount_type'];
     freeDeliveryBearer = json['free_delivery_bearer'];
     shippingType = json['shipping_type'];
@@ -223,6 +247,15 @@ class Orders {
     editedStatus = json['edited_status'];
     editDueAmount = json['edit_due_amount'] != null ? double.tryParse(json['edit_due_amount'].toString()) : null;
     editReturnAmount = json['edit_return_amount'] != null ? double.tryParse(json['edit_return_amount'].toString()) : null;
+    deliveryManReview = json['delivery_man_review'] != null ? DeliveryManReview.fromJson(json['delivery_man_review']) : null;
+    offlinePayments = json['offline_payments'] != null ? OfflinePayments.fromJson(json['offline_payments']) : null;
+    if (json['verification_images'] != null) {
+      verificationImages = <VerificationImages>[];
+      json['verification_images'].forEach((v) {
+        verificationImages!.add(VerificationImages.fromJson(v));
+      });
+    }
+    latestEditHistory = json['latest_edit_history'] != null ? OrderEditHistory.fromJson(json['latest_edit_history']) : null;
 
   }
 }

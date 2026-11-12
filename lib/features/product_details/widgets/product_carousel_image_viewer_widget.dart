@@ -88,15 +88,11 @@ class _ProductCarouselImageViewerWidgetState extends State<ProductCarouselImageV
                         ),
 
                     if ((productModel.discount ?? 0) > 0 || productModel.clearanceSale != null)
-                        Positioned(
-                          top: 0,
-                          left: 0,
-                          child: DiscountTagDetailsWidget(
-                            productModel: productModel,
-                            positionedTop: 0,
-                            topLeftBorderRadius: Dimensions.radiusDefault,
-                            bottomRightBorderRadius: Dimensions.radiusDefault,
-                          ),
+                        DiscountTagDetailsWidget(
+                          productModel: productModel,
+                          positionedTop: 0,
+                          topLeftBorderRadius: Dimensions.radiusDefault,
+                          bottomRightBorderRadius: Dimensions.radiusDefault,
                         ),
                     ]
                   ),

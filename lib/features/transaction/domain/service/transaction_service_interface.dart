@@ -7,10 +7,19 @@ abstract class TransactionServiceInterface {
     required CommissionPayRequestModel commissionPayRequest,
   });
 
-  Future<dynamic> storeOrUpdateWithdraw({
+  Future<dynamic> createWithdraw({
     required int auctionProductId,
     required int withdrawMethodId,
-    int? existingWithdrawId,
+    double? amount,
+    Map<String, dynamic>? methodInfo,
+    String? transactionNote,
+    String? currentCurrencyCode,
+  });
+
+  Future<dynamic> updateWithdraw({
+    required int withdrawId,
+    required int auctionProductId,
+    required int withdrawMethodId,
     double? amount,
     Map<String, dynamic>? methodInfo,
     String? transactionNote,

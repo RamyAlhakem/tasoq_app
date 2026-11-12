@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_app_bar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/no_internet_screen_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/not_loggedin_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_sliver_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/enums/auction_enum.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction/controllers/customer_auction_list_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction/domain/models/customer_auction_list_model.dart';
@@ -63,9 +63,17 @@ class _MyBidsScreenState extends State<MyBidsScreen> {
     super.dispose();
   }
 
-  void _fetchList({bool isRefresh = false}) {
+  Future<void> _fetchList({bool isRefresh = false}) {
     final String? auctionStatus = _auctionStatusFilters[_selectedTab];
-    Provider.of<CustomerAuctionListController>(context, listen: false).getCustomerAuctionList(context, status: 'all', auctionStatus: auctionStatus, isRefresh: isRefresh);
+    return Provider.of<CustomerAuctionListController>(context, listen: false)
+        .getCustomerAuctionList(context, status: 'all', auctionStatus: auctionStatus, isRefresh: isRefresh);
+  }
+
+  DateTime _countdownTarget(CustomerAuctionProduct product) {
+    final bool isLive = product.currentAuctionStatus != null
+        ? product.currentAuctionStatus!.isLive : product.auctionStatus?.isLive == true;
+    final String? time = isLive ? product.endTime : product.startTime;
+    return time != null ? DateConverter.isoStringToLocalDate(time) : DateTime.now();
   }
 
   void _onTabChanged(int index) {
@@ -122,28 +130,39 @@ class _MyBidsScreenState extends State<MyBidsScreen> {
                       }
 
                       if (!controller.isLoading && controller.auctionList.isEmpty) {
-                        return NoInternetOrDataScreenWidget(isNoInternet: false, message: getTranslated('no_auction_found', context) ?? 'No auctions found');
+                        return RefreshIndicator(
+                          onRefresh: () => _fetchList(isRefresh: true),
+                          child: CustomScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            slivers: [
+                              SliverFillRemaining(
+                                hasScrollBody: false,
+                                child: NoInternetOrDataScreenWidget(isNoInternet: false, message: getTranslated('no_auction_found', context) ?? 'No auctions found'),
+                              ),
+                            ],
+                          ),
+                        );
                       }
 
                       return RefreshIndicator(
-                        onRefresh: () async => _fetchList(isRefresh: true),
-                        child: SingleChildScrollView(
+                        onRefresh: () => _fetchList(isRefresh: true),
+                        child: CustomScrollView(
                           controller: _scrollController,
-                          child: PaginatedListView(
-                            scrollController: _scrollController,
-                            totalSize: controller.totalSize,
-                            offset: controller.currentOffset,
-                            limit: 10,
-                            onPaginate: (_) => controller.loadMore(context),
-                            itemView: ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: controller.auctionList.length,
-                              itemBuilder: (context, index) {
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          slivers: [
+                            PaginatedSliverListView(
+                              scrollController: _scrollController,
+                              totalSize: controller.totalSize,
+                              offset: controller.currentOffset,
+                              limit: 10,
+                              onPaginate: (_) => controller.loadMore(context),
+                              itemView: SliverList(
+                                delegate: SliverChildBuilderDelegate(
+                                  (context, index) {
                                 final CustomerAuctionProduct product = controller.auctionList[index];
                                 final bool isLive = product.auctionStatus?.isLive == true;
                                 final bool showBidActions = (product.auctionStatus?.isLive == true) && product.hasMyBid;
-
+  
                                 return Padding(
                                   padding: const EdgeInsets.only(
                                     left: Dimensions.homePagePadding,
@@ -158,11 +177,11 @@ class _MyBidsScreenState extends State<MyBidsScreen> {
                                     productName: product.name ?? '',
                                     startingPrice: product.startingPrice ?? 0,
                                     highestBidAmount: product.highestBidAmount ?? 0,
-                                    targetTime: product.endTime != null ? DateConverter.isoStringToLocalDate(product.endTime!) : DateTime.now(),
+                                    targetTime: _countdownTarget(product),
                                     viewCount: product.totalViews ?? 0,
                                     bidCount: product.totalParticipantsCount,
                                     isOutbid: product.isOutbid,
-                                    hasBid: product.myBid != null,
+                                    hasBid: product.hasMyBid,
                                     auctionStatus: product.auctionStatus,
                                     currentAuctionStatus: product.currentAuctionStatus,
                                     trackingUrl: product.trackingUrl,
@@ -196,9 +215,13 @@ class _MyBidsScreenState extends State<MyBidsScreen> {
                                     },
                                   ),
                                 );
-                              },
+                                  },
+                                  childCount: controller.auctionList.length,
+                                ),
+                              ),
                             ),
-                          ),
+                            const SliverToBoxAdapter(child: SizedBox(height: Dimensions.bottomSpace)),
+                          ],
                         ),
                       );
                     },

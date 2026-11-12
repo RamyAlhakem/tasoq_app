@@ -1,3 +1,4 @@
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/domain/models/product_model.dart';
 
 
@@ -6,13 +7,12 @@ class CompareModel {
 
   CompareModel({this.compareLists});
 
-  CompareModel.fromJson(Map<String, dynamic> json) {
-    if (json['compare_lists'] != null) {
-      compareLists = <CompareLists>[];
-      json['compare_lists'].forEach((v) {
-        compareLists!.add(CompareLists.fromJson(v));
-      });
-    }
+  CompareModel.fromJson(dynamic json) {
+    // v6 returns the rows at content.data; the list is never paginated here.
+    final dynamic rows = ApiEnvelope.content(json)['data'];
+    compareLists = rows is List
+        ? rows.map((v) => CompareLists.fromJson(v)).toList()
+        : <CompareLists>[];
   }
 }
 

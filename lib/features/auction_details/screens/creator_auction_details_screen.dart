@@ -16,6 +16,7 @@ import 'package:flutter_sixvalley_ecommerce/features/auction_details/widgets/auc
 import 'package:flutter_sixvalley_ecommerce/features/auction_details/widgets/auction_payment_info_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_details/widgets/auction_product_details_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_details/widgets/auction_timeline_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/features/auction_details/widgets/auction_winner_info_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_details/widgets/creator_bidding_list_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_details/widgets/auction_details_bottom_bar_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_details/widgets/creator_auction_deatils_screen_shimmer.dart';
@@ -34,6 +35,7 @@ import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dar
 import 'package:flutter_sixvalley_ecommerce/utill/custom_themes.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/dimensions.dart';
 import 'package:flutter_sixvalley_ecommerce/utill/images.dart';
+import 'package:flutter_sixvalley_ecommerce/features/profile/controllers/profile_contrroller.dart';
 import 'package:provider/provider.dart';
 
 class CreatorAuctionDetailsScreen extends StatefulWidget {
@@ -94,6 +96,7 @@ class _CreatorAuctionDetailsScreenState extends State<CreatorAuctionDetailsScree
       builder: (context, controller, _) {
         final product = controller.auctionProduct;
         final auctionState = product?.auctionState ?? UserCreatedAuctionEnum.pending;
+        final int? myId = Provider.of<ProfileController>(context, listen: false).userInfoModel?.id;
 
         final List<CreatorBidListItem> bids = [];
 
@@ -102,23 +105,25 @@ class _CreatorAuctionDetailsScreenState extends State<CreatorAuctionDetailsScree
               controller.bidListModel!.bids!.asMap().entries.map((entry) {
                 final index = entry.key;
                 final bid = entry.value;
+                final bool isMyBid = myId != null && bid.bidder?.id == myId;
                 return CreatorBidListItem(
                   rank: index + 1,
-                  name: '${bid.customer?.fName ?? ''} ${bid.customer?.lName ?? ''}',
+                  name: '${bid.bidder?.fName ?? ''} ${bid.bidder?.lName ?? ''}',
                   timeAgo: bid.bidTime ?? '',
                   bidAmount: PriceConverter.convertPrice(context, double.parse(bid.bidAmount?.toString() ?? '0')),
-                  avatarUrl: bid.customer?.imageFullUrl?.path ?? '',
+                  avatarUrl: bid.bidder?.imageFullUrl?.path ?? '',
                   isLeading: bid.isLeadBid ?? false,
                   isWithdrawBid: bid.isWithdrawBid ?? false,
-                  isCurrentUser: bid.isMyBid ?? false,
-                  isWinner: (bid.userContext?.isWinner ?? false) && !(bid.userContext?.isClaimExpired ?? false) && (bid.isLeadBid ?? false) && (bid.isMyBid ?? false),
-                  isClaimExpired: (bid.userContext?.isWinner ?? false) && (bid.userContext?.isClaimExpired ?? false) && (bid.isLeadBid ?? false) && (bid.isMyBid ?? false),
+                  isCurrentUser: isMyBid,
+                  isWinner: (bid.userContext?.isWinner ?? false) && !(bid.userContext?.isClaimExpired ?? false) && (bid.isLeadBid ?? false) && isMyBid,
+                  isClaimExpired: (bid.userContext?.isWinner ?? false) && (bid.userContext?.isClaimExpired ?? false) && (bid.isLeadBid ?? false) && isMyBid,
                 );
               }).toList()
           );
         }
 
         final payment = product?.transactions?.firstWhere((t) => t.type == 'auction_payment', orElse: () => AuctionTransaction());
+        final PaymentStatus? paymentStatus = product?.paymentInfo?.paymentStatus ?? PaymentStatus.fromString(payment?.paymentStatus);
 
 
         return PopScope(
@@ -142,7 +147,7 @@ class _CreatorAuctionDetailsScreenState extends State<CreatorAuctionDetailsScree
               totalBidCount: product.totalBidsCount ?? 0,
               isCashOnDelivery: controller.isCashOnDeliveryCommission,
               hasExistingWithdraw: controller.auctionWithdraw != null,
-              isWithdrawDisabled: payment?.paymentStatus == PaymentStatus.unpaid.label,
+              isWithdrawDisabled: paymentStatus == PaymentStatus.unpaid,
               onCancel: _showDeleteConfirmationDialog,
               onEdit: () => RouterHelper.getAddEditAuctionProductRoute(productId: product.id ?? 0, slug: product.slug ?? widget.slug, initialProduct: controller.auctionProduct, fromDetails: true, action: RouteAction.push),
               onRelaunch: () => RouterHelper.getAddEditAuctionProductRoute(productId: product.id ?? 0, slug: product.slug ?? widget.slug, initialProduct: controller.auctionProduct, fromDetails: true, isRelaunchMode: true, action: RouteAction.push),
@@ -273,9 +278,9 @@ class _CreatorAuctionDetailsScreenState extends State<CreatorAuctionDetailsScree
                         ].contains(auctionState)) ...[
                           const SizedBox(height: Dimensions.paddingSizeSmall),
                           AuctionPaymentInfoWidget(
-                            paymentStatus: payment?.paymentStatus == 'paid' ? PaymentStatus.paid : PaymentStatus.unpaid,
-                            paymentMethod: payment?.paymentMethod ?? '',
-                            paidAmount: payment?.amount ?? 0,
+                            paymentStatus: paymentStatus ?? PaymentStatus.unpaid,
+                            paymentMethod: product.paymentInfo?.paymentMethod ?? payment?.paymentMethod ?? '',
+                            paidAmount: product.paymentInfo?.paidAmount ?? payment?.amount ?? 0,
                           ),
                         ],
 
@@ -310,12 +315,28 @@ class _CreatorAuctionDetailsScreenState extends State<CreatorAuctionDetailsScree
                           customVideoUrl: product.customVideoUrlFullUrl?.path,
                         ),
 
+                        if (auctionState == UserCreatedAuctionEnum.live || auctionState == UserCreatedAuctionEnum.readyToClaim ||auctionState == UserCreatedAuctionEnum.purchaseComplete)
+                          const SizedBox(height: Dimensions.paddingSizeSmall),
+                      ],
+                    ),
+                  ),
+
+                  if (auctionState == UserCreatedAuctionEnum.live || auctionState == UserCreatedAuctionEnum.readyToClaim || auctionState == UserCreatedAuctionEnum.purchaseComplete)
+                    CreatorBiddingListWidget(bids: bids, productId: product.id ?? 0),
+
+                  if (product.winner != null && (auctionState == UserCreatedAuctionEnum.live || auctionState == UserCreatedAuctionEnum.readyToClaim || auctionState == UserCreatedAuctionEnum.purchaseComplete))
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: Dimensions.paddingSizeSmall),
+                        child: AuctionWinnerInfoWidget(winner: product.winner!),
+                      ),
+                    ),
+
+                  SliverToBoxAdapter(
+                    child: Column(
+                      children: [
                         if (auctionState == UserCreatedAuctionEnum.live || auctionState == UserCreatedAuctionEnum.purchaseComplete) ...[
                           const SizedBox(height: Dimensions.paddingSizeSmall),
-
-                          CreatorBiddingListWidget(bids: bids, productId: product.id ?? 0),
-                          const SizedBox(height: Dimensions.paddingSizeSmall),
-
                           AuctionInsightsWidget(
                             totalBids: product.totalBidsCount ?? 0,
                             avgBidIncrease: product.minimumIncrementAmount ?? 0.00,

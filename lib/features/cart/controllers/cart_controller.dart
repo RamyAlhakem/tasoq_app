@@ -1,11 +1,13 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/domain/services/cart_service_interface.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/cart/domain/models/cart_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product/domain/models/product_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/product_details/controllers/product_details_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/shipping/controllers/shipping_controller.dart';
+import 'package:flutter_sixvalley_ecommerce/features/splash/controllers/splash_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/api_checker.dart';
 import 'package:flutter_sixvalley_ecommerce/main.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/show_custom_snakbar_widget.dart';
@@ -47,7 +49,10 @@ class CartController extends ChangeNotifier {
     ApiResponseModel apiResponse = await cartServiceInterface!.getCartList(couponCode: couponCode);
     if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
       _cartList = [];
-      apiResponse.response!.data.forEach((cart) => _cartList.add(CartModel.fromJson(cart)));
+      final dynamic cartData = ApiEnvelope.content(apiResponse.response!.data)['data'];
+      if (cartData is List) {
+        cartData.forEach((cart) => _cartList.add(CartModel.fromJson(cart)));
+      }
       _cartLoading = false;
     } else {
       _cartLoading = false;
@@ -95,7 +100,7 @@ class CartController extends ChangeNotifier {
 
 
 
-  Future<ApiResponseModel> addToCartAPI(CartModelBody cart, BuildContext context, List<ChoiceOptions> choices, List<int>? variationIndexes, {int buyNow = 0, int? shippingMethodExist, int? shippingMethodId, bool shouldPop = true, bool showSuccessToast = true}) async {
+  Future<ApiResponseModel> addToCartAPI(CartModelBody cart, BuildContext context, List<ChoiceOptions> choices, List<int>? variationIndexes, {int buyNow = 0, int? shippingMethodExist, int? shippingMethodId, bool shouldPop = true, bool showSuccessToast = true, bool useOverlay = false}) async {
     _addToCartLoading = true;
     notifyListeners();
     ApiResponseModel apiResponse = await cartServiceInterface!.addToCartListData(cart, choices, variationIndexes, buyNow, shippingMethodExist, shippingMethodId);
@@ -107,7 +112,17 @@ class CartController extends ChangeNotifier {
       getCartData(Get.context!);
     } else {
       _addToCartLoading = false;
-      ApiChecker.checkApi(apiResponse);
+      final dynamic errorData = apiResponse.response?.data;
+      if (errorData is Map && errorData['identical_code'] == 'cart_below_minimum_order_amount_422') {
+        final String message = '${errorData['message']} ${errorData['content']?['data']?['minimum_order_amount']}';
+        if (useOverlay) {
+          showOverlaySnackBar(context, message, snackBarType: SnackBarType.error);
+        } else {
+          showCustomSnackBarWidget(message, Get.context!, snackBarType: SnackBarType.error);
+        }
+      } else {
+        ApiChecker.checkApi(apiResponse, useOverlay: useOverlay, overlayContext: context);
+      }
     }
     notifyListeners();
     return apiResponse;
@@ -120,14 +135,21 @@ class CartController extends ChangeNotifier {
     ApiResponseModel apiResponse = await cartServiceInterface!.restockRequest(cart, choices, variationIndexes, buyNow, shippingMethodExist, shippingMethodId);
 
     _addToCartLoading = false;
-    if (apiResponse.response != null && apiResponse.response!.statusCode == 200) {
+    final int? statusCode = apiResponse.response?.statusCode;
+    final bool alreadyRequested = statusCode == 409;
+    if (statusCode == 200 || statusCode == 201 || alreadyRequested) {
+      final dynamic data = apiResponse.response!.data;
       Navigator.of(Get.context!).pop();
       _addToCartLoading = false;
       if(context.mounted) {
         Provider.of<ProductDetailsController>(context, listen: false).updateProductRestock(variantKey: variationType);
       }
-      await FirebaseMessaging.instance.subscribeToTopic(apiResponse.response!.data['topic']);
-      showCustomSnackBarWidget(apiResponse.response!.data['message'], Get.context!, snackBarType: apiResponse.response!.data['status'] == 0 ? SnackBarType.error : SnackBarType.success);
+      final dynamic topic = ApiEnvelope.content(data)['topic'];
+      if (topic is String && topic.isNotEmpty) {
+        await FirebaseMessaging.instance.subscribeToTopic(topic);
+      }
+      final bool isError = alreadyRequested || (data is Map && data['status'] == 0);
+      showCustomSnackBarWidget(ApiEnvelope.message(data), Get.context!, snackBarType: isError ? SnackBarType.error : SnackBarType.success);
     } else {
       _addToCartLoading = false;
       ApiChecker.checkApi(apiResponse);
@@ -185,6 +207,15 @@ class CartController extends ChangeNotifier {
 
     } else {
       ApiChecker.checkApi(apiResponse);
+    }
+
+    final BuildContext? context = Get.context;
+    final bool isWholesaleEnabled = context != null && Provider.of<SplashController>(context, listen: false).isWholesaleEnabled;
+    if (isWholesaleEnabled) {
+      ApiResponseModel wholesaleResponse = await cartServiceInterface!.mergeWholesaleGuestCart();
+      if (wholesaleResponse.response == null || wholesaleResponse.response!.statusCode != 200) {
+        ApiChecker.checkApi(wholesaleResponse);
+      }
     }
     notifyListeners();
   }

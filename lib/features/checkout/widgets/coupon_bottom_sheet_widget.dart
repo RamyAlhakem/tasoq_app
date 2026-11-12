@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/features/coupon/domain/models/coupon_item_model.dart';
 import 'package:flutter_sixvalley_ecommerce/localization/language_constrants.dart';
 import 'package:flutter_sixvalley_ecommerce/features/coupon/controllers/coupon_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/theme/controllers/theme_controller.dart';
@@ -11,7 +12,11 @@ import 'package:provider/provider.dart';
 
 class CouponBottomSheetWidget extends StatefulWidget {
   final double orderAmount;
-  const CouponBottomSheetWidget({super.key, required this.orderAmount});
+
+  final List<Coupons>? coupons;
+  final bool isWholesale;
+
+  const CouponBottomSheetWidget({super.key, required this.orderAmount, this.coupons, this.isWholesale = false});
   @override
   State<CouponBottomSheetWidget> createState() => _CouponBottomSheetWidgetState();
 }
@@ -21,9 +26,17 @@ class _CouponBottomSheetWidgetState extends State<CouponBottomSheetWidget> {
   TextEditingController couponController =TextEditingController();
 
   @override
+  void dispose() {
+    couponController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Consumer<CouponController>(
         builder: (context, couponProvider, _) {
+          final List<Coupons>? couponList = widget.isWholesale ? widget.coupons : couponProvider.availableCouponList;
+
           return Container(constraints : BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.75,
               minHeight: MediaQuery.of(context).size.height * 0.5 ),
             padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
@@ -90,22 +103,27 @@ class _CouponBottomSheetWidgetState extends State<CouponBottomSheetWidget> {
                     style: textBold.copyWith(fontSize: Dimensions.fontSizeLarge))),
 
               couponProvider.availableCouponList != null? couponProvider.availableCouponList!.isNotEmpty?
-              Expanded(child: Padding(padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeDefault),
-                child: ListView.builder(
-                  padding: EdgeInsets.zero,
-                  shrinkWrap: true,
-                  itemCount: couponProvider.availableCouponList!.length,
-                  itemBuilder: (context, index) {
-                    return CouponItemWidget(
-                      coupons: couponProvider.availableCouponList![index],
-                      fromCheckout: true,
-                      onCopy: (String? code ) {
-                        couponController.text = code ?? '';
-                      },
-                    );
-                  }
+              Expanded(child: CustomScrollView(
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeDefault),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          return CouponItemWidget(
+                            coupons: couponProvider.availableCouponList![index],
+                            fromCheckout: true,
+                            onCopy: (String? code ) {
+                              couponController.text = code ?? '';
+                            },
+                          );
+                        },
+                        childCount: couponProvider.availableCouponList!.length,
+                      ),
+                    ),
                   ),
-                ),
+                ],
+              ),
               ) : const NoInternetOrDataScreenWidget(isNoInternet: false) :
               const Expanded(child: Center(child: CircularProgressIndicator())),
 

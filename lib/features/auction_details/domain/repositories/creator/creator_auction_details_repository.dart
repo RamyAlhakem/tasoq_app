@@ -13,10 +13,7 @@ class CreatorAuctionDetailsRepository implements CreatorAuctionDetailsRepository
   @override
   Future<ApiResponseModel> getAuctionDetails(String slug) async {
     try {
-      final response = await dioClient!.get(
-        '${AppConstants.creatorAuctionProductDetailsUri}/$slug',
-        queryParameters: {'guest_id': '1'},
-      );
+      final response = await dioClient!.get('${AppConstants.creatorAuctionProductDetailsUri}/$slug', queryParameters: {'view': 'creator'});
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
       return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
@@ -34,24 +31,24 @@ class CreatorAuctionDetailsRepository implements CreatorAuctionDetailsRepository
         'offset': offset,
         'limit': limit,
       };
-      final response = await dioClient!.get('${AppConstants.auctionCreatorBidListUri}$auctionProductId', queryParameters: queryParams);
+      final response = await dioClient!.get('${AppConstants.auctionCreatorBidListUri}$auctionProductId/bids', queryParameters: queryParams);
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
   @override
   Future<ApiResponseModel> uploadTrackingUrl(int auctionProductId, String trackingUrl) async {
     try {
-      final response = await dioClient!.put('${AppConstants.auctionUploadTrackingUri}$auctionProductId',
+      final response = await dioClient!.put('${AppConstants.auctionUploadTrackingUri}$auctionProductId/tracking-url',
         data: {
           'tracking_url': trackingUrl,
         },
       );
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 
@@ -59,12 +56,12 @@ class CreatorAuctionDetailsRepository implements CreatorAuctionDetailsRepository
   Future<ApiResponseModel> updateDeliveryStatus(int auctionProductId, AuctionDeliveryStatus status) async {
     try {
       final response = await dioClient!.put(
-        '${AppConstants.auctionDeliveryStatusUri}$auctionProductId',
+        '${AppConstants.auctionDeliveryStatusUri}$auctionProductId/delivery-status',
         data: {'delivery_status': status.value},
       );
       return ApiResponseModel.withSuccess(response);
     } catch (e) {
-      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e));
+      return ApiResponseModel.withError(ApiErrorHandler.getMessage(e), responseValue: ApiErrorHandler.getResponse(e));
     }
   }
 

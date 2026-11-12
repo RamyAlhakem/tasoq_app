@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:flutter_sixvalley_ecommerce/data/model/api_list_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/helper/date_converter.dart';
 
 class WalletTransactionModel {
@@ -13,29 +16,44 @@ class WalletTransactionModel {
   
 
   WalletTransactionModel.fromJson(Map<String, dynamic> json) {
-    limit = int.tryParse('${json['limit']}');
-    offset = int.tryParse('${json['offset']}');
-    totalSize = int.tryParse('${json['total_size']}');
-    filterBy = json['filter_by'];
-    startDate = DateConverter.convertDurationDateTimeFromString(json['start_date']);
-    endDate = DateConverter.convertDurationDateTimeFromString(json['end_date']);
+    final ApiListEnvelope envelope = ApiListEnvelope.fromJson(json, legacyKeys: ['wallet_transaction_list']);
+    final Map params = envelope.content['params'] is Map ? envelope.content['params'] : const {};
+    final Map summary = envelope.content['summary'] is Map ? envelope.content['summary'] : const {};
 
-    if (json['transaction_types'] != null) {
-      transactionTypes = List<String>.from(json['transaction_types'].map((id) => id.toString()));
-    }
+    limit = envelope.limit;
+    offset = envelope.offset;
+    totalSize = envelope.totalSize;
 
-    if(json['total_wallet_balance'] != null){
-      totalWalletBalance = json['total_wallet_balance'].toDouble( );
-    }else{
-      totalWalletBalance = 0.0;
-    }
+    // The all/debit/credit filter is `entry_type` in v6 and `filter_by` before
+    // it. The Dart name stays `filterBy` because the filter sheet and the badge
+    // count are keyed on it.
+    filterBy = params['entry_type'] ?? params['filter_by'] ?? json['filter_by'];
+    startDate = DateConverter.convertDurationDateTimeFromString(params['start_date'] ?? json['start_date']);
+    endDate = DateConverter.convertDurationDateTimeFromString(params['end_date'] ?? json['end_date']);
+    transactionTypes = _readTransactionTypes(params['transaction_types'] ?? json['transaction_types']);
 
-    if (json['wallet_transaction_list'] != null) {
+    totalWalletBalance =
+        double.tryParse('${summary['total_wallet_balance'] ?? envelope.read('total_wallet_balance')}') ?? 0.0;
+
+    if (envelope.data != null) {
       walletTransactionList = <WalletTransactionList>[];
-      json['wallet_transaction_list'].forEach((v) {
-        walletTransactionList!.add(WalletTransactionList.fromJson(v));
-      });
+      for (final dynamic v in envelope.data!) {
+        if (v is Map) walletTransactionList!.add(WalletTransactionList.fromJson(Map<String, dynamic>.from(v)));
+      }
     }
+  }
+
+  static List<String>? _readTransactionTypes(dynamic value) {
+    if (value is List) return value.map((type) => type.toString()).toList();
+    if (value is String && value.isNotEmpty) {
+      try {
+        final dynamic decoded = jsonDecode(value);
+        if (decoded is List) return decoded.map((type) => type.toString()).toList();
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
   }
 
 }
@@ -53,6 +71,7 @@ class WalletTransactionList {
   String? _createdAt;
   String? _updatedAt;
   String? paymentMethod;
+  String? _businessModule;
 
   WalletTransactionList(
       {int? id,
@@ -66,7 +85,8 @@ class WalletTransactionList {
         String? reference,
         String? createdAt,
         String? updatedAt,
-        String? paymentMethod
+        String? paymentMethod,
+        String? businessModule
       }) {
     if (id != null) {
       _id = id;
@@ -102,6 +122,9 @@ class WalletTransactionList {
       _updatedAt = updatedAt;
     }
     this.paymentMethod;
+    if (businessModule != null) {
+      _businessModule = businessModule;
+    }
   }
 
   int? get id => _id;
@@ -115,20 +138,22 @@ class WalletTransactionList {
   String? get reference => _reference;
   String? get createdAt => _createdAt;
   String? get updatedAt => _updatedAt;
+  String? get businessModule => _businessModule;
 
   WalletTransactionList.fromJson(Map<String, dynamic> json) {
     _id = json['id'];
     _userId = json['user_id'];
     _transactionId = json['transaction_id'];
-    _credit = json['credit'].toDouble();
-    _debit = json['debit'].toDouble();
-    _adminBonus = json['admin_bonus'].toDouble();
-    _balance = json['balance'].toDouble();
+    _credit = double.tryParse('${json['credit']}');
+    _debit = double.tryParse('${json['debit']}');
+    _adminBonus = double.tryParse('${json['admin_bonus']}');
+    _balance = double.tryParse('${json['balance']}');
     _transactionType = json['transaction_type'];
     _reference = json['reference'];
     _createdAt = json['created_at'];
     _updatedAt = json['updated_at'];
     paymentMethod = json['payment_method'];
+    _businessModule = json['business_module'];
   }
 
 }

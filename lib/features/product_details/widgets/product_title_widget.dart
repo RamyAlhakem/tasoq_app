@@ -183,7 +183,6 @@ class ProductTitleWidget extends StatelessWidget {
               const SizedBox(height: Dimensions.paddingSizeSmall),
             ],
 
-            /// Available color
             productModel!.colors != null && productModel!.colors!.isNotEmpty ?
             Row(children: [
 

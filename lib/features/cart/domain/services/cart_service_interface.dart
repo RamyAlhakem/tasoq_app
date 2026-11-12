@@ -20,5 +20,6 @@ abstract class CartServiceInterface{
   Future<ApiResponseModel<T>> getCartData<T>({required DataSourceEnum source});
 
   Future<dynamic> mergeGuestCart();
+  Future<dynamic> mergeWholesaleGuestCart();
 
 }

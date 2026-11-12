@@ -1,8 +1,7 @@
 import 'dart:convert';
-
 import 'package:flutter_sixvalley_ecommerce/common/enums/auction_enum.dart';
 import 'package:flutter_sixvalley_ecommerce/common/enums/payment_status_enum.dart';
-
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 
 enum AuctionOwnerType {
   admin,
@@ -36,22 +35,27 @@ class ParticipationAuctionDetailsModel {
   });
 
   factory ParticipationAuctionDetailsModel.fromJson(Map<String, dynamic> json) {
-    final productJson = json['product'] as Map<String, dynamic>?;
-    final mergedProductJson = productJson != null
-        ? {...productJson, 'second_highest_bid': json['second_highest_bid']}
-        : null;
+    final Map content = ApiEnvelope.content(json);
+    final dynamic productJson = content['product'] ?? content['data'];
+
+    dynamic field(String key) => content[key] ?? (productJson is Map ? productJson[key] : null);
+
+    final mergedProductJson = productJson is Map
+        ? {...Map<String, dynamic>.from(productJson), 'second_highest_bid': field('second_highest_bid')} : null;
+
+    List<Map<String, dynamic>>? rows(dynamic value) =>
+        value is List ? [for (final Map row in value.whereType<Map>()) Map<String, dynamic>.from(row)] : null;
+    Map<String, dynamic>? map(dynamic value) => value is Map ? Map<String, dynamic>.from(value) : null;
+
+    final Map<String, dynamic>? paymentInfoJson = map(field('payment_info'));
+    final Map<String, dynamic>? billingInfoJson = map(field('billing_info'));
+
     return ParticipationAuctionDetailsModel(
       product: mergedProductJson != null ? AuctionProductDetails.fromJson(mergedProductJson) : null,
-      similarProducts: json['similar_products'] != null
-          ? List.from(json['similar_products']).map((e) => SimilarProduct.fromJson(e)).toList() : null,
-      sameAuthorProducts: json['same_author_products'] != null
-          ? List.from(json['same_author_products']).map((e) => SameAuthorProduct.fromJson(e)).toList() : null,
-      paymentInfo: json['payment_info'] != null
-          ? PaymentInfo.fromJson(json['payment_info'])
-          : null,
-      billingInfo: json['billing_info'] != null
-          ? BillingInfo.fromJson(json['billing_info'])
-          : null,
+      similarProducts: rows(field('similar_products'))?.map(SimilarProduct.fromJson).toList(),
+      sameAuthorProducts: rows(field('same_author_products'))?.map(SameAuthorProduct.fromJson).toList(),
+      paymentInfo: paymentInfoJson != null ? PaymentInfo.fromJson(paymentInfoJson) : null,
+      billingInfo: billingInfoJson != null ? BillingInfo.fromJson(billingInfoJson) : null,
     );
   }
 }
@@ -65,51 +69,41 @@ class AuctionProductDetails {
   final OwnerInfo? ownerInfo;
   final String? details;
   final String? itemCondition;
-
   final double? shippingFee;
   final String? returnPolicy;
-
   final double? startingPrice;
   final double? highestBidAmount;
   final double? minimumIncrementAmount;
   final double? maximumDecrementAmount;
   final double? currentHighestBidAmount;
-
   final int? totalViews;
   final int? totalBidsCount;
-
   final String? startTime;
   final String? endTime;
-
   final ThumbnailFullUrl? thumbnailFullUrl;
   final List<ThumbnailFullUrl>? imagesFullUrl;
-
   final Brand? brand;
   final List<Bid>? bids;
-
   final MyParticipation? myParticipation;
   final MyBid? myBid;
-
   final double? totalTaxAmount;
-
   final int? shippingAddressId;
   final AddressInfo? shippingAddressInfo;
   final int? billingAddress;
   final AddressInfo? billingAddressInfo;
-
   final int? totalParticipants;
   final int? participantsCount;
   final int? totalParticipantsCount;
-
   final bool? hasReadyToDeliveryParticipantSignal;
   final bool? hasOnTheWayParticipantSignal;
   final bool? hasPurchaseCompleteParticipantSignal;
   final AuctionParticipationStatus? auctionStatus;
   final AuctionParticipationStatus? myAuctionStatus;
   final String? auctionOwnerStatus;
+  final String? auctionCurrentStatus;
   final String? trackingUrl;
   final AuctionInsights? auctionInsights;
-  final bool? isAuctionSave;
+  bool? isAuctionSave;
   final bool? isSameAddress;
   final MySavedProduct? mySavedProduct;
   final String? videoProvider;
@@ -158,6 +152,7 @@ class AuctionProductDetails {
     this.auctionStatus,
     this.myAuctionStatus,
     this.auctionOwnerStatus,
+    this.auctionCurrentStatus,
     this.trackingUrl,
     this.auctionInsights,
     this.mySavedProduct,
@@ -173,8 +168,10 @@ class AuctionProductDetails {
   factory AuctionProductDetails.fromJson(Map<String, dynamic> json) {
     double? parseDouble(dynamic value) =>
         value != null ? double.tryParse(value.toString()) : null;
+    int? parseInt(dynamic value) => value is int ? value : int.tryParse('${value ?? ''}');
+    bool? parseBool(dynamic value) => value == null ? null : (value == true || '$value' == '1');
 
-    final ownerType = AuctionOwnerType.fromString(json['owner_type']);
+    final ownerType = AuctionOwnerType.fromString(json['owner_type']?.toString());
 
     OwnerInfo? ownerInfo;
     if (ownerType == AuctionOwnerType.admin || ownerType == AuctionOwnerType.seller) {
@@ -183,100 +180,62 @@ class AuctionProductDetails {
       ownerInfo = json['customer'] != null ? OwnerInfo.fromJson(json['customer']) : null;
     }
 
+    final dynamic auctionStatusValue = json['auction_status'] ?? json['auction_current_status'];
+
     return AuctionProductDetails(
-      id: json['id'],
+      id: parseInt(json['id']),
       name: json['name'],
-      categoryId: json['category_id'],
-      ownerId: json['owner_id'],
+      categoryId: parseInt(json['category_id']),
+      ownerId: parseInt(json['owner_id']),
       ownerType: ownerType,
       ownerInfo: ownerInfo,
       details: json['details'],
       itemCondition: json['item_condition'],
-
       shippingFee: parseDouble(json['shipping_fee']),
       returnPolicy: json['return_policy'],
-
       startingPrice: parseDouble(json['starting_price']),
       highestBidAmount: parseDouble(json['highest_bid_amount']),
       minimumIncrementAmount: parseDouble(json['minimum_increment_amount']),
       maximumDecrementAmount: parseDouble(json['maximum_decrement_amount']),
       currentHighestBidAmount: parseDouble(json['current_highest_bid_amount']),
-
-      totalViews: json['total_views'],
-      totalBidsCount: json['total_bids_count'],
-
+      totalViews: parseInt(json['total_views']),
+      totalBidsCount: parseInt(json['total_bids_count']),
       startTime: json['start_time'],
       endTime: json['end_time'],
-
       totalTaxAmount: parseDouble(json['total_tax_amount']),
-
-      thumbnailFullUrl: json['thumbnail_full_url'] != null
-          ? ThumbnailFullUrl.fromJson(json['thumbnail_full_url'])
-          : null,
-
-      imagesFullUrl: json['images_full_url'] != null
-          ? List.from(json['images_full_url'])
-          .map((e) => ThumbnailFullUrl.fromJson(e))
-          .toList()
-          : null,
-
-      brand: json['brand'] != null
-          ? Brand.fromJson(json['brand'])
-          : null,
-
-      bids: json['bids'] != null
-          ? List.from(json['bids'])
-          .map((e) => Bid.fromJson(e))
-          .toList()
-          : null,
-
-      myParticipation: json['my_participation'] != null
-          ? MyParticipation.fromJson(json['my_participation'])
-          : null,
-
-      myBid: json['my_bid'] != null
-          ? MyBid.fromJson(json['my_bid'])
-          : null,
-
-      shippingAddressId: json['shipping_address_id'],
+      thumbnailFullUrl: json['thumbnail_full_url'] != null ? ThumbnailFullUrl.fromJson(json['thumbnail_full_url']) : null,
+      imagesFullUrl: json['images_full_url'] != null ? List.from(json['images_full_url']).map((e) => ThumbnailFullUrl.fromJson(e)).toList() : null,
+      brand: json['brand'] != null ? Brand.fromJson(json['brand']) : null,
+      bids: json['bids'] != null ? List.from(json['bids']).map((e) => Bid.fromJson(e)).toList() : null,
+      myParticipation: json['my_participation'] != null ? MyParticipation.fromJson(json['my_participation']) : null,
+      myBid: json['my_bid'] != null ? MyBid.fromJson(json['my_bid']) : null,
+      shippingAddressId: parseInt(json['shipping_address_id']),
       shippingAddressInfo: json['shipping_address_info'] != null ? AddressInfo.fromJson(json['shipping_address_info']) : null,
-      billingAddress: json['billing_address'],
+      billingAddress: parseInt(json['billing_address']),
       billingAddressInfo: json['billing_address_info'] != null ? AddressInfo.fromJson(json['billing_address_info']) : null,
-
-      totalParticipants: json['total_participants'],
-      participantsCount: json['participants_count'],
-      totalParticipantsCount: json['total_participants_count'],
-
+      totalParticipants: parseInt(json['total_participants']),
+      participantsCount: parseInt(json['participants_count']),
+      totalParticipantsCount: parseInt(json['total_participants_count']),
       hasReadyToDeliveryParticipantSignal:
-      json['has_ready_to_delivery_participant_signal'],
+      parseBool(json['has_ready_to_delivery_participant_signal']),
       hasOnTheWayParticipantSignal:
-      json['has_on_the_way_participant_signal'],
+      parseBool(json['has_on_the_way_participant_signal']),
       hasPurchaseCompleteParticipantSignal:
-      json['has_purchase_complete_participant_signal'],
-
-      auctionStatus: AuctionParticipationStatus.fromString(json['auction_status']),
-
-      myAuctionStatus: AuctionParticipationStatus.fromString(json['my_auction_status']),
-
-      auctionOwnerStatus: json['auction_status']?.toString(),
-
+      parseBool(json['has_purchase_complete_participant_signal']),
+      auctionStatus: AuctionParticipationStatus.fromString(auctionStatusValue?.toString()),
+      myAuctionStatus: AuctionParticipationStatus.fromString(json['my_auction_status']?.toString()),
+      auctionOwnerStatus: auctionStatusValue?.toString(),
+      auctionCurrentStatus: json['auction_current_status']?.toString(),
       trackingUrl: json['tracking_url'],
-
-      auctionInsights: json['auction_insights'] != null
-          ? AuctionInsights.fromJson(json['auction_insights'])
-          : null,
-      mySavedProduct: json['my_saved_product'] != null
-          ? MySavedProduct.fromJson(json['my_saved_product'])
-          : null,
+      auctionInsights: json['auction_insights'] != null ? AuctionInsights.fromJson(json['auction_insights']) : null,
+      mySavedProduct: json['my_saved_product'] != null ? MySavedProduct.fromJson(json['my_saved_product']) : null,
       videoProvider: json['video_provider'],
       youtubeVideoUrl: json['youtube_video_url'],
       customVideoUrlFullUrl: json['custom_video_url_full_url'] != null ? ThumbnailFullUrl.fromJson(json['custom_video_url_full_url']) : null,
-      isAuctionSave: json['is_auction_save'] ?? false,
-      isSameAddress: json['billing_same_as_shipping'] ?? false,
-      secondHighestBid: json['second_highest_bid'] != null
-          ? SecondHighestBid.fromJson(json['second_highest_bid'])
-          : null,
-      isAllBidWithdrawn: json['is_all_bid_withdrawn'] ?? false,
+      isAuctionSave: parseBool(json['is_auction_save']) ?? false,
+      isSameAddress: parseBool(json['billing_same_as_shipping']) ?? false,
+      secondHighestBid: json['second_highest_bid'] is Map ? SecondHighestBid.fromJson(Map<String, dynamic>.from(json['second_highest_bid'])) : null,
+      isAllBidWithdrawn: parseBool(json['is_all_bid_withdrawn']) ?? false,
     );
   }
 }
@@ -303,8 +262,7 @@ class SimilarProduct {
   });
 
   factory SimilarProduct.fromJson(Map<String, dynamic> json) {
-    double? parseDouble(dynamic value) =>
-        value != null ? double.tryParse(value.toString()) : null;
+    double? parseDouble(dynamic value) => value != null ? double.tryParse(value.toString()) : null;
 
     return SimilarProduct(
       id: json['id'],
@@ -382,13 +340,9 @@ class Bid {
 
   factory Bid.fromJson(Map<String, dynamic> json) {
     return Bid(
-      bidAmount: json['bid_amount'] != null
-          ? double.tryParse(json['bid_amount'].toString())
-          : null,
+      bidAmount: json['bid_amount'] != null ? double.tryParse(json['bid_amount'].toString()) : null,
       bidTime: json['bid_time'],
-      customer: json['customer'] != null
-          ? Customer.fromJson(json['customer'])
-          : null,
+      customer: json['customer'] != null ? Customer.fromJson(json['customer']) : null,
     );
   }
 }
@@ -414,9 +368,7 @@ class Customer {
       fName: json['f_name'],
       lName: json['l_name'],
       image: json['image'],
-      imageFullUrl: json['image_full_url'] != null
-          ? ThumbnailFullUrl.fromJson(json['image_full_url'])
-          : null,
+      imageFullUrl: json['image_full_url'] != null ? ThumbnailFullUrl.fromJson(json['image_full_url']) : null,
     );
   }
 }
@@ -444,9 +396,7 @@ class AuctionDetails {
     return AuctionDetails(
       startTime: json['start_time'],
       endTime: json['end_time'],
-      highestBidAmount: json['highest_bid_amount'] != null
-          ? double.tryParse(json['highest_bid_amount'].toString())
-          : null,
+      highestBidAmount: json['highest_bid_amount'] != null ? double.tryParse(json['highest_bid_amount'].toString()) : null,
       totalBids: json['total_bids'],
       totalParticipants: json['total_participants'],
       totalViews: json['total_views'],
@@ -514,6 +464,7 @@ class MyParticipation {
   final String? createdAt;
   final String? updatedAt;
   final AuctionTransaction? auctionTransaction;
+  final OfflinePaymentInfo? offlinePaymentInfo;
 
   MyParticipation({
     this.id,
@@ -529,6 +480,7 @@ class MyParticipation {
     this.createdAt,
     this.updatedAt,
     this.auctionTransaction,
+    this.offlinePaymentInfo,
   });
 
   factory MyParticipation.fromJson(Map<String, dynamic> json) {
@@ -546,8 +498,29 @@ class MyParticipation {
       createdAt: json['created_at']?.toString(),
       updatedAt: json['updated_at']?.toString(),
       auctionTransaction: json['auction_transaction'] != null ? AuctionTransaction.fromJson(json['auction_transaction']) : null,
+      offlinePaymentInfo: json['offline_payment_info'] is Map ? OfflinePaymentInfo.fromJson(Map<String, dynamic>.from(json['offline_payment_info'])) : null,
     );
   }
+}
+
+class OfflinePaymentInfo {
+  final String? methodName;
+  final String? accountNumber;
+  final String? reference;
+  final String? paymentNote;
+  final double? amount;
+  final Map<String, dynamic> fields;
+
+  OfflinePaymentInfo({this.methodName, this.accountNumber, this.reference, this.paymentNote, this.amount, this.fields = const {}});
+
+  factory OfflinePaymentInfo.fromJson(Map<String, dynamic> json) => OfflinePaymentInfo(
+    methodName: json['method_name']?.toString(),
+    accountNumber: json['account_number']?.toString(),
+    reference: json['reference']?.toString(),
+    paymentNote: json['payment_note']?.toString(),
+    amount: json['amount'] != null ? double.tryParse(json['amount'].toString()) : null,
+    fields: json,
+  );
 }
 
 class MethodInformations {
@@ -578,9 +551,7 @@ class AuctionTransactionPaymentInfo {
     paymentNote: json['payment_note']?.toString(),
     methodId: json['method_id'],
     methodName: json['method_name']?.toString(),
-    methodInformations: json['method_informations'] != null
-        ? MethodInformations.fromJson(json['method_informations'])
-        : null,
+    methodInformations: json['method_informations'] != null ? MethodInformations.fromJson(json['method_informations']) : null,
   );
 }
 
@@ -664,9 +635,7 @@ class MyBid {
       id: json['id'],
       auctionProductId: json['auction_product_id'],
       userId: json['user_id'],
-      bidAmount: json['bid_amount'] != null
-          ? double.tryParse(json['bid_amount'].toString())
-          : null,
+      bidAmount: json['bid_amount'] != null ? double.tryParse(json['bid_amount'].toString()) : null,
       isAutoBid: json['is_auto_bid'],
       isWithdrawBid: json['is_withdraw_bid'],
       bidTime: json['bid_time'],
@@ -733,18 +702,10 @@ class BillingInfo {
 
   factory BillingInfo.fromJson(Map<String, dynamic> json) {
     return BillingInfo(
-      productPrice: json['product_price'] != null
-          ? double.tryParse(json['product_price'].toString())
-          : null,
-      winningBid: json['winning_bid'] != null
-          ? double.tryParse(json['winning_bid'].toString())
-          : null,
-      shippingFee: json['shipping_fee'] != null
-          ? double.tryParse(json['shipping_fee'].toString())
-          : null,
-      taxAmount: json['tax_amount'] != null
-          ? double.tryParse(json['tax_amount'].toString())
-          : null,
+      productPrice: json['product_price'] != null ? double.tryParse(json['product_price'].toString()) : null,
+      winningBid: json['winning_bid'] != null ? double.tryParse(json['winning_bid'].toString()) : null,
+      shippingFee: json['shipping_fee'] != null ? double.tryParse(json['shipping_fee'].toString()) : null,
+      taxAmount: json['tax_amount'] != null ? double.tryParse(json['tax_amount'].toString()) : null,
       taxType: json['tax_type'],
       paidBy: json['paid_by'],
     );
@@ -783,9 +744,7 @@ class OwnerInfo {
       fName: json['f_name'],
       lName: json['l_name'],
       image: json['image'],
-      imageFullUrl: json['image_full_url'] != null
-          ? ThumbnailFullUrl.fromJson(json['image_full_url'])
-          : null,
+      imageFullUrl: json['image_full_url'] != null ? ThumbnailFullUrl.fromJson(json['image_full_url']) : null,
     );
   }
 }
@@ -804,12 +763,8 @@ class AuctionInsights {
   factory AuctionInsights.fromJson(Map<String, dynamic> json) {
     return AuctionInsights(
       totalBids: json['total_bids'],
-      avgBidIncrease: json['avg_bid_increase'] != null
-          ? double.tryParse(json['avg_bid_increase'].toString())
-          : null,
-      highestJump: json['highest_jump'] != null
-          ? double.tryParse(json['highest_jump'].toString())
-          : null,
+      avgBidIncrease: json['avg_bid_increase'] != null ? double.tryParse(json['avg_bid_increase'].toString()) : null,
+      highestJump: json['highest_jump'] != null ? double.tryParse(json['highest_jump'].toString()) : null,
     );
   }
 

@@ -8,7 +8,6 @@ abstract class ProductServiceInterface{
   Future<dynamic> getFilteredProductList(BuildContext context,String offset, ProductType productType);
   Future<dynamic> getBrandOrCategoryProductList({required bool isBrand, required int id, String searchProduct = '', required int offset, String? productType, String? brandIds, String? authorIds, String? publishingIds});
   Future<dynamic> getRelatedProductList(String id);
-  Future<dynamic> getLatestProductList(String offset);
   Future<ApiResponseModel<T>> getRecommendedProduct<T>({required DataSourceEnum source});
   Future<ApiResponseModel<T>> getMostDemandedProduct<T>({required DataSourceEnum source});
   Future<ApiResponseModel<T>> getFindWhatYouNeed<T>({required DataSourceEnum source});

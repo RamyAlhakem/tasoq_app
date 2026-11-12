@@ -47,13 +47,7 @@ class FooterBannerSliderWidget extends StatelessWidget {
                     return InkWell(
                       onTap: () {
                         if(bannerList[index].resourceId != null){
-                          bannerProvider.clickBannerRedirect(
-                            context,
-                            bannerList[index].resourceId,
-                            bannerList[index].resourceType =='product'?
-                            bannerList[index].product : null,
-                            bannerList[index].resourceType
-                          );
+                          bannerProvider.clickBannerRedirect(context, bannerList[index]);
                         }
                       },
                       child: ClipRRect(

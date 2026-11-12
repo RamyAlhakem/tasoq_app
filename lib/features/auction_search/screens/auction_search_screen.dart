@@ -3,7 +3,7 @@ import 'package:flutter_sixvalley_ecommerce/common/basewidget/auction/auction_fi
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/auction/shimmers/auction_card_shimmer_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/custom_asset_image_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/no_internet_screen_widget.dart';
-import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_list_view_widget.dart';
+import 'package:flutter_sixvalley_ecommerce/common/basewidget/paginated_sliver_list_view_widget.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_search/controllers/auction_search_controller.dart';
 import 'package:flutter_sixvalley_ecommerce/features/auction_home/domain/models/auction_product_model.dart';
 import 'package:flutter_sixvalley_ecommerce/common/basewidget/auction/auction_card_widget.dart';
@@ -74,7 +74,7 @@ class _AuctionSearchScreenState extends State<AuctionSearchScreen> {
               return SingleChildScrollView(
                 controller: scrollController,
                 padding: const EdgeInsets.only(top: 10),
-                child: _buildDefaultUI(context),
+                child: const AuctionSearchDefaultUI(),
               );
             }
             return AuctionSearchResultWidget(
@@ -100,7 +100,13 @@ class _AuctionSearchScreenState extends State<AuctionSearchScreen> {
     );
   }
 
-  Widget _buildDefaultUI(BuildContext context) {
+}
+
+class AuctionSearchDefaultUI extends StatelessWidget {
+  const AuctionSearchDefaultUI({super.key});
+
+  @override
+  Widget build(BuildContext context) {
     final controller = Provider.of<AuctionSearchController>(context, listen: false);
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start,
@@ -318,49 +324,50 @@ class AuctionSearchResultWidget extends StatelessWidget {
             ? Center(
                 child: NoInternetOrDataScreenWidget(isNoInternet: false, message: getTranslated('no_data_found', context) ?? ''),
               )
-            : SingleChildScrollView(
+            : CustomScrollView(
               controller: scrollController,
-              child: PaginatedListView(
-                scrollController: scrollController,
-                totalSize: controller.auctionListModel?.totalSize,
-                offset: controller.auctionListModel?.offset,
-                onPaginate: (offset) async {
-                  await controller.getAuctionList(
-                    search: controller.searchText,
-                    offset: offset ?? 1,
-                  );
-                },
-                itemView: GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(Dimensions.homePagePadding),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: Dimensions.paddingSizeSmall,
-                    crossAxisSpacing: Dimensions.paddingSizeSmall,
-                    childAspectRatio: 0.65,
-                  ),
-                  itemCount: products.length,
-                  itemBuilder: (context, index) {
-                    final item = products[index];
-                    final isLive = item.auctionDetails?.status == 'live';
+              slivers: [
+                PaginatedSliverListView(
+                  scrollController: scrollController,
+                  totalSize: controller.auctionListModel?.totalSize,
+                  offset: controller.auctionListModel?.offset,
+                  onPaginate: (offset) async {
+                    await controller.getAuctionList(search: controller.searchText, offset: offset ?? 1);
+                  },
+                  itemView: SliverPadding(
+                    padding: const EdgeInsets.all(Dimensions.homePagePadding),
+                    sliver: SliverGrid(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: Dimensions.paddingSizeSmall,
+                        crossAxisSpacing: Dimensions.paddingSizeSmall,
+                        childAspectRatio: 0.65,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final item = products[index];
+                          final isLive = item.auctionDetails?.status == 'live';
 
-                  return AuctionCardWidget(
-                    slug: item.slug ?? '',
-                    state: isLive ? AuctionCardState.live : AuctionCardState.upcoming,
-                    imageUrl: item.thumbnailFullUrl?.path ?? '',
-                    productName: item.name ?? '',
-                    price: (isLive ? item.auctionDetails?.highestBidAmount : item.startingPrice)?.toDouble() ?? 0,
-                    targetTime: DateTime.tryParse(
-                        isLive ? item.auctionDetails?.endTime ?? '' : item.auctionDetails?.startTime ?? '') ?? DateTime.now(),
-                    viewCount: item.auctionDetails?.totalViews ?? 0,
-                    bidCount: item.auctionDetails?.totalBids,
-                  );
-                },
-              ),
+                          return AuctionCardWidget(
+                            slug: item.slug ?? '',
+                            state: isLive ? AuctionCardState.live : AuctionCardState.upcoming,
+                            imageUrl: item.thumbnailFullUrl?.path ?? '',
+                            productName: item.name ?? '',
+                            price: (isLive ? item.auctionDetails?.highestBidAmount : item.startingPrice)?.toDouble() ?? 0,
+                            targetTime: DateTime.tryParse(
+                                isLive ? item.auctionDetails?.endTime ?? '' : item.auctionDetails?.startTime ?? '') ?? DateTime.now(),
+                            viewCount: item.auctionDetails?.totalViews ?? 0,
+                            bidCount: item.auctionDetails?.totalBids,
+                          );
+                        },
+                        childCount: products.length,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
       ],
     );
   }

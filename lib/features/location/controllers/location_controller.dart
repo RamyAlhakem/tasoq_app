@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_sixvalley_ecommerce/data/model/api_envelope.dart';
 import 'package:flutter_sixvalley_ecommerce/data/model/api_response.dart';
 import 'package:flutter_sixvalley_ecommerce/features/location/domain/models/place_details_model.dart';
 import 'package:flutter_sixvalley_ecommerce/features/location/domain/models/prediction_model.dart';
@@ -34,6 +35,12 @@ class LocationController with ChangeNotifier {
   Placemark? get pickAddress => _pickAddress;
 
   TextEditingController get locationController => _locationController;
+
+  @override
+  void dispose() {
+    _locationController.dispose();
+    super.dispose();
+  }
 
 
   bool _buttonDisabled = true;
@@ -138,10 +145,16 @@ class LocationController with ChangeNotifier {
   void setLocation(String? placeID, String? address, GoogleMapController? mapController) async {
     _loading = true;
     notifyListeners();
-    PlaceDetailsModel detail;
     ApiResponseModel response = await locationServiceInterface.getPlaceDetails(placeID);
+    final dynamic data = response.response?.data;
+    if (data is! Map) {
+      _loading = false;
+      notifyListeners();
+      return;
+    }
 
-    detail = PlaceDetailsModel.fromJson(response.response!.data);
+    final PlaceDetailsModel detail = PlaceDetailsModel.fromJson(
+        Map<String, dynamic>.from(ApiEnvelope.content(data)));
 
     _pickPosition = Position(
       longitude: detail.location?.longitude ?? 0, latitude: detail.location?.latitude ?? 0,
@@ -185,8 +198,13 @@ class LocationController with ChangeNotifier {
   Future<String> getAddressFromGeocode(LatLng latLng, BuildContext context) async {
     ApiResponseModel response = await locationServiceInterface.getAddressFromGeocode(latLng);
     String address = '';
-    if(response.response!.statusCode == 200 && response.response!.data['status'] == 'OK') {
-      address = response.response!.data['results'][0]['formatted_address'].toString();
+
+    final Map payload = ApiEnvelope.content(response.response?.data);
+    final dynamic results = payload['results'];
+
+    if(response.response?.statusCode == 200 && payload['status'] == 'OK'
+        && results is List && results.isNotEmpty) {
+      address = '${results.first['formatted_address'] ?? ''}';
     }
     return address;
   }
@@ -197,8 +215,10 @@ class LocationController with ChangeNotifier {
 
       ApiResponseModel response = await locationServiceInterface.searchLocation(text);
 
-      if (response.response!.data is !List) {
-        _predictionListModel =  PredictionListModel.fromJson(response.response!.data);
+      final dynamic data = response.response?.data;
+      if (data is Map) {
+        _predictionListModel = PredictionListModel.fromJson(
+            Map<String, dynamic>.from(ApiEnvelope.content(data)));
       }
     }
 
